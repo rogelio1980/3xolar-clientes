@@ -233,22 +233,29 @@ function renderProposal(d) {
   let quoteData = null;
   if (d.items && d.items.length) {
     quoteData = d;
-  } else if (d.quoteId) {
-    // Load asynchronously
-    db.collection('clients').doc(cId).collection('proposals').doc(d.quoteId).get()
-      .then(qSnap => {
-        if (qSnap.exists) {
-          const qData = qSnap.data();
-          const qHtml = renderQuote(qData, d.quoteId);
-          const qSection = document.getElementById('quote-section');
-          if (qSection) {
-            qSection.innerHTML = qHtml;
-            qSection.style.display = 'block';
-            const tLink = document.getElementById('topbar-cot-link');
-          if(tLink){tLink.href='/cotizacion?id='+proposalId+'&client='+cId;tLink.style.display='inline-flex';}
+  } else if (d.quoteId || d.quoteData) {
+    // Show PDF link immediately - cotizacion.html reads from Firestore correctly
+    const tLink = document.getElementById('topbar-cot-link');
+    if(tLink){
+      tLink.href='/cotizacion?id='+proposalId+'&client='+cId;
+      tLink.style.display='inline-flex';
+    }
+    // Try to load full quote doc if quoteId exists
+    if (d.quoteId) {
+      db.collection('clients').doc(cId).collection('proposals').doc(d.quoteId).get()
+        .then(qSnap => {
+          const qData = qSnap.exists ? qSnap.data() : (d.quoteData || null);
+          if (qData && qData.items && qData.items.length) {
+            const qHtml = renderQuote(qData);
+            const qSection = document.getElementById('quote-section');
+            if (qSection) { qSection.innerHTML = qHtml; qSection.style.display = 'block'; }
           }
-        }
-      }).catch(()=>{});
+        }).catch(()=>{});
+    } else if (d.quoteData && d.quoteData.items && d.quoteData.items.length) {
+      const qHtml = renderQuote(d.quoteData);
+      const qSection = document.getElementById('quote-section');
+      if (qSection) { qSection.innerHTML = qHtml; qSection.style.display = 'block'; }
+    }
   }
   if (quoteData) quoteHtml = renderQuote(quoteData, null);
 

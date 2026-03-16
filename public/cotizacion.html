@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotización · TRN</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* ─── Variables ─────────────────────────────────────── */
+:root {
+  --navy:    #0B1A2E;
+  --mid:     #1B3A5C;
+  --amber:   #F5A623;
+  --orange:  #FF6B35;
+  --green:   #2ECC71;
+  --text:    #1a1f36;
+  --muted:   #5a6a8a;
+  --border:  #dde2f0;
+  --row-alt: #f6f8fd;
+}
+
+/* ─── Reset ──────────────────────────────────────────── */
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #e8edf6;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ─── Toolbar (screen only) ──────────────────────────── */
+.toolbar {
+  position: fixed; top:0; left:0; right:0; height:52px; z-index:200;
+  background: var(--navy);
+  display: flex; align-items: center; gap:.8rem; padding: 0 1.8rem;
+  box-shadow: 0 2px 16px rgba(0,0,0,.35);
+}
+.toolbar-brand {
+  font-family:'Outfit',sans-serif; font-weight:800; font-size:1rem;
+  color: var(--amber); letter-spacing:-.3px; flex:1;
+}
+.toolbar-brand small { color:rgba(255,255,255,.4); font-weight:400; font-size:.75rem; margin-left:.5rem; }
+
+.tbtn {
+  display:inline-flex; align-items:center; gap:.35rem;
+  padding:.42rem 1.1rem; border-radius:7px; border:none; cursor:pointer;
+  font-family:'Outfit',sans-serif; font-weight:700; font-size:.82rem;
+  transition: all .18s;
+}
+.tbtn-back  { background:rgba(255,255,255,.07); color:rgba(255,255,255,.65); border:1px solid rgba(255,255,255,.1); }
+.tbtn-back:hover  { background:rgba(255,255,255,.14); color:#fff; }
+.tbtn-pdf   { background: var(--amber); color: var(--navy); }
+.tbtn-pdf:hover { background: var(--orange); transform:translateY(-1px); box-shadow:0 4px 14px rgba(245,166,35,.4); }
+
+/* ─── Page shell ──────────────────────────────────────── */
+.page { margin-top:52px; padding:2rem; display:flex; justify-content:center; }
+
+/* ─── Document ─────────────────────────────────────────── */
+.doc {
+  background: #fff;
+  width: 215.9mm;   /* US Letter */
+  box-shadow: 0 6px 40px rgba(0,0,0,.16);
+  padding: 14mm 18mm 18mm;
+  position:relative;
+}
+
+/* ─── Doc top stripe ──────────────────────────────────── */
+.doc-stripe {
+  height: 5px;
+  background: linear-gradient(90deg, var(--navy) 0%, var(--amber) 55%, var(--orange) 100%);
+  margin: -14mm -18mm 12mm;
+}
+
+/* ─── Header: TRN block + folio block ───────────────── */
+.doc-header {
+  display:flex; justify-content:space-between; align-items:flex-start;
+  gap:1.5rem;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--navy);
+  margin-bottom: 14px;
+}
+
+.trn-block { display:flex; align-items:center; gap:12px; }
+
+.trn-logo { height:48px; width:auto; object-fit:contain; }
+.trn-logo-text {
+  font-family:'Outfit',sans-serif; font-weight:900; font-size:1.5rem;
+  color: var(--amber); letter-spacing:-1px;
+  display:none; /* shown if img fails */
+}
+
+.trn-info { font-size:9.5px; color:#333; line-height:1.7; }
+.trn-info strong {
+  font-family:'Outfit',sans-serif; font-weight:800; font-size:11.5px;
+  color: var(--navy); display:block; margin-bottom:1px;
+}
+
+.folio-block { text-align:right; flex-shrink:0; }
+.folio-label {
+  font-family:'Outfit',sans-serif; font-size:7.5px; font-weight:700;
+  letter-spacing:3px; text-transform:uppercase; color:var(--muted);
+}
+.folio-num {
+  font-family:'Outfit',sans-serif; font-weight:800; font-size:1.35rem;
+  color: var(--amber); letter-spacing:-.5px; line-height:1.1; margin:2px 0;
+}
+.folio-date { font-size:10px; color:var(--muted); }
+.status-pill {
+  display:inline-block; margin-top:4px;
+  padding:2px 9px; border-radius:4px;
+  font-family:'Outfit',sans-serif; font-size:8px; font-weight:700;
+  letter-spacing:1px; text-transform:uppercase;
+}
+.s-review    { background:rgba(245,166,35,.12); color:#a06000; }
+.s-aprobada  { background:rgba(46,204,113,.14); color:#1a7a40; }
+.s-rechazada { background:rgba(231,76,60,.1); color:#b52c22; }
+.s-borrador  { background:rgba(90,106,138,.1); color:#5a6a8a; }
+
+/* ─── Info strip: client + meta ──────────────────────── */
+.info-strip {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:10px; margin-bottom:12px;
+}
+
+.info-card {
+  padding:9px 12px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background: #fafbff;
+}
+.info-card-hdr {
+  font-family:'Outfit',sans-serif; font-size:7.5px; font-weight:700;
+  letter-spacing:2px; text-transform:uppercase; color:var(--amber);
+  border-bottom:1px solid var(--border);
+  padding-bottom:5px; margin-bottom:7px;
+}
+
+.client-row { display:flex; align-items:center; gap:10px; }
+.client-logo { height:38px; max-width:80px; object-fit:contain; flex-shrink:0; }
+.client-text strong {
+  font-family:'Outfit',sans-serif; font-weight:700; font-size:11.5px;
+  color:var(--navy); display:block; line-height:1.3;
+}
+.client-text span { display:block; font-size:9.5px; color:#444; line-height:1.65; }
+
+.meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px 10px; }
+.meta-item label { display:block; font-size:7.5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); }
+.meta-item span  { font-size:10px; font-weight:500; color:var(--text); }
+
+/* ─── Subject bar ─────────────────────────────────────── */
+.subject-bar {
+  background: var(--navy);
+  color:#fff;
+  padding:9px 13px;
+  border-radius:6px;
+  margin-bottom:13px;
+}
+.subject-lbl {
+  font-family:'Outfit',sans-serif; font-size:7px; font-weight:700;
+  letter-spacing:2px; text-transform:uppercase; color:var(--amber);
+  margin-bottom:2px;
+}
+.subject-title {
+  font-family:'Outfit',sans-serif; font-weight:700; font-size:13.5px;
+  line-height:1.3; color:#fff;
+}
+.subject-desc { font-size:9.5px; color:rgba(255,255,255,.58); margin-top:2px; }
+
+/* ─── Section heading ─────────────────────────────────── */
+.sec-hdr {
+  font-family:'Outfit',sans-serif; font-size:7.5px; font-weight:700;
+  letter-spacing:2.5px; text-transform:uppercase;
+  color: var(--amber);
+  border-bottom:1.5px solid var(--amber);
+  padding-bottom:2px; margin-bottom:7px;
+  display:inline-block;
+}
+
+/* ─── Partidas table ──────────────────────────────────── */
+.partidas-wrap { margin-bottom:8px; }
+
+.pt {
+  width:100%; border-collapse:collapse;
+  font-size:10px;
+}
+.pt thead tr { background: var(--navy); }
+.pt thead th {
+  font-family:'Outfit',sans-serif; font-weight:600; font-size:8.5px;
+  letter-spacing:.4px; text-transform:uppercase;
+  color:#fff; padding:5.5px 8px; text-align:left;
+}
+.pt thead th.tr { text-align:right; }
+
+.pt tbody tr:nth-child(even) { background: var(--row-alt); }
+.pt td {
+  padding:5px 8px; border-bottom:1px solid var(--border);
+  color: var(--text); vertical-align:top;
+}
+.pt td.tr { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.pt td.strong-total { font-weight:700; color:var(--navy); }
+
+/* Section-header row inside table */
+.pt tr.pt-sec td {
+  background: rgba(27,58,92,.06);
+  color: var(--mid);
+  font-family:'Outfit',sans-serif; font-weight:700; font-size:8.5px;
+  letter-spacing:.3px; text-transform:uppercase;
+  padding:4px 8px;
+  border-top:1px solid rgba(27,58,92,.14);
+  border-bottom:1px solid rgba(27,58,92,.14);
+}
+/* Nota row */
+.pt tr.pt-nota td {
+  font-size:9px; color:var(--muted); font-style:italic; padding:3.5px 8px;
+}
+
+/* ─── Totals ──────────────────────────────────────────── */
+.totals-wrap { display:flex; justify-content:flex-end; margin-bottom:15px; }
+.totals-box  { min-width:230px; border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+.tot-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:5.5px 13px; font-size:10.5px;
+}
+.tot-row + .tot-row { border-top:1px solid var(--border); }
+.tot-row label { color:var(--muted); font-weight:500; }
+.tot-row span  { font-variant-numeric:tabular-nums; font-weight:600; color:var(--text); }
+.tot-final {
+  background: var(--navy); padding:9px 13px !important;
+}
+.tot-final label {
+  color:rgba(255,255,255,.65);
+  font-family:'Outfit',sans-serif; font-weight:700; font-size:9px; letter-spacing:1px;
+}
+.tot-final span {
+  color: var(--amber);
+  font-family:'Outfit',sans-serif; font-weight:800; font-size:14.5px;
+}
+
+/* ─── Text sections ───────────────────────────────────── */
+.text-sec { margin-bottom:13px; }
+.text-sec p, .text-sec div { font-size:9.5px; color:#3a3a4a; line-height:1.7; }
+
+.cond-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px 16px; }
+.cond-item label {
+  font-family:'Outfit',sans-serif; font-size:7.5px; font-weight:700;
+  letter-spacing:1px; text-transform:uppercase; color:var(--amber);
+  display:block; margin-bottom:1px;
+}
+.cond-item span { font-size:10px; font-weight:500; color:var(--text); }
+
+.notas-p {
+  font-size:9px; color:var(--muted); font-style:italic;
+  line-height:1.65; margin-bottom:14px;
+}
+
+/* ─── Footer / firmas ─────────────────────────────────── */
+.doc-footer {
+  margin-top:18px; padding-top:10px;
+  border-top:1px solid var(--border);
+  display:flex; justify-content:space-between; gap:1rem;
+}
+.firma { flex:1; text-align:center; }
+.firma-line { border-bottom:1px solid #aaa; height:38px; margin-bottom:4px; }
+.firma-label {
+  font-family:'Outfit',sans-serif; font-size:7.5px; font-weight:700;
+  letter-spacing:1.5px; text-transform:uppercase; color:var(--muted);
+}
+.firma-sub { font-size:9px; color:var(--text); font-weight:500; margin-top:1px; }
+
+/* ─── Loader ──────────────────────────────────────────── */
+#loader {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-height:60vh; gap:1rem;
+  color:var(--navy); font-family:'Outfit',sans-serif; font-size:1rem; font-weight:600;
+}
+.spin {
+  width:36px; height:36px;
+  border:3px solid var(--border); border-top-color:var(--amber);
+  border-radius:50%; animation:spin .75s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ─── Print ───────────────────────────────────────────── */
+@media print {
+  body { background:#fff; }
+  .toolbar, .no-print { display:none !important; }
+  .page { margin:0; padding:0; }
+  .doc {
+    box-shadow:none; width:100%;
+    padding:8mm 12mm 12mm;
+  }
+  .doc-stripe { margin:-8mm -12mm 10mm; }
+
+  @page {
+    size: letter;
+    margin: 0;
+  }
+
+  .pt thead { display:table-header-group; }
+  .pt tr, .totals-wrap, .text-sec, .doc-footer { page-break-inside:avoid; }
+  
+  .info-card  { background:#fff !important; }
+  .subject-bar { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .totals-box .tot-final { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Toolbar ─────────────────────────────────── -->
+<div class="toolbar no-print">
+  <div class="toolbar-brand">TRN <small>Portal de Cotizaciones</small></div>
+  <button class="tbtn tbtn-back" onclick="window.history.back()">← Volver</button>
+  <button class="tbtn tbtn-pdf" onclick="window.print()">⬇ Descargar PDF</button>
+</div>
+
+<div class="page">
+
+  <!-- Loader -->
+  <div id="loader">
+    <div class="spin"></div>
+    <span>Cargando cotización…</span>
+  </div>
+
+  <!-- Document shell (hidden until data loads) -->
+  <div class="doc" id="doc" style="display:none">
+    <div class="doc-stripe"></div>
+
+    <!-- ── Header ─────────────── -->
+    <div class="doc-header">
+      <div class="trn-block">
+        <img id="trnLogoImg" src="/assets/trn-logo.png" class="trn-logo" alt="TRN"
+          onerror="this.style.display='none';document.getElementById('trnLogoTxt').style.display='block'">
+        <span class="trn-logo-text" id="trnLogoTxt" style="display:none">TRN</span>
+        <div class="trn-info">
+          <strong>TELECOMUNICACIONES Y REDES DEL NORTE</strong>
+          San Martín 502, Centro &nbsp;·&nbsp; Chihuahua, Chih. C.P. 31000<br>
+          RFC: TRN161229RR9 &nbsp;·&nbsp; Régimen: [601] General de Ley Personas Morales
+        </div>
+      </div>
+      <div class="folio-block">
+        <div class="folio-label">Cotización</div>
+        <div class="folio-num" id="folio">—</div>
+        <div class="folio-date" id="fechaDoc">—</div>
+        <span class="status-pill" id="statusPill">—</span>
+      </div>
+    </div>
+
+    <!-- ── Info strip ──────────── -->
+    <div class="info-strip">
+      <!-- Client card -->
+      <div class="info-card">
+        <div class="info-card-hdr">Facturar a</div>
+        <div class="client-row">
+          <img id="clientLogoImg" class="client-logo" src="" alt="" style="display:none">
+          <div class="client-text">
+            <strong id="clienteNombre">—</strong>
+            <span id="clienteDomicilio"></span>
+            <span id="clienteRfc"></span>
+            <span id="clienteRegimen"></span>
+          </div>
+        </div>
+      </div>
+      <!-- Meta card -->
+      <div class="info-card">
+        <div class="info-card-hdr">Datos de la cotización</div>
+        <div class="meta-grid">
+          <div class="meta-item"><label>Atención a</label><span id="atencionA">—</span></div>
+          <div class="meta-item"><label>Vigencia</label><span id="vigencia">—</span></div>
+          <div class="meta-item"><label>Lugar</label><span id="lugar">—</span></div>
+          <div class="meta-item"><label>Tiempo de entrega</label><span id="tiempoEntrega">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Subject ─────────────── -->
+    <div class="subject-bar">
+      <div class="subject-lbl">Propuesta técnica</div>
+      <div class="subject-title" id="quoteTitle">—</div>
+      <div class="subject-desc" id="quoteDesc"></div>
+    </div>
+
+    <!-- ── Partidas ────────────── -->
+    <div class="partidas-wrap">
+      <span class="sec-hdr">Partidas y Precios</span>
+      <table class="pt">
+        <thead>
+          <tr>
+            <th>Descripción</th>
+            <th class="tr" style="width:46px">Cant.</th>
+            <th class="tr" style="width:80px">P. Unitario</th>
+            <th class="tr" style="width:52px">Desc.%</th>
+            <th class="tr" style="width:84px">Total</th>
+          </tr>
+        </thead>
+        <tbody id="ptBody"></tbody>
+      </table>
+    </div>
+
+    <!-- ── Totals ─────────────── -->
+    <div class="totals-wrap">
+      <div class="totals-box">
+        <div class="tot-row"><label>Subtotal</label><span id="valSubtotal">—</span></div>
+        <div class="tot-row"><label>IVA 16%</label><span id="valIva">—</span></div>
+        <div class="tot-row tot-final"><label>TOTAL MXN</label><span id="valTotal">—</span></div>
+      </div>
+    </div>
+
+    <!-- ── Garantía ────────────── -->
+    <div class="text-sec" id="secGarantia">
+      <span class="sec-hdr">Garantía</span>
+      <p id="txtGarantia"></p>
+    </div>
+
+    <!-- ── Condiciones ─────────── -->
+    <div class="text-sec" id="secCondiciones">
+      <span class="sec-hdr">Condiciones</span>
+      <div class="cond-grid" id="condGrid"></div>
+    </div>
+
+    <!-- ── Notas finales ──────── -->
+    <p class="notas-p" id="txtNotas"></p>
+
+    <!-- ── Firmas ──────────────── -->
+    <div class="doc-footer">
+      <div class="firma">
+        <div class="firma-line"></div>
+        <div class="firma-label">Elaboró</div>
+        <div class="firma-sub" id="elaboroPor">TRN</div>
+      </div>
+      <div class="firma">
+        <div class="firma-line"></div>
+        <div class="firma-label">Autoriza · TRN</div>
+      </div>
+      <div class="firma">
+        <div class="firma-line"></div>
+        <div class="firma-label">Recibe · Cliente</div>
+      </div>
+    </div>
+
+  </div><!-- /doc -->
+</div><!-- /page -->
+
+<!-- ── Firebase SDK ──────────────────────────────────── -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="/firebase-config.js"></script>
+<script>
+  /* ── Init ─────────────────────────────────────────── */
+  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  const auth = firebase.auth();
+  const db   = firebase.firestore();
+
+  /* ── Params ─────────────────────────────────────── */
+  const params     = new URLSearchParams(location.search);
+  const proposalId = params.get('id');
+  const clientParam = params.get('client');
+
+  if (!proposalId) {
+    showErr('Falta parámetro ?id=');
+  }
+
+  /* ── Auth guard ──────────────────────────────────── */
+  auth.onAuthStateChanged(async user => {
+    if (!user) { location.href = '/'; return; }
+    try {
+      // Determine clientId: explicit param OR logged-in user
+      const uDoc = await db.collection('users').doc(user.uid).get();
+      const isAdmin = uDoc.exists && uDoc.data().role === 'admin';
+      const clientId = clientParam || user.uid;
+
+      // Parallel fetch: client data + proposal
+      const [cSnap, pSnap] = await Promise.all([
+        db.collection('clients').doc(clientId).get(),
+        db.collection('clients').doc(clientId)
+          .collection('proposals').doc(proposalId).get()
+      ]);
+
+      if (!pSnap.exists) { showErr('Cotización no encontrada'); return; }
+
+      const clientData = cSnap.exists ? cSnap.data() : {};
+      const prop = pSnap.data();
+      const cot  = prop.cotizacion || {};
+
+      render(prop, cot, clientData);
+
+    } catch(e) { showErr(e.message); }
+  });
+
+  /* ── Render ──────────────────────────────────────── */
+  function render(prop, cot, client) {
+    const emp = client.empresa || {};
+
+    /* Folio + status */
+    set('folio',    cot.folio || prop.folio || 'S/F');
+    set('fechaDoc', fmtDate(cot.fecha || prop.updatedAt));
+
+    const stMap  = { review:'En revisión', aprobada:'Aprobada', rechazada:'Rechazada', borrador:'Borrador' };
+    const stCss  = { review:'s-review', aprobada:'s-aprobada', rechazada:'s-rechazada', borrador:'s-borrador' };
+    const st = cot.status || prop.status || 'review';
+    const pill = $('statusPill');
+    pill.textContent = stMap[st] || st;
+    pill.className   = 'status-pill ' + (stCss[st] || 's-review');
+
+    /* Client info */
+    set('clienteNombre', emp.nombre || client.nombre || prop.clienteNombre || '—');
+
+    let domicilio = '';
+    if (emp.domicilio) domicilio += emp.domicilio;
+    if (emp.ciudad)   domicilio += (domicilio ? ', ' : '') + emp.ciudad;
+    if (emp.cp)       domicilio += (domicilio ? ' C.P. ' : '') + emp.cp;
+    set('clienteDomicilio', domicilio);
+    set('clienteRfc',       emp.rfc ? 'RFC: ' + emp.rfc : '');
+    set('clienteRegimen',   emp.regimenFiscal || '');
+
+    const logoSrc = emp.logoBase64 || emp.logoUrl || '';
+    if (logoSrc) {
+      const img = $('clientLogoImg');
+      img.src = logoSrc;
+      img.style.display = 'block';
+    }
+
+    /* Meta */
+    set('atencionA',     cot.atencionA || '—');
+    set('vigencia',      cot.vigencia  || '—');
+    set('lugar',         cot.lugar     || '—');
+    set('tiempoEntrega', cot.tiempoEntrega || '—');
+
+    /* Subject */
+    set('quoteTitle', prop.title || cot.titulo || '—');
+    set('quoteDesc',  prop.description || cot.descripcion || '');
+
+    /* Partidas */
+    renderPartidas(cot.partidas || []);
+
+    /* Totals */
+    set('valSubtotal', fmtMXN(cot.subtotal));
+    set('valIva',      fmtMXN(cot.iva));
+    set('valTotal',    fmtMXN(cot.total));
+
+    /* Garantía */
+    if (cot.garantia) { set('txtGarantia', cot.garantia); }
+    else              { $('secGarantia').style.display = 'none'; }
+
+    /* Condiciones */
+    const condItems = [
+      ['Forma de pago',     cot.condicionesFormaPago    || cot.formaPago],
+      ['Instalación',       cot.condicionesInstalacion  || cot.instalacion],
+      ['Tiempo de entrega', cot.condicionesTiempoEntrega|| cot.tiempoEntrega],
+      ['Vigencia',          cot.condicionesVigencia     || cot.vigencia],
+    ].filter(([,v]) => v);
+
+    if (condItems.length) {
+      $('condGrid').innerHTML = condItems
+        .map(([l,v]) => `<div class="cond-item"><label>${esc(l)}</label><span>${esc(v)}</span></div>`)
+        .join('');
+    } else {
+      $('secCondiciones').style.display = 'none';
+    }
+
+    /* Notas */
+    if (cot.notasFinales) set('txtNotas', cot.notasFinales);
+
+    /* Elaboró */
+    set('elaboroPor', cot.elaboradoPor || '');
+
+    /* Title */
+    document.title = (cot.folio || 'Cotizacion') + ' — TRN';
+
+    /* Show */
+    $('loader').style.display = 'none';
+    $('doc').style.display    = 'block';
+  }
+
+  function renderPartidas(rows) {
+    const body = $('ptBody');
+    body.innerHTML = '';
+
+    rows.forEach(p => {
+      const tr = document.createElement('tr');
+
+      /* Section-header row */
+      if (p.esEncabezado || (p.tipo === 'texto' && /^[—–-]/.test(p.descripcion || ''))) {
+        tr.className = 'pt-sec';
+        tr.innerHTML = `<td colspan="5">${esc(p.descripcion)}</td>`;
+        body.appendChild(tr); return;
+      }
+
+      /* Pure note row */
+      if (p.tipo === 'texto') {
+        tr.className = 'pt-nota';
+        tr.innerHTML = `<td colspan="5">${esc(p.descripcion)}</td>`;
+        body.appendChild(tr); return;
+      }
+
+      /* Regular product / MO / viatico */
+      const desc = esc(p.descripcion || '—');
+      const cant = p.cantidad != null ? numFmt(p.cantidad, p.cantidad % 1 ? 2 : 0) : '—';
+      const pu   = p.precioUnitario != null ? '$' + numFmt(p.precioUnitario) : '—';
+      const dsc  = p.descuento > 0 ? p.descuento + '%' : '—';
+      const tot  = p.total != null ? '$' + numFmt(p.total) : '—';
+
+      tr.innerHTML = `
+        <td>${desc}</td>
+        <td class="tr">${cant}</td>
+        <td class="tr">${pu}</td>
+        <td class="tr">${dsc}</td>
+        <td class="tr strong-total">${tot}</td>`;
+      body.appendChild(tr);
+    });
+  }
+
+  /* ── Helpers ──────────────────────────────────────── */
+  const $   = id => document.getElementById(id);
+  const set = (id, val) => { const e = $(id); if (e) e.textContent = val; };
+  const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  function numFmt(n, dec = 2) {
+    return Number(n).toLocaleString('es-MX', {
+      minimumFractionDigits: dec,
+      maximumFractionDigits: dec
+    });
+  }
+
+  function fmtMXN(n) {
+    if (n == null) return '—';
+    return '$' + numFmt(n) + ' MXN';
+  }
+
+  function fmtDate(ts) {
+    if (!ts) return '—';
+    try {
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      return d.toLocaleDateString('es-MX', { year:'numeric', month:'long', day:'numeric' });
+    } catch { return String(ts); }
+  }
+
+  function showErr(msg) {
+    $('loader').innerHTML = `<p style="color:#c0392b;font-family:'DM Sans',sans-serif">❌ ${esc(msg)}</p>`;
+  }
+</script>
+</body>
+</html>

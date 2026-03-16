@@ -9,6 +9,7 @@
       { "source": "/viewer", "destination": "/viewer.html" },
       { "source": "/admin", "destination": "/admin.html" },
       { "source": "/cotizador", "destination": "/cotizador.html" },
+      { "source": "/cotizacion", "destination": "/cotizacion.html" },
       { "source": "**", "destination": "/index.html" }
     ]
   },

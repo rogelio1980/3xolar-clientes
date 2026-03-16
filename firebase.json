@@ -1,0 +1,19 @@
+{
+  "hosting": {
+    "public": "public",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "cleanUrls": true,
+    "trailingSlash": false,
+    "rewrites": [
+      { "source": "/portal", "destination": "/portal.html" },
+      { "source": "/viewer", "destination": "/viewer.html" },
+      { "source": "/admin", "destination": "/admin.html" },
+      { "source": "/cotizador", "destination": "/cotizador.html" },
+      { "source": "**", "destination": "/index.html" }
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

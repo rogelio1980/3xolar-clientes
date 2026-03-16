@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TRN — Cotizador</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--dark:#0B1A2E;--navy:#112240;--mid:#1B3A5C;--amber:#F5A623;--orange:#FF6B35;--green:#2ECC71;--teal:#00B894;--white:#F8FAFE;--gray:#8892B0;--light:#CCD6F6;--danger:#e74c3c;--card:rgba(17,34,64,0.9);--border:rgba(245,166,35,0.15)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);min-height:100dvh;overflow-x:hidden}
+.topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0.75rem clamp(1rem,4vw,2rem);background:rgba(11,26,46,0.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);height:56px}
+.topbar-left{display:flex;align-items:center;gap:0.75rem}
+.topbar-left img{height:36px}
+.topbar-title{font-family:'Outfit',sans-serif;font-weight:700;font-size:1rem;color:var(--light)}
+.topbar-actions{display:flex;gap:0.5rem}
+.btn-back,.btn-logout{padding:0.45rem 1rem;border:1px solid var(--border);border-radius:8px;background:transparent;color:var(--gray);font-family:'Outfit',sans-serif;font-size:0.8rem;cursor:pointer;transition:all .2s;text-decoration:none}
+.btn-back:hover,.btn-logout:hover{border-color:var(--amber);color:var(--amber)}
+.container{max-width:960px;margin:0 auto;padding:clamp(1rem,3vw,2.5rem)}
+h1{font-family:'Outfit',sans-serif;font-size:clamp(1.25rem,3vw,1.75rem);font-weight:800;margin-bottom:0.25rem}
+.page-sub{color:var(--gray);font-size:0.85rem;margin-bottom:2rem}
+.section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:1.5rem}
+.section-title{font-family:'Outfit',sans-serif;font-weight:700;font-size:0.9rem;color:var(--amber);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem}
+.field{display:flex;flex-direction:column;gap:0.3rem}
+.field label{font-size:0.75rem;font-weight:500;color:var(--gray);font-family:'Outfit',sans-serif}
+.field input,.field select,.field textarea{padding:0.6rem 0.8rem;border:1px solid var(--border);border-radius:8px;background:var(--dark);color:var(--white);font-family:'DM Sans',sans-serif;font-size:0.9rem;outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--amber)}
+.field textarea{resize:vertical;min-height:70px}
+.field input[readonly]{opacity:0.6;cursor:default}
+.field.full{grid-column:1/-1}
+/* Items table */
+.items-header{display:grid;grid-template-columns:2fr 80px 110px 80px 110px 40px;gap:0.5rem;padding:0.5rem 0;border-bottom:2px solid var(--amber);font-family:'Outfit',sans-serif;font-size:0.7rem;font-weight:600;color:var(--amber);text-transform:uppercase}
+.item-row{display:grid;grid-template-columns:2fr 80px 110px 80px 110px 40px;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid var(--border);align-items:center}
+.item-row input{padding:0.5rem;border:1px solid var(--border);border-radius:6px;background:var(--dark);color:var(--white);font-size:0.85rem;outline:none;width:100%}
+.item-row input:focus{border-color:var(--amber)}
+.item-total{font-family:'JetBrains Mono',monospace;color:var(--amber);font-size:0.9rem;text-align:right;padding-right:0.25rem}
+.btn-remove{width:32px;height:32px;border:none;border-radius:6px;background:rgba(231,76,60,0.15);color:var(--danger);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center}
+.btn-remove:hover{background:rgba(231,76,60,0.3)}
+.btn-add-item{width:100%;padding:0.7rem;border:2px dashed var(--border);border-radius:10px;background:transparent;color:var(--gray);font-family:'Outfit',sans-serif;font-size:0.85rem;cursor:pointer;margin-top:0.75rem;transition:all .2s}
+.btn-add-item:hover{border-color:var(--amber);color:var(--amber)}
+.totals{max-width:340px;margin-left:auto;margin-top:1rem}
+.total-row{display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;font-size:0.9rem;border-bottom:1px solid var(--border)}
+.total-row.grand{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.15rem;color:var(--amber);border-bottom:none;border-top:2px solid var(--amber);margin-top:0.25rem;padding-top:0.75rem}
+.total-row .val{font-family:'JetBrains Mono',monospace}
+.total-row select{padding:0.3rem 0.5rem;border:1px solid var(--border);border-radius:6px;background:var(--dark);color:var(--white);font-size:0.8rem;outline:none}
+.actions{display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.5rem}
+.btn-save{padding:0.8rem 2rem;border:none;border-radius:10px;background:linear-gradient(135deg,var(--amber),var(--orange));color:#fff;font-family:'Outfit',sans-serif;font-weight:700;font-size:1rem;cursor:pointer;transition:opacity .2s}
+.btn-save:hover{opacity:0.9}
+.btn-save:disabled{opacity:0.5;cursor:not-allowed}
+.btn-preview{padding:0.8rem 2rem;border:1px solid var(--amber);border-radius:10px;background:transparent;color:var(--amber);font-family:'Outfit',sans-serif;font-weight:700;font-size:1rem;cursor:pointer;display:none;text-decoration:none}
+.btn-preview:hover{background:rgba(245,166,35,0.1)}
+.toast{position:fixed;bottom:2rem;right:2rem;padding:1rem 1.5rem;border-radius:10px;background:var(--green);color:#fff;font-family:'Outfit',sans-serif;font-weight:600;font-size:0.9rem;transform:translateY(100px);opacity:0;transition:all .3s;z-index:999}
+.toast.show{transform:translateY(0);opacity:1}
+@media(max-width:700px){
+  .items-header,.item-row{grid-template-columns:1fr;gap:0.3rem}
+  .items-header{display:none}
+  .item-row{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0.75rem;margin-bottom:0.5rem}
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <img src="assets/trn-logo.png" alt="TRN" onerror="this.style.display='none'">
+    <span class="topbar-title">Cotizador</span>
+  </div>
+  <div class="topbar-actions">
+    <a class="btn-back" href="/admin">← Admin</a>
+    <button class="btn-logout" id="btnLogout">Salir</button>
+  </div>
+</div>
+<div class="container">
+  <h1>Nueva Cotización</h1>
+  <p class="page-sub">Genera una cotización detallada para tu cliente</p>
+
+  <!-- Sección 1: Cliente -->
+  <div class="section">
+    <div class="section-title">👤 Cliente</div>
+    <div class="form-grid">
+      <div class="field"><label>Cliente *</label><select id="clientSelect"><option value="">Seleccionar…</option></select></div>
+      <div class="field"><label>Empresa</label><input id="empresa" readonly></div>
+      <div class="field"><label>Contacto</label><input id="contacto" readonly></div>
+      <div class="field"><label>Fecha cotización</label><input type="date" id="fechaCot"></div>
+      <div class="field"><label>Vigencia (días)</label><input type="number" id="vigencia" value="30" min="1"></div>
+      <div class="field"><label>Folio</label><input id="folio" readonly></div>
+    </div>
+  </div>
+
+  <!-- Sección 2: Proyecto -->
+  <div class="section">
+    <div class="section-title">📋 Proyecto</div>
+    <div class="form-grid">
+      <div class="field full"><label>Título *</label><input id="titulo" required></div>
+      <div class="field full"><label>Descripción / Alcance</label><textarea id="descripcion"></textarea></div>
+      <div class="field"><label>Lugar de entrega</label><input id="lugar"></div>
+      <div class="field"><label>Tiempo de entrega</label><input id="tiempoEntrega" placeholder="Ej. 10 días hábiles"></div>
+      <div class="field"><label>Moneda</label><select id="moneda"><option value="MXN">MXN</option><option value="USD">USD</option></select></div>
+    </div>
+  </div>
+
+  <!-- Sección 3: Partidas -->
+  <div class="section">
+    <div class="section-title">📦 Partidas</div>
+    <div class="items-header">
+      <div>Descripción</div><div>Cant.</div><div>P. Unitario</div><div>Desc. %</div><div>Total</div><div></div>
+    </div>
+    <div id="itemsContainer"></div>
+    <button class="btn-add-item" id="btnAddItem">+ Agregar partida</button>
+    <div class="totals">
+      <div class="total-row"><span>Subtotal</span><span class="val" id="subtotalVal">$0.00</span></div>
+      <div class="total-row"><span>IVA <select id="ivaSelect"><option value="0">Sin IVA (0%)</option><option value="0.16" selected>16%</option><option value="0.08">8% (frontera)</option></select></span><span class="val" id="ivaVal">$0.00</span></div>
+      <div class="total-row grand"><span>Total</span><span class="val" id="totalVal">$0.00</span></div>
+    </div>
+  </div>
+
+  <!-- Sección 4: Condiciones -->
+  <div class="section">
+    <div class="section-title">📝 Condiciones</div>
+    <div class="form-grid">
+      <div class="field"><label>Forma de pago</label>
+        <select id="formaPago">
+          <option>50% anticipo / 50% entrega</option>
+          <option>100% anticipado</option>
+          <option>30/70</option>
+          <option>Crédito 30 días</option>
+          <option>Crédito 60 días</option>
+        </select>
+      </div>
+      <div class="field"><label>Garantía</label>
+        <select id="garantia">
+          <option>1 año equipos, 6 meses MO</option>
+          <option>2 años equipos, 1 año MO</option>
+          <option>Según fabricante</option>
+        </select>
+      </div>
+      <div class="field"><label>Incluye instalación</label>
+        <select id="instalacion">
+          <option>Sí</option>
+          <option>No</option>
+          <option>Por separado</option>
+        </select>
+      </div>
+      <div class="field"><label>Estado</label>
+        <select id="estado">
+          <option value="draft">Borrador</option>
+          <option value="review">En revisión</option>
+          <option value="sent">Enviado</option>
+        </select>
+      </div>
+      <div class="field full"><label>Notas adicionales</label><textarea id="notas" rows="3"></textarea></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-save" id="btnSave">💾 Guardar cotización</button>
+    <a class="btn-preview" id="btnPreview" target="_blank">👁 Ver previa</a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+firebase.initializeApp(FIREBASE_CONFIG);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Guard: admin only
+auth.onAuthStateChanged(async user => {
+  if (!user) { location.href = '/'; return; }
+  const uSnap = await db.collection('users').doc(user.uid).get().catch(()=>null);
+  if (!uSnap || !uSnap.exists || uSnap.data().role !== 'admin') {
+    location.href = '/portal'; return;
+  }
+  init();
+});
+
+function generateFolio() {
+  const y = new Date().getFullYear();
+  const r = String(Math.floor(Math.random()*1000)).padStart(3,'0');
+  return `TRN-${y}-${r}`;
+}
+
+function fmt(n) {
+  return Number(n).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),4000);
+}
+
+async function init() {
+  document.getElementById('fechaCot').value = new Date().toISOString().slice(0,10);
+  document.getElementById('folio').value = generateFolio();
+
+  // Load clients
+  const sel = document.getElementById('clientSelect');
+  const snap = await db.collection('clients').get();
+  snap.forEach(doc => {
+    const d = doc.data();
+    const opt = document.createElement('option');
+    opt.value = doc.id;
+    opt.textContent = d.name || d.email || doc.id;
+    opt.dataset.empresa = d.company || '';
+    opt.dataset.contacto = d.name || '';
+    sel.appendChild(opt);
+  });
+
+  sel.addEventListener('change', () => {
+    const o = sel.options[sel.selectedIndex];
+    document.getElementById('empresa').value = o.dataset.empresa || '';
+    document.getElementById('contacto').value = o.dataset.contacto || '';
+  });
+
+  addItemRow();
+  document.getElementById('btnAddItem').addEventListener('click', addItemRow);
+  document.getElementById('ivaSelect').addEventListener('change', recalc);
+  document.getElementById('btnSave').addEventListener('click', save);
+}
+
+function addItemRow() {
+  const c = document.getElementById('itemsContainer');
+  const row = document.createElement('div');
+  row.className = 'item-row';
+  row.innerHTML = `
+    <input type="text" placeholder="Descripción" class="i-desc">
+    <input type="number" value="1" min="0" step="any" class="i-qty">
+    <input type="number" value="0" min="0" step="0.01" class="i-price">
+    <input type="number" value="0" min="0" max="100" class="i-disc">
+    <div class="item-total">$0.00</div>
+    <button class="btn-remove" onclick="this.closest('.item-row').remove();recalc()">×</button>
+  `;
+  c.appendChild(row);
+  row.querySelectorAll('input').forEach(inp => inp.addEventListener('input', recalc));
+  recalc();
+}
+
+function recalc() {
+  let subtotal = 0;
+  document.querySelectorAll('.item-row').forEach(row => {
+    const qty = parseFloat(row.querySelector('.i-qty').value) || 0;
+    const price = parseFloat(row.querySelector('.i-price').value) || 0;
+    const disc = parseFloat(row.querySelector('.i-disc').value) || 0;
+    const total = qty * price * (1 - disc/100);
+    row.querySelector('.item-total').textContent = '$' + fmt(total);
+    subtotal += total;
+  });
+  const ivaRate = parseFloat(document.getElementById('ivaSelect').value) || 0;
+  const iva = subtotal * ivaRate;
+  const total = subtotal + iva;
+  document.getElementById('subtotalVal').textContent = '$' + fmt(subtotal);
+  document.getElementById('ivaVal').textContent = '$' + fmt(iva);
+  document.getElementById('totalVal').textContent = '$' + fmt(total);
+}
+// Make recalc global for the remove button onclick
+window.recalc = recalc;
+
+async function save() {
+  const clientId = document.getElementById('clientSelect').value;
+  const titulo = document.getElementById('titulo').value.trim();
+  if (!clientId) { showToast('⚠️ Selecciona un cliente'); return; }
+  if (!titulo) { showToast('⚠️ Ingresa un título'); return; }
+
+  const btn = document.getElementById('btnSave');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+
+  const items = [];
+  document.querySelectorAll('.item-row').forEach(row => {
+    items.push({
+      desc: row.querySelector('.i-desc').value,
+      qty: parseFloat(row.querySelector('.i-qty').value) || 0,
+      price: parseFloat(row.querySelector('.i-price').value) || 0,
+      disc: parseFloat(row.querySelector('.i-disc').value) || 0
+    });
+  });
+
+  const ivaRate = parseFloat(document.getElementById('ivaSelect').value) || 0;
+  let subtotal = 0;
+  items.forEach(it => { subtotal += it.qty * it.price * (1 - it.disc/100); });
+  const iva = subtotal * ivaRate;
+  const total = subtotal + iva;
+  const moneda = document.getElementById('moneda').value;
+  const folio = document.getElementById('folio').value;
+
+  const payload = {
+    title: titulo,
+    description: document.getElementById('descripcion').value,
+    status: document.getElementById('estado').value,
+    tags: ['Cotización', moneda],
+    folio,
+    contacto: document.getElementById('contacto').value,
+    lugar: document.getElementById('lugar').value,
+    tiempoEntrega: document.getElementById('tiempoEntrega').value,
+    vigencia: parseInt(document.getElementById('vigencia').value) || 30,
+    fechaCot: document.getElementById('fechaCot').value,
+    moneda,
+    ivaRate,
+    subtotal,
+    iva,
+    total,
+    formaPago: document.getElementById('formaPago').value,
+    garantia: document.getElementById('garantia').value,
+    incluye: document.getElementById('instalacion').value,
+    notas: document.getElementById('notas').value,
+    items,
+    versions: [],
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  try {
+    const docRef = await db.collection('clients').doc(clientId).collection('proposals').add(payload);
+    showToast(`✅ Guardado · ${folio} · Total $${fmt(total)} ${moneda}`);
+    btn.textContent = '💾 Guardar cotización';
+    btn.disabled = false;
+    const prev = document.getElementById('btnPreview');
+    prev.style.display = 'inline-flex';
+    prev.href = `/viewer?id=${docRef.id}`;
+  } catch(err) {
+    showToast('❌ Error al guardar: ' + err.message);
+    btn.textContent = '💾 Guardar cotización';
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('btnLogout').onclick = () => auth.signOut().then(()=>location.href='/');
+</script>
+</body>
+</html>

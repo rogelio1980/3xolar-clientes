@@ -86,6 +86,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
   </div>
   <div class="topbar-actions">
     <a class="btn-back" id="btnBack" href="/portal">← Volver</a>
+    <a id="topbar-cot-link" href="#" target="_blank" class="btn-pdf-cot" style="display:none">⬇ Cotización PDF</a>
     <button class="btn-logout" id="btnLogout">Salir</button>
   </div>
 </div>
@@ -227,10 +228,29 @@ function renderProposal(d) {
   // No iframe — removed
   const ifrHtml = '';
 
+  // Quote: may be in d.items directly, or via d.quoteId (separate doc)
   let quoteHtml = '';
+  let quoteData = null;
   if (d.items && d.items.length) {
-    quoteHtml = renderQuote(d);
+    quoteData = d;
+  } else if (d.quoteId) {
+    // Load asynchronously
+    db.collection('clients').doc(cId).collection('proposals').doc(d.quoteId).get()
+      .then(qSnap => {
+        if (qSnap.exists) {
+          const qData = qSnap.data();
+          const qHtml = renderQuote(qData, d.quoteId);
+          const qSection = document.getElementById('quote-section');
+          if (qSection) {
+            qSection.innerHTML = qHtml;
+            qSection.style.display = 'block';
+            const tLink = document.getElementById('topbar-cot-link');
+          if(tLink){tLink.href='/cotizacion?id='+proposalId+'&client='+cId;tLink.style.display='inline-flex';}
+          }
+        }
+      }).catch(()=>{});
   }
+  if (quoteData) quoteHtml = renderQuote(quoteData, null);
 
   main.innerHTML =
     '<h1 class="proposal-title">'+esc(d.title||'Sin título')+'</h1>'+
@@ -241,7 +261,8 @@ function renderProposal(d) {
     (d.contacto ? '<div style="font-size:0.8rem;color:var(--gray);margin-bottom:1rem">Atención: '+esc(d.contacto)+'</div>' : '')+
     (versions ? '<div class="section-label">Versiones</div><div class="version-list">'+versions+'</div>' : '')+
     ifrHtml+
-    quoteHtml+
+    '<div id="quote-section"'+(quoteHtml ? '' : ' style="display:none"')+'>'+quoteHtml+'</div>'+
+    
     '<div style="margin-top:1.5rem">'+
       '<div class="section-label">Comentarios generales '+
         '<button class="btn-sticky-toggle" onclick="toggleSC(\'general\')">💬 <span class="sticky-cnt" id="cnt-general">0</span></button>'+
@@ -251,7 +272,7 @@ function renderProposal(d) {
 }
 
 /* ── Render quote (items table) ──────────────── */
-function renderQuote(d) {
+function renderQuote(d, qId) {
   const sym = (d.moneda==='USD') ? 'US$' : '$';
 
   const rows = (d.items||[]).map(it => {

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TRN — Cotizador v3</title>
+<title>TRN — Cotizador v4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -82,6 +82,42 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
 .tipo-badge.mo{background:rgba(0,184,148,0.12);color:var(--teal)}
 .tipo-badge.viatico{background:rgba(255,107,53,0.12);color:var(--orange)}
 .tipo-badge.texto{background:rgba(136,146,176,0.15);color:var(--gray)}
+.tipo-badge.kit{background:rgba(0,184,148,0.12);color:var(--teal)}
+
+/* ═══ KIT STYLES ═══ */
+.kit-row{border-left:3px solid var(--teal);background:rgba(0,184,148,0.03)}
+.kit-panel{background:rgba(0,184,148,0.04);border:1px solid rgba(0,184,148,0.15);border-radius:10px;margin:0.3rem 0 0.8rem 1rem;padding:1rem}
+.kit-panel summary{font-family:'Outfit',sans-serif;font-size:0.75rem;font-weight:600;color:var(--teal);cursor:pointer;list-style:none;display:flex;align-items:center;gap:0.4rem}
+.kit-panel summary::before{content:'▶';font-size:0.55rem;transition:transform .2s}
+.kit-panel[open] summary::before{transform:rotate(90deg)}
+.kit-mode{display:flex;gap:1rem;align-items:center;flex-wrap:wrap;margin:0.6rem 0;padding:0.5rem 0;border-bottom:1px solid rgba(0,184,148,0.12);font-size:0.78rem}
+.kit-mode label{display:flex;align-items:center;gap:0.4rem;color:var(--light);cursor:pointer}
+.kit-mode input[type=radio]{accent-color:var(--teal)}
+.kit-markup-row{display:flex;align-items:center;gap:0.5rem;margin:0.4rem 0;font-size:0.8rem;color:var(--light)}
+.kit-markup-row input{width:70px;padding:0.3rem 0.5rem;border:1px solid var(--border);border-radius:5px;background:var(--dark);color:var(--white);font-size:0.82rem;text-align:center}
+.kit-markup-row .suggested{font-family:'JetBrains Mono',monospace;color:var(--amber);font-weight:500}
+.kit-markup-row button{padding:0.3rem 0.7rem;border:1px solid var(--teal);border-radius:6px;background:transparent;color:var(--teal);font-family:'Outfit',sans-serif;font-size:0.7rem;font-weight:600;cursor:pointer}
+.kit-markup-row button:hover{background:rgba(0,184,148,0.1)}
+.comp-header{display:grid;grid-template-columns:2fr 100px 100px 100px 100px 30px;gap:0.4rem;padding:0.35rem 0.5rem;border-bottom:1px solid rgba(0,184,148,0.2);font-family:'Outfit',sans-serif;font-size:0.6rem;font-weight:700;color:var(--teal);text-transform:uppercase}
+.kit-component{display:grid;grid-template-columns:2fr 100px 100px 100px 100px 30px;gap:0.4rem;padding:0.4rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.04);align-items:center}
+.kit-component input,.kit-component select{padding:0.35rem 0.45rem;border:1px solid var(--border);border-radius:5px;background:var(--dark);color:var(--white);font-size:0.78rem;outline:none;width:100%}
+.kit-component input:focus{border-color:var(--teal)}
+.kit-component .comp-total{font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--amber)}
+.kit-component .comp-total.zero{color:var(--danger)}
+.comp-extra{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;padding:0.3rem 0.5rem 0.5rem;margin-bottom:0.3rem}
+.comp-extra input{padding:0.3rem 0.45rem;border:1px solid var(--border);border-radius:5px;background:var(--dark);color:var(--white);font-size:0.75rem;outline:none;width:100%}
+.comp-extra label{font-size:0.6rem;color:var(--gray);font-family:'Outfit',sans-serif}
+.comp-extra .chk-row{font-size:0.7rem}
+.btn-add-component{width:100%;padding:0.5rem;border:1px dashed rgba(0,184,148,0.3);border-radius:8px;background:rgba(0,184,148,0.05);color:var(--teal);font-family:'Outfit',sans-serif;font-size:0.78rem;font-weight:600;cursor:pointer;margin-top:0.5rem;transition:all .15s}
+.btn-add-component:hover{border-color:var(--teal);background:rgba(0,184,148,0.1)}
+.kit-summary{background:rgba(0,0,0,0.15);border-radius:8px;padding:0.75rem 1rem;margin-top:0.75rem;font-family:'JetBrains Mono',monospace;font-size:0.82rem}
+.kit-summary .ks-row{display:flex;justify-content:space-between;padding:0.2rem 0;color:var(--light)}
+.kit-summary .ks-row .val{color:var(--amber)}
+.kit-summary .ks-row.profit{border-top:1px solid var(--border);padding-top:0.4rem;margin-top:0.3rem;font-weight:600}
+.kit-template-row{display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.6rem;align-items:center}
+.kit-template-row button,.kit-template-row select{padding:0.35rem 0.7rem;border:1px solid var(--border);border-radius:6px;background:var(--dark);color:var(--gray);font-family:'Outfit',sans-serif;font-size:0.72rem;cursor:pointer}
+.kit-template-row button:hover{border-color:var(--teal);color:var(--teal)}
+@media(max-width:700px){.comp-header{display:none}.kit-component{grid-template-columns:1fr 80px 30px}.comp-extra{grid-template-columns:1fr}}
 
 /* ═══ COST PANEL (details) ═══ */
 .cost-panel{padding:0.65rem 0.75rem;background:rgba(11,26,46,0.6);border-radius:8px;margin:0.3rem 0 0.5rem}
@@ -166,7 +202,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
 @media print{
   *{color-adjust:exact;-webkit-print-color-adjust:exact}
   body{background:#fff!important;color:#1a1a1a!important;font-size:10pt}
-  .topbar,.cfg-panel,.type-tabs,.btn-add-item,.actions-bar,.saved-block,.cost-panel,.rent-panel,.btn-remove,.toast,.tb-btn,.cfg-anchor{display:none!important}
+  .topbar,.cfg-panel,.type-tabs,.btn-add-item,.actions-bar,.saved-block,.cost-panel,.rent-panel,.btn-remove,.toast,.tb-btn,.cfg-anchor,.kit-panel,.kit-summary,.btn-add-component,.admin-only{display:none!important}
   .print-only{display:block!important}
   .section,.container{background:transparent!important;border:none!important;padding:0!important;margin:0!important;box-shadow:none!important}
   .print-only .phdr{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #F5A623;padding-bottom:12px;margin-bottom:16px}
@@ -290,6 +326,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
       <button class="type-tab" onclick="addItem('mo')">👷 Mano de Obra</button>
       <button class="type-tab" onclick="addItem('viatico')">🚗 Viático</button>
       <button class="type-tab" onclick="addItem('texto')">📝 Texto libre</button>
+      <button class="type-tab" onclick="addItem('kit')" style="border-color:rgba(0,184,148,0.3);color:var(--teal)">🧰 Kit</button>
     </div>
     <div class="items-header" id="itemsHeader">
       <div>Descripción</div><div>Cant.</div><div>P. Unitario</div><div class="col-disc">Desc. %</div><div>Total</div><div></div>
@@ -311,6 +348,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
       <div class="rent-row"><span>Costo materiales:</span><span class="val" id="rMat">$0.00</span></div>
       <div class="rent-row"><span>Costo mano de obra:</span><span class="val" id="rMO">$0.00</span></div>
       <div class="rent-row"><span>Costo viáticos:</span><span class="val" id="rViat">$0.00</span></div>
+      <div class="rent-row"><span>Costo kits:</span><span class="val" id="rKits">$0.00</span></div>
       <div class="rent-row total"><span>COSTO TOTAL REAL:</span><span class="val" id="rTotal">$0.00</span></div>
       <div class="rent-row"><span>Precio venta (s/IVA):</span><span class="val" id="rVenta">$0.00</span></div>
       <div class="rent-row profit"><span>UTILIDAD BRUTA:</span><span class="val" id="rUtil">$0.00</span></div>
@@ -435,8 +473,10 @@ const db = firebase.firestore();
 /* ═══ GLOBALS ═══ */
 let catalog = [];
 let garTemplates = [];
+let kitTemplates = [];
 let clients = {};
 let itemIdCounter = 0;
+let compIdCounter = 0;
 let savedDocId = null;
 
 const SYM = () => document.getElementById('moneda').value === 'USD' ? 'US$' : '$';
@@ -467,7 +507,7 @@ async function init(){
   const f = genFolio();
   document.getElementById('folio').value = f;
   document.getElementById('folioBadge').textContent = f;
-  await Promise.all([loadClients(), loadCatalog(), loadGarantiaTemplates()]);
+  await Promise.all([loadClients(), loadCatalog(), loadGarantiaTemplates(), loadKitTemplates()]);
   addItem('producto');
   addItem('producto');
   applyCfg();
@@ -523,6 +563,15 @@ async function loadGarantiaTemplates(){
       sel.appendChild(o);
     });
   }catch(e){}
+}
+
+/* ═══ LOAD KIT TEMPLATES ═══ */
+async function loadKitTemplates(){
+  try{
+    const snap = await db.collection('kitTemplates').orderBy('createdAt','desc').get();
+    kitTemplates = [];
+    snap.forEach(d => kitTemplates.push({id:d.id,...d.data()}));
+  }catch(e){kitTemplates=[]}
 }
 
 /* ═══ SETUP GARANTIA ═══ */
@@ -600,6 +649,7 @@ function applyCfg(){
 
   // Costos panels
   document.querySelectorAll('.cost-panel').forEach(p => p.style.display = costos ? '' : 'none');
+  document.querySelectorAll('.kit-panel').forEach(p => p.style.display = costos ? '' : 'none');
 
   // Rentabilidad
   document.getElementById('rentPanel').style.display = rent ? '' : 'none';
@@ -690,6 +740,69 @@ function addItem(tipo){
           <div><span class="lbl">Utilidad viático:</span> <span class="cr-vUtil">$0.00</span> <span class="semaforo cr-vSem">⚪</span></div>
         </div>
       </details>`;
+  } else if(tipo === 'kit'){
+    row.className = 'item-row kit-row';
+    row.innerHTML = `
+      <div class="item-main" style="grid-template-columns:2.5fr 70px 100px 100px 36px">
+        <div><span class="tipo-badge kit">🧰</span><textarea class="i-desc" rows="2" placeholder="Ej: Kit de Instalación Solar 10 kWh — Incluye panel bifacial, inversor híbrido, batería LiFePO₄ y estructura." style="width:100%;resize:vertical;min-height:36px;padding:0.35rem 0.5rem;border:1px solid var(--border);border-radius:5px;background:var(--dark);color:var(--white);font-size:0.82rem;font-family:'DM Sans',sans-serif;outline:none"></textarea></div>
+        <div><span class="item-label">Cant.</span><input type="number" class="i-qty" value="1" min="1" step="1"></div>
+        <div><span class="item-label">Precio kit</span><input type="number" class="i-price" value="0" min="0" step="0.01"></div>
+        <div class="item-total" style="color:var(--teal)">$0.00</div>
+        <button class="btn-remove" onclick="this.closest('.item-row').remove();recalc()">×</button>
+      </div>
+      <details class="kit-panel admin-only" open ${document.getElementById('cfgCostos').checked?'':'style="display:none"'}>
+        <summary>🔧 Componentes del kit (interno)</summary>
+        <div class="kit-mode">
+          <label><input type="radio" name="kitmode-${id}" value="fijo" checked> Precio fijo manual</label>
+          <label><input type="radio" name="kitmode-${id}" value="markup"> Suma componentes + markup %</label>
+        </div>
+        <div class="kit-markup-row" style="display:none">
+          <span>Markup:</span>
+          <input type="number" class="k-markup" value="30" min="0" max="500" step="1">
+          <span>%</span>
+          <span>→ Precio sugerido: <span class="suggested k-suggested">$0.00</span></span>
+          <button class="k-apply" type="button">Aplicar</button>
+        </div>
+        <div class="comp-header"><div>Componente</div><div>Cant.</div><div>Costo unit.</div><div>¿c/IVA?</div><div>Costo total</div><div></div></div>
+        <div class="kit-components" data-kit="${id}"></div>
+        <button class="btn-add-component" type="button" onclick="addComponent('${id}')">＋ Agregar componente</button>
+        <div class="kit-summary">
+          <div class="ks-row"><span>Costo total componentes:</span><span class="val ks-cost">$0.00</span></div>
+          <div class="ks-row"><span>Precio venta al cliente:</span><span class="val ks-price">$0.00</span></div>
+          <div class="ks-row profit"><span>Utilidad bruta:</span><span class="val ks-profit">$0.00</span></div>
+        </div>
+        <div class="kit-template-row">
+          <button type="button" onclick="saveKitTemplate('${id}')">💾 Guardar como plantilla de kit</button>
+          <select class="k-tpl-select" onchange="loadKitTemplate(this,'${id}')">
+            <option value="">— Cargar kit guardado —</option>
+          </select>
+        </div>
+      </details>`;
+    // Populate kit template select
+    const tplSel = row.querySelector('.k-tpl-select');
+    kitTemplates.forEach(t => {
+      const o = document.createElement('option');
+      o.value = t.id;
+      o.textContent = t.nombre || 'Kit';
+      tplSel.appendChild(o);
+    });
+    // Kit mode toggle
+    row.querySelectorAll(`input[name="kitmode-${id}"]`).forEach(r => {
+      r.addEventListener('change', () => {
+        const isMarkup = row.querySelector(`input[name="kitmode-${id}"]:checked`).value === 'markup';
+        row.querySelector('.kit-markup-row').style.display = isMarkup ? 'flex' : 'none';
+        recalc();
+      });
+    });
+    // Apply suggested price
+    row.querySelector('.k-apply').addEventListener('click', () => {
+      const sugText = row.querySelector('.k-suggested').textContent;
+      const sugVal = parseFloat(sugText.replace(/[^0-9.-]/g,''));
+      if(sugVal > 0) row.querySelector('.i-price').value = sugVal.toFixed(2);
+      recalc();
+    });
+    addComponent(id);
+    addComponent(id);
   } else {
     row.innerHTML = `
       <div class="item-main" style="grid-template-columns:1fr 36px">
@@ -726,11 +839,111 @@ function buildAC(input, itemId){
   input.addEventListener('blur', () => setTimeout(()=>list.classList.remove('open'),200));
 }
 
+/* ═══ KIT COMPONENT FUNCTIONS ═══ */
+function addComponent(kitId){
+  const cid = 'comp-' + (++compIdCounter);
+  const container = document.querySelector(`.kit-components[data-kit="${kitId}"]`);
+  if(!container) return;
+  const comp = document.createElement('div');
+  comp.className = 'kit-component';
+  comp.dataset.compId = cid;
+  comp.innerHTML = `
+    <div class="ac-wrap"><input type="text" class="kc-desc" placeholder="Componente (marca/modelo)" data-ac="${cid}"><div class="ac-list" id="ac-${cid}"></div></div>
+    <div><input type="number" class="kc-qty" value="1" min="1" step="1"></div>
+    <div><input type="number" class="kc-costo" value="0" min="0" step="0.01"></div>
+    <div style="text-align:center"><input type="checkbox" class="kc-iva" title="¿Incluye IVA?"></div>
+    <div class="comp-total">$0.00</div>
+    <button class="btn-remove" onclick="this.closest('.kit-component').remove();recalc()" style="width:28px;height:28px;font-size:0.85rem">×</button>`;
+  container.appendChild(comp);
+  // Extra fields row
+  const extra = document.createElement('div');
+  extra.className = 'comp-extra';
+  extra.innerHTML = `
+    <div><label>SKU / Modelo</label><input class="kc-sku" style="font-family:'JetBrains Mono',monospace"></div>
+    <div><label>URL Proveedor</label><div style="display:flex;gap:0.2rem"><input class="kc-url" style="flex:1"><button class="gar-btn" onclick="const u=this.previousElementSibling.value;if(u)window.open(u.startsWith('http')?u:'https://'+u,'_blank')" style="padding:0.2rem 0.4rem;font-size:0.7rem">🔗</button></div></div>
+    <div style="display:flex;align-items:end;padding-bottom:0.1rem"><label class="chk-row" style="font-size:0.7rem"><input type="checkbox" class="kc-descDist"> Desc. distribuidor incluido</label></div>`;
+  container.appendChild(extra);
+  buildAC(comp.querySelector('.kc-desc'), cid);
+  comp.querySelectorAll('input').forEach(inp => inp.addEventListener('input', recalc));
+  recalc();
+}
+
+async function saveKitTemplate(kitId){
+  const row = document.querySelector(`.item-row[data-id="${kitId}"]`);
+  if(!row) return;
+  const desc = row.querySelector('.i-desc').value.trim();
+  const nombre = desc.slice(0,60) || 'Kit sin nombre';
+  const mode = row.querySelector(`input[name="kitmode-${kitId}"]:checked`)?.value || 'fijo';
+  const markup = parseFloat(row.querySelector('.k-markup')?.value) || 30;
+  const precio = parseFloat(row.querySelector('.i-price').value) || 0;
+  const componentes = [];
+  const container = row.querySelector(`.kit-components[data-kit="${kitId}"]`);
+  if(container){
+    container.querySelectorAll('.kit-component').forEach(c => {
+      const extra = c.nextElementSibling?.classList.contains('comp-extra') ? c.nextElementSibling : null;
+      componentes.push({
+        desc: c.querySelector('.kc-desc')?.value || '',
+        sku: extra?.querySelector('.kc-sku')?.value || '',
+        urlProveedor: extra?.querySelector('.kc-url')?.value || '',
+        qty: parseFloat(c.querySelector('.kc-qty')?.value) || 1,
+        costoUnitario: parseFloat(c.querySelector('.kc-costo')?.value) || 0,
+        incluyeIVA: c.querySelector('.kc-iva')?.checked || false
+      });
+    });
+  }
+  try{
+    await db.collection('kitTemplates').add({
+      nombre, descripcionCliente: desc, componentes, precioBase: precio,
+      modoPrecio: mode, markupPct: markup,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showToast('✅ Plantilla de kit guardada');
+    kitTemplates.push({nombre, descripcionCliente: desc, componentes, precioBase: precio});
+    // Update all kit template selects
+    document.querySelectorAll('.k-tpl-select').forEach(sel => {
+      const o = document.createElement('option');
+      o.textContent = nombre;
+      sel.appendChild(o);
+    });
+  }catch(e){showToast('❌ Error: '+e.message)}
+}
+
+function loadKitTemplate(sel, kitId){
+  const t = kitTemplates.find(k => k.id === sel.value);
+  if(!t) return;
+  const row = document.querySelector(`.item-row[data-id="${kitId}"]`);
+  if(!row) return;
+  row.querySelector('.i-desc').value = t.descripcionCliente || t.nombre || '';
+  if(t.precioBase) row.querySelector('.i-price').value = t.precioBase;
+  // Clear existing components
+  const container = row.querySelector(`.kit-components[data-kit="${kitId}"]`);
+  if(container) container.innerHTML = '';
+  // Add components from template
+  (t.componentes||[]).forEach(comp => {
+    addComponent(kitId);
+    const comps = container.querySelectorAll('.kit-component');
+    const lastComp = comps[comps.length - 1];
+    const lastExtra = lastComp.nextElementSibling;
+    if(lastComp){
+      lastComp.querySelector('.kc-desc').value = comp.desc || '';
+      lastComp.querySelector('.kc-qty').value = comp.qty || 1;
+      lastComp.querySelector('.kc-costo').value = comp.costoUnitario || 0;
+      if(comp.incluyeIVA) lastComp.querySelector('.kc-iva').checked = true;
+    }
+    if(lastExtra && lastExtra.classList.contains('comp-extra')){
+      if(comp.sku) lastExtra.querySelector('.kc-sku').value = comp.sku;
+      if(comp.urlProveedor) lastExtra.querySelector('.kc-url').value = comp.urlProveedor;
+    }
+  });
+  recalc();
+}
+
 /* ═══ RECALC ═══ */
 function recalc(){
   const sym = SYM();
   let subtotal = 0;
-  let costMat = 0, costMO = 0, costViat = 0;
+  let costMat = 0, costMO = 0, costViat = 0, costKits = 0;
 
   document.querySelectorAll('.item-row').forEach(row => {
     const tipo = row.dataset.tipo;
@@ -801,6 +1014,49 @@ function recalc(){
       }
       if(vReal > 0) costViat += vReal; else costViat += total;
 
+    } else if(tipo === 'kit'){
+      const qty = parseFloat(row.querySelector('.i-qty').value) || 0;
+      const price = parseFloat(row.querySelector('.i-price').value) || 0;
+      total = qty * price;
+      row.querySelector('.item-total').textContent = sym + fmt(total);
+
+      // Calc component costs
+      let compCostTotal = 0;
+      const kitId = row.dataset.id;
+      const container = row.querySelector(`.kit-components[data-kit="${kitId}"]`);
+      if(container){
+        container.querySelectorAll('.kit-component').forEach(c => {
+          const cqty = parseFloat(c.querySelector('.kc-qty')?.value) || 0;
+          const ccosto = parseFloat(c.querySelector('.kc-costo')?.value) || 0;
+          const inclIVA = c.querySelector('.kc-iva')?.checked;
+          const compTotal = cqty * ccosto * (inclIVA ? 1 : 1.16);
+          c.querySelector('.comp-total').textContent = sym + fmt(compTotal);
+          c.querySelector('.comp-total').className = compTotal === 0 ? 'comp-total zero' : 'comp-total';
+          compCostTotal += compTotal;
+        });
+      }
+
+      // Kit summary
+      const utilKit = total - compCostTotal;
+      const margenKit = total > 0 ? (utilKit/total*100) : 0;
+      const ksC = row.querySelector('.ks-cost');
+      if(ksC){
+        ksC.textContent = sym + fmt(compCostTotal);
+        row.querySelector('.ks-price').textContent = sym + fmt(total);
+        row.querySelector('.ks-profit').textContent = sym + fmt(utilKit) + '  (' + margenKit.toFixed(1) + '%) ' + (margenKit < 10 ? '🔴' : margenKit < 25 ? '🟡' : '🟢');
+      }
+
+      // Markup mode: calc suggested price
+      const mode = row.querySelector(`input[name="kitmode-${kitId}"]:checked`)?.value;
+      if(mode === 'markup'){
+        const mkp = parseFloat(row.querySelector('.k-markup')?.value) || 0;
+        const suggested = compCostTotal * (1 + mkp/100);
+        const sugEl = row.querySelector('.k-suggested');
+        if(sugEl) sugEl.textContent = sym + fmt(suggested);
+      }
+
+      costKits += compCostTotal;
+
     }
     // texto: total=0, no suma
     subtotal += total;
@@ -815,12 +1071,13 @@ function recalc(){
   document.getElementById('totalVal').textContent = sym + fmt(grand);
 
   // Rentabilidad global
-  const costoTotal = costMat + costMO + costViat;
+  const costoTotal = costMat + costMO + costViat + costKits;
   const utilBruta = subtotal - costoTotal;
   const margenGlobal = subtotal > 0 ? (utilBruta/subtotal*100) : 0;
   document.getElementById('rMat').textContent = sym + fmt(costMat);
   document.getElementById('rMO').textContent = sym + fmt(costMO);
   document.getElementById('rViat').textContent = sym + fmt(costViat);
+  document.getElementById('rKits').textContent = sym + fmt(costKits);
   document.getElementById('rTotal').textContent = sym + fmt(costoTotal);
   document.getElementById('rVenta').textContent = sym + fmt(subtotal);
   document.getElementById('rUtil').textContent = sym + fmt(utilBruta) + '  (' + margenGlobal.toFixed(1) + '%) ' + (margenGlobal < 10 ? '🔴' : margenGlobal < 25 ? '🟡' : '🟢');
@@ -870,6 +1127,37 @@ function getItems(){
       item.qty = vqty; item.price = vcosto; item.disc = 0;
       item.total = vqty * vcosto;
       item.viaFields = {concepto: row.querySelector('.i-concepto')?.value||'', cantidad: vqty, costoUnit: vcosto, costoReal: parseFloat(row.querySelector('.c-vReal')?.value)||0};
+    } else if(tipo === 'kit'){
+      const qty = parseFloat(row.querySelector('.i-qty').value)||0;
+      const precio = parseFloat(row.querySelector('.i-price').value)||0;
+      item.qty = qty; item.precio = precio; item.price = precio; item.disc = 0;
+      item.total = qty * precio;
+      const kitId = row.dataset.id;
+      item.modoPrecio = row.querySelector(`input[name="kitmode-${kitId}"]:checked`)?.value || 'fijo';
+      item.markupPct = parseFloat(row.querySelector('.k-markup')?.value) || 0;
+      item.componentes = [];
+      let costTotal = 0;
+      const container = row.querySelector(`.kit-components[data-kit="${kitId}"]`);
+      if(container){
+        container.querySelectorAll('.kit-component').forEach(c => {
+          const extra = c.nextElementSibling?.classList.contains('comp-extra') ? c.nextElementSibling : null;
+          const cqty = parseFloat(c.querySelector('.kc-qty')?.value)||0;
+          const ccosto = parseFloat(c.querySelector('.kc-costo')?.value)||0;
+          const inclIVA = c.querySelector('.kc-iva')?.checked||false;
+          const costoTotalConIVA = cqty * ccosto * (inclIVA ? 1 : 1.16);
+          costTotal += costoTotalConIVA;
+          item.componentes.push({
+            desc: c.querySelector('.kc-desc')?.value||'',
+            sku: extra?.querySelector('.kc-sku')?.value||'',
+            urlProveedor: extra?.querySelector('.kc-url')?.value||'',
+            qty: cqty, costoUnitario: ccosto, incluyeIVA: inclIVA,
+            costoTotalConIVA
+          });
+        });
+      }
+      item.costoTotalKit = costTotal;
+      item.utilidadKit = item.total - costTotal;
+      item.margenKit = item.total > 0 ? ((item.total - costTotal)/item.total*100) : 0;
     } else {
       item.qty = 0; item.price = 0; item.disc = 0; item.total = 0;
     }
@@ -901,11 +1189,12 @@ async function saveQuote(){
   const tiempoEntrega = tiempoNum ? (tiempoNum + ' ' + tiempoUnidad) : '';
 
   // Margen resumen
-  let costMat=0, costMO=0, costViat=0;
+  let costMat=0, costMO=0, costViat=0, costKits=0;
   items.forEach(it => {
     if(it.tipo==='producto' && it.costoInterno) costMat += it.costoInterno.costoConIVA||0;
     if(it.tipo==='mo' && it.moFields) costMO += it.moFields.costoRealTotal||0;
     if(it.tipo==='viatico' && it.viaFields) costViat += it.viaFields.costoReal||it.total||0;
+    if(it.tipo==='kit') costKits += it.costoTotalKit||0;
   });
 
   const payload = {
@@ -925,9 +1214,9 @@ async function saveQuote(){
     incluye: document.getElementById('instalacion').value,
     notas: document.getElementById('notas').value,
     items,
-    margenResumen: {costoMateriales:costMat, costoMO:costMO, costoViaticos:costViat,
-      costoTotalReal:costMat+costMO+costViat, utilidadBruta:subtotal-(costMat+costMO+costViat),
-      margenPct: subtotal>0 ? ((subtotal-(costMat+costMO+costViat))/subtotal*100) : 0},
+    margenResumen: {costoMateriales:costMat, costoMO:costMO, costoViaticos:costViat, costoKits:costKits,
+      costoTotalReal:costMat+costMO+costViat+costKits, utilidadBruta:subtotal-(costMat+costMO+costViat+costKits),
+      margenPct: subtotal>0 ? ((subtotal-(costMat+costMO+costViat+costKits))/subtotal*100) : 0},
     config: {showDisc: document.getElementById('cfgDisc').checked,
       showSubtotals: document.getElementById('cfgSubtotals').checked,
       showCredito: document.getElementById('cfgCred').checked,
@@ -943,14 +1232,19 @@ async function saveQuote(){
     savedDocId = docRef.id;
 
     // Save descriptions to catalog
+    const saveToCatalog = (text) => {
+      if(!text || text.length <= 5) return;
+      const existing = catalog.find(c => c.text === text);
+      if(existing){
+        db.collection('catalog').doc(existing.id).update({count: firebase.firestore.FieldValue.increment(1), lastUsed: firebase.firestore.FieldValue.serverTimestamp()});
+      } else {
+        db.collection('catalog').add({text, count:1, createdAt: firebase.firestore.FieldValue.serverTimestamp(), lastUsed: firebase.firestore.FieldValue.serverTimestamp()});
+      }
+    };
     items.forEach(it => {
-      if(it.desc && it.desc.length > 5){
-        const existing = catalog.find(c => c.text === it.desc);
-        if(existing){
-          db.collection('catalog').doc(existing.id).update({count: firebase.firestore.FieldValue.increment(1), lastUsed: firebase.firestore.FieldValue.serverTimestamp()});
-        } else {
-          db.collection('catalog').add({text: it.desc, count:1, createdAt: firebase.firestore.FieldValue.serverTimestamp(), lastUsed: firebase.firestore.FieldValue.serverTimestamp()});
-        }
+      saveToCatalog(it.desc);
+      if(it.tipo === 'kit' && it.componentes){
+        it.componentes.forEach(comp => saveToCatalog(comp.desc));
       }
     });
 
@@ -1006,6 +1300,11 @@ function doPrint(){
     if(it.tipo === 'texto'){
       const cs = showDisc ? 5 : 4;
       thtml += `<tr><td colspan="${cs}" style="font-style:italic;color:#888">${it.desc}</td></tr>`;
+    } else if(it.tipo === 'kit'){
+      const descHtml = (it.desc||'').replace(/\n/g,'<br>');
+      thtml += `<tr><td>🧰 ${descHtml}</td><td class="num">${it.qty||1}</td><td class="num">${sym}${fmt(it.price||0)}</td>`;
+      if(showDisc) thtml += `<td class="num">—</td>`;
+      thtml += `<td class="num">${sym}${fmt(it.total||0)}</td></tr>`;
     } else {
       thtml += `<tr><td>${it.desc}</td><td class="num">${it.qty||''}</td><td class="num">${sym}${fmt(it.price||0)}</td>`;
       if(showDisc) thtml += `<td class="num">${it.disc||0}%</td>`;

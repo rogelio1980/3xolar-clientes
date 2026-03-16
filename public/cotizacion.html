@@ -456,6 +456,35 @@ body {
   const auth = firebase.auth();
   const db   = firebase.firestore();
 
+  /* ── Helpers ──────────────────────────────────────── */
+  const $   = id => document.getElementById(id);
+  const set = (id, val) => { const e = $(id); if (e) e.textContent = val; };
+  const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  function numFmt(n, dec = 2) {
+    return Number(n).toLocaleString('es-MX', {
+      minimumFractionDigits: dec,
+      maximumFractionDigits: dec
+    });
+  }
+
+  function fmtMXN(n) {
+    if (n == null) return '—';
+    return '$' + numFmt(n) + ' MXN';
+  }
+
+  function fmtDate(ts) {
+    if (!ts) return '—';
+    try {
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      return d.toLocaleDateString('es-MX', { year:'numeric', month:'long', day:'numeric' });
+    } catch { return String(ts); }
+  }
+
+  function showErr(msg) {
+    $('loader').innerHTML = '<p style="color:#c0392b;font-family:DM Sans,sans-serif">\u274c ' + esc(msg) + '</p>';
+  }
+
   /* ── Params ─────────────────────────────────────── */
   const params     = new URLSearchParams(location.search);
   const proposalId = params.get('id');
@@ -615,34 +644,7 @@ body {
     });
   }
 
-  /* ── Helpers ──────────────────────────────────────── */
-  const $   = id => document.getElementById(id);
-  const set = (id, val) => { const e = $(id); if (e) e.textContent = val; };
-  const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
-  function numFmt(n, dec = 2) {
-    return Number(n).toLocaleString('es-MX', {
-      minimumFractionDigits: dec,
-      maximumFractionDigits: dec
-    });
-  }
-
-  function fmtMXN(n) {
-    if (n == null) return '—';
-    return '$' + numFmt(n) + ' MXN';
-  }
-
-  function fmtDate(ts) {
-    if (!ts) return '—';
-    try {
-      const d = ts.toDate ? ts.toDate() : new Date(ts);
-      return d.toLocaleDateString('es-MX', { year:'numeric', month:'long', day:'numeric' });
-    } catch { return String(ts); }
-  }
-
-  function showErr(msg) {
-    $('loader').innerHTML = `<p style="color:#c0392b;font-family:'DM Sans',sans-serif">❌ ${esc(msg)}</p>`;
-  }
+  /* (helpers moved above) */
 </script>
 </body>
 </html>

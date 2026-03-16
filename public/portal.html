@@ -109,7 +109,7 @@ auth.onAuthStateChanged(async user => {
       snap.forEach(doc => {
         const d = doc.data();
         if (d._type === 'quote') return;
-        if (d.folio && d.items && !d.versions) return;
+        if (d.folio && d.items && Array.isArray(d.versions) && d.versions.length === 0) return;
         const st = d.status || 'draft';
         const vers = d.versions ? d.versions.length : 0;
         const date = d.updatedAt ? new Date(d.updatedAt.toDate()).toLocaleDateString('es-MX') : '';

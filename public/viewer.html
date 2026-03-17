@@ -289,12 +289,14 @@ function renderQuote(d, qId) {
     const qty = it.qty || it.cantidad || 1;
     const price = it.price || it.precio || it.precioUnitario || 0;
     const disc = it.disc || it.descuento || 0;
-    const total = qty * price * (1 - disc/100);
+    const total = it.total != null ? it.total : qty * price * (1 - disc/100);
     const desc = it.desc || it.description || it.descripcion || '—';
+    const qtyDisp = (it.tipo==='mo' && it.moFields) ? (it.moFields.tecnicos||1)+' tec x '+(it.moFields.dias||1)+' días' : (it.tipo==='viatico' && it.viaFields) ? fmt(it.viaFields.cantidad||1,0) : String(qty);
+    const priceDisp = (it.tipo==='mo') ? '—' : (it.tipo==='viatico' && it.viaFields) ? sym+fmt(it.viaFields.costoUnit||0) : sym+fmt(price);
     return '<tr>'+
       '<td>'+esc(desc)+'</td>'+
-      '<td class="num">'+qty+'</td>'+
-      '<td class="num">'+sym+fmt(price)+'</td>'+
+      '<td class="num">'+qtyDisp+'</td>'+
+      '<td class="num">'+priceDisp+'</td>'+
       '<td class="num">'+(disc>0 ? disc+'%' : '—')+'</td>'+
       '<td class="num">'+sym+fmt(total)+'</td>'+
     '</tr>';

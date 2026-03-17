@@ -604,22 +604,23 @@ async function loadExistingQuote(clientId, quoteId){
       });
     }
 
-    // Load items — addItem creates empty row, then fillItemRow populates it
+    // Load items — use flag to suppress intermediate recalc calls
     const itemsContainer=document.getElementById('itemsContainer');
     itemsContainer.innerHTML='';
     const items=q.items||q.partidas||[];
+    window.__batchLoading=true;
     if(items.length){
       items.forEach(it=>{
         const tipo=it.tipo||'producto';
         addItem(tipo);
-        // Get the last added row and fill it
-        const rows=itemsContainer.querySelectorAll('.item-row');
-        const row=rows[rows.length-1];
+        const allRows=itemsContainer.querySelectorAll('.item-row');
+        const row=allRows[allRows.length-1];
         if(row) fillItemRow(row, tipo, it);
       });
     } else {
       addItem('producto');
     }
+    window.__batchLoading=false;
     recalc();
     showToast('✅ Cotización cargada para edición');
   } catch(e){
@@ -987,7 +988,7 @@ function addItem(tipo){
 
   c.appendChild(row);
   row.querySelectorAll('input,select').forEach(inp => inp.addEventListener('input', recalc));
-  recalc();
+  if(!window.__batchLoading) recalc();
 }
 
 /* ═══ AUTOCOMPLETE ═══ */

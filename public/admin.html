@@ -163,10 +163,10 @@ tr:hover td{background:rgba(245,166,35,.02)}
     <div class="panel active" id="panel-dashboard">
       <div class="panel-title">📊 Dashboard</div>
       <div class="stats">
-        <div class="stat-card s-amber"><div class="stat-num" id="statClients">—</div><div class="stat-label">Clientes</div></div>
-        <div class="stat-card s-teal"><div class="stat-num" id="statProposals">—</div><div class="stat-label">Propuestas</div></div>
-        <div class="stat-card s-green"><div class="stat-num" id="statQuotes">—</div><div class="stat-label">Cotizaciones</div></div>
-        <div class="stat-card s-blue"><div class="stat-num" id="statComments">—</div><div class="stat-label">Comentarios</div></div>
+        <div class="stat-card s-amber" onclick="navTo('clientes')" style="cursor:pointer" title="Ver clientes"><div class="stat-num" id="statClients">—</div><div class="stat-label">Clientes</div></div>
+        <div class="stat-card s-teal" onclick="navTo('propuestas')" style="cursor:pointer" title="Ver propuestas"><div class="stat-num" id="statProposals">—</div><div class="stat-label">Propuestas</div></div>
+        <div class="stat-card s-green" onclick="navTo('cotizaciones')" style="cursor:pointer" title="Ver cotizaciones"><div class="stat-num" id="statQuotes">—</div><div class="stat-label">Cotizaciones</div></div>
+        <div class="stat-card s-blue" onclick="navTo('comentarios')" style="cursor:pointer" title="Ver comentarios"><div class="stat-num" id="statComments">—</div><div class="stat-label">Comentarios</div></div>
       </div>
       <div class="section-label">Actividad reciente</div>
       <div class="tbl-wrap">
@@ -424,7 +424,17 @@ function fmtMoney(n, cur='MXN') {
   return new Intl.NumberFormat('es-MX',{style:'currency',currency:cur,minimumFractionDigits:2}).format(n);
 }
 
-// ── Auth guard ────────────────────────────────────
+// ── Navigation helper ─────────────────────────────
+function navTo(panel) {
+  const item = document.querySelector(`[data-panel="${panel}"]`);
+  if (item) {
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    item.classList.add('active');
+    const p = document.getElementById('panel-'+panel);
+    if (p) p.classList.add('active');
+  }
+}
 auth.onAuthStateChanged(async user => {
   if (!user) { location.href = '/'; return; }
   const uSnap = await db.collection('users').doc(user.uid).get().catch(()=>null);
@@ -444,10 +454,31 @@ document.querySelectorAll('.nav-item').forEach(item => {
 
 // ── Load all data ─────────────────────────────────
 async function loadAll() {
-  // Clients
-  const cSnap = await db.collection('clients').get();
+  // Load clients AND users in parallel — merge names from users into clients
+  const [cSnap, uSnap] = await Promise.all([
+    db.collection('clients').get(),
+    db.collection('users').get()
+  ]);
+
+  // Build user name map: uid → {name, email, company}
+  const userMap = {};
+  uSnap.forEach(d => { userMap[d.id] = d.data(); });
+
   allClients = {};
-  cSnap.forEach(d => { allClients[d.id] = {...d.data(), _id: d.id}; });
+  cSnap.forEach(d => {
+    const data = d.data();
+    // If the client doc has no name, pull it from users collection
+    const u = userMap[d.id] || {};
+    const merged = {
+      ...data,
+      _id: d.id,
+      name: data.name || u.name || '',
+      email: data.email || u.email || '',
+      company: data.company || u.company || data.empresa?.nombre || '',
+    };
+    allClients[d.id] = merged;
+  });
+
   document.getElementById('statClients').textContent = cSnap.size;
   renderClientsTable();
 

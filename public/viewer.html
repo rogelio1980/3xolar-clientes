@@ -220,44 +220,51 @@ function renderProposal(d) {
   const versions = (d.versions||[]).map((v,i) =>
     '<div class="version-item">'+
       '<span class="ver-badge">v'+(i+1)+'</span>'+
-      '<div class="ver-info"><strong>'+esc(v.label||('Versión '+(i+1)))+'</strong><br>'+esc(v.changelog||'')+'<br>'+esc(v.date||'')+'</div>'+
+      '<div class="ver-info"><strong>'+esc(v.label||('Versión '+(i+1)))+'</strong><br>'+esc(v.changelog||'')+'<br>'+esc(v.date||'')+
+      (v.hasQuote ? ' <span style="background:rgba(245,166,35,.15);color:var(--amber);padding:2px 8px;border-radius:4px;font-size:.68rem;font-weight:700;font-family:Outfit,sans-serif">💰 Con cotización</span>' : '')+
+      '</div>'+
       (v.url ? '<a class="ver-link" href="'+esc(v.url)+'" target="_blank">Ver ↗</a>' : '')+
     '</div>'
   ).join('');
 
-  // No iframe — removed
-  const ifrHtml = '';
-
-  // Quote: may be in d.items directly, or via d.quoteId (separate doc)
-  let quoteHtml = '';
-  let quoteData = null;
-  if (d.items && d.items.length) {
-    quoteData = d;
-  } else if (d.quoteId || d.quoteData) {
-    // Show PDF link immediately - cotizacion.html reads from Firestore correctly
+  // Quote banner (no inline table — cotización is in the separate PDF page)
+  let quoteBannerHtml = '';
+  const hasQuote = !!(d.items && d.items.length) || !!d.quoteId || !!d.quoteData;
+  if (hasQuote) {
     const tLink = document.getElementById('topbar-cot-link');
     if(tLink){
       tLink.href='/cotizacion?id='+proposalId+'&client='+cId;
       tLink.style.display='inline-flex';
     }
-    // Try to load full quote doc if quoteId exists
+    // Build a simple banner with folio + total + PDF link
+    const sym = (d.moneda==='USD'||((d.quoteData||{}).moneda==='USD')) ? 'US$' : '$';
+    const total = d.total || (d.quoteData||{}).total || 0;
+    const folio = d.folio || (d.quoteData||{}).folio || '';
+    // If quoteId, try to load folio/total from that doc
     if (d.quoteId) {
       db.collection('clients').doc(cId).collection('proposals').doc(d.quoteId).get()
         .then(qSnap => {
-          const qData = qSnap.exists ? qSnap.data() : (d.quoteData || null);
-          if (qData && qData.items && qData.items.length) {
-            const qHtml = renderQuote(qData);
-            const qSection = document.getElementById('quote-section');
-            if (qSection) { qSection.innerHTML = qHtml; qSection.style.display = 'block'; }
+          if (!qSnap.exists) return;
+          const qd = qSnap.data();
+          const qSym = qd.moneda==='USD' ? 'US$' : '$';
+          const bannerEl = document.getElementById('quote-banner-data');
+          if (bannerEl) {
+            bannerEl.innerHTML = (qd.folio ? '<span style="font-family:JetBrains Mono,monospace;color:var(--light);font-size:0.85rem">'+esc(qd.folio)+'</span> · ' : '')+
+              '<span style="font-family:Outfit,sans-serif;font-weight:800;color:var(--amber);font-size:1.1rem">'+qSym+fmt(qd.total||0)+'</span>';
           }
         }).catch(()=>{});
-    } else if (d.quoteData && d.quoteData.items && d.quoteData.items.length) {
-      const qHtml = renderQuote(d.quoteData);
-      const qSection = document.getElementById('quote-section');
-      if (qSection) { qSection.innerHTML = qHtml; qSection.style.display = 'block'; }
     }
+    quoteBannerHtml =
+      '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem;margin-top:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">'+
+        '<div>'+
+          '<div style="font-family:Outfit,sans-serif;font-weight:700;font-size:0.75rem;color:var(--amber);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.3rem">💰 Cotización vinculada</div>'+
+          '<div id="quote-banner-data">'+(folio ? '<span style="font-family:JetBrains Mono,monospace;color:var(--light);font-size:0.85rem">'+esc(folio)+'</span> · ' : '')+
+            (total ? '<span style="font-family:Outfit,sans-serif;font-weight:800;color:var(--amber);font-size:1.1rem">'+sym+fmt(total)+'</span>' : '<span style="color:var(--gray);font-size:0.8rem">Cargando…</span>')+
+          '</div>'+
+        '</div>'+
+        '<a href="/cotizacion?id='+proposalId+'&client='+cId+'" target="_blank" class="btn-pdf-cot" style="font-size:.78rem;padding:.4rem 1rem">⬇ Ver Cotización PDF</a>'+
+      '</div>';
   }
-  if (quoteData) quoteHtml = renderQuote(quoteData, null);
 
   main.innerHTML =
     '<h1 class="proposal-title">'+esc(d.title||'Sin título')+'</h1>'+
@@ -267,8 +274,7 @@ function renderProposal(d) {
     (d.empresa ? '<div style="font-size:0.82rem;color:var(--light);margin-bottom:0.25rem">'+esc(d.empresa)+'</div>' : '')+
     (d.contacto ? '<div style="font-size:0.8rem;color:var(--gray);margin-bottom:1rem">Atención: '+esc(d.contacto)+'</div>' : '')+
     (versions ? '<div class="section-label">Versiones</div><div class="version-list">'+versions+'</div>' : '')+
-    ifrHtml+
-    '<div id="quote-section"'+(quoteHtml ? '' : ' style="display:none"')+'>'+quoteHtml+'</div>'+
+    quoteBannerHtml+
     
     '<div style="margin-top:1.5rem">'+
       '<div class="section-label">Comentarios generales '+
@@ -278,86 +284,6 @@ function renderProposal(d) {
     '</div>';
 }
 
-/* ── Render quote (items table) ──────────────── */
-function renderQuote(d, qId) {
-  const sym = (d.moneda==='USD') ? 'US$' : '$';
-
-  const rows = (d.items||[]).map(it => {
-    if (it.tipo === 'texto') {
-      return '<tr><td colspan="5" style="font-size:0.8rem;color:var(--gray);font-style:italic">'+esc(it.desc||it.description||'')+'</td></tr>';
-    }
-    const qty = it.qty || it.cantidad || 1;
-    const price = it.price || it.precio || it.precioUnitario || 0;
-    const disc = it.disc || it.descuento || 0;
-    const total = it.total != null ? it.total : qty * price * (1 - disc/100);
-    const desc = it.desc || it.description || it.descripcion || '—';
-    const qtyDisp = (it.tipo==='mo' && it.moFields) ? (it.moFields.tecnicos||1)+' tec x '+(it.moFields.dias||1)+' días' : (it.tipo==='viatico' && it.viaFields) ? fmt(it.viaFields.cantidad||1,0) : String(qty);
-    const priceDisp = (it.tipo==='mo') ? '—' : (it.tipo==='viatico' && it.viaFields) ? sym+fmt(it.viaFields.costoUnit||0) : sym+fmt(price);
-    return '<tr>'+
-      '<td>'+esc(desc)+'</td>'+
-      '<td class="num">'+qtyDisp+'</td>'+
-      '<td class="num">'+priceDisp+'</td>'+
-      '<td class="num">'+(disc>0 ? disc+'%' : '—')+'</td>'+
-      '<td class="num">'+sym+fmt(total)+'</td>'+
-    '</tr>';
-  }).join('');
-
-  const ivaLabel = d.ivaRate ? (typeof d.ivaRate === 'number' && d.ivaRate < 1 ? (d.ivaRate*100) : d.ivaRate) + '%' : '16%';
-
-  let garantiaHtml = '';
-  if (d.garantiaDesc || d.garantiaTipo) {
-    garantiaHtml =
-      '<div class="guarantee-block">'+
-        '<div class="section-label">Garantía '+
-          '<button class="btn-sticky-toggle" onclick="toggleSC(\'garantia\')">💬 <span class="sticky-cnt" id="cnt-garantia">0</span></button>'+
-        '</div>'+
-        (d.garantiaTipo ? '<div style="font-size:0.75rem;color:var(--amber);margin-bottom:0.4rem;font-family:Outfit,sans-serif;font-weight:600">'+esc(d.garantiaTipo)+'</div>' : '')+
-        '<p>'+esc(d.garantiaDesc||'')+'</p>'+
-        '<div class="sticky-panel" id="sc-garantia">'+scInnerHtml('garantia')+'</div>'+
-      '</div>';
-  }
-
-  let condHtml = '';
-  const condItems = [];
-  if (d.formaPago) condItems.push(['Forma de pago', d.formaPago]);
-  if (d.incluye) condItems.push(['Instalación', d.incluye]);
-  if (d.tiempoEntrega) condItems.push(['Tiempo de entrega', d.tiempoEntrega]);
-  if (d.vigencia) condItems.push(['Vigencia', d.vigencia + ' días']);
-  if (d.lugar) condItems.push(['Lugar de entrega', d.lugar]);
-
-  if (condItems.length) {
-    condHtml =
-      '<div class="conditions-block">'+
-        '<div class="section-label">Condiciones '+
-          '<button class="btn-sticky-toggle" onclick="toggleSC(\'condiciones\')">💬 <span class="sticky-cnt" id="cnt-condiciones">0</span></button>'+
-        '</div>'+
-        '<div class="cond-grid">'+condItems.map(function(c){return '<div class="cond-item"><strong>'+esc(c[0])+'</strong><span>'+esc(c[1])+'</span></div>';}).join('')+'</div>'+
-        (d.notas ? '<p style="margin-top:0.75rem;font-size:0.8rem;color:var(--gray);font-style:italic">'+esc(d.notas)+'</p>' : '')+
-        '<div class="sticky-panel" id="sc-condiciones">'+scInnerHtml('condiciones')+'</div>'+
-      '</div>';
-  }
-
-  return '<div class="quote-view">'+
-    '<div style="display:flex;justify-content:flex-end;margin-bottom:1rem;">'+
-      '<a href="/cotizacion?id='+proposalId+'&client='+cId+'" target="_blank" class="btn-pdf-cot">⬇ Descargar PDF</a>'+
-    '</div>'+
-    '<div class="section-label">Partidas '+
-      '<button class="btn-sticky-toggle" onclick="toggleSC(\'partidas\')">💬 <span class="sticky-cnt" id="cnt-partidas">0</span></button>'+
-    '</div>'+
-    '<table class="quote-table">'+
-      '<thead><tr><th>Descripción</th><th style="text-align:right">Cant.</th><th style="text-align:right">P.Unit.</th><th style="text-align:right">Desc.</th><th style="text-align:right">Total</th></tr></thead>'+
-      '<tbody>'+rows+'</tbody>'+
-    '</table>'+
-    '<div class="sticky-panel" id="sc-partidas">'+scInnerHtml('partidas')+'</div>'+
-    '<div class="totals-block">'+
-      '<div class="total-row"><span>Subtotal</span><span class="val">'+sym+fmt(d.subtotal||0)+' '+(d.moneda||'')+'</span></div>'+
-      '<div class="total-row"><span>IVA ('+ivaLabel+')</span><span class="val">'+sym+fmt(d.iva||0)+' '+(d.moneda||'')+'</span></div>'+
-      '<div class="total-row grand"><span>Total</span><span class="val">'+sym+fmt(d.total||0)+' '+(d.moneda||'')+'</span></div>'+
-    '</div>'+
-    garantiaHtml+
-    condHtml+
-  '</div>';
-}
 
 /* ── Logout ─────────────────────────────────── */
 document.getElementById('btnLogout').onclick = () => auth.signOut().then(() => location.href = '/');

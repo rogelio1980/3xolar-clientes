@@ -123,7 +123,10 @@ body{font-family:'DM Sans',sans-serif;background:#e8edf6;color:var(--text);font-
     <!-- Header TRN -->
     <div class="doc-header">
       <div class="trn-block">
-        <img src="/assets/trn-logo.png" class="trn-logo" alt="TRN" onerror="this.style.display='none'">
+        <svg class="trn-logo" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg" style="height:48px;width:auto">
+          <rect width="200" height="60" rx="8" fill="#0B1A2E"/>
+          <text x="100" y="40" text-anchor="middle" font-family="Outfit,sans-serif" font-weight="900" font-size="32" fill="#F5A623">TRN</text>
+        </svg>
         <div class="trn-info">
           <strong>TELECOMUNICACIONES Y REDES DEL NORTE</strong>
           San Martín 502, Centro &nbsp;·&nbsp; Chihuahua, Chih. C.P. 31000<br>
@@ -287,6 +290,16 @@ function render(prop,q,client){
 
   const logoSrc=emp.logoBase64||emp.logoUrl||'';
   if(logoSrc){const img=$('clientLogoImg');img.src=logoSrc;img.style.display='block';}
+  else{
+    const initials=(cNombre||'').split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    if(initials){
+      const el=$('clientLogoImg');
+      const span=document.createElement('div');
+      span.style.cssText='width:38px;height:38px;border-radius:6px;background:var(--navy);color:var(--amber);display:flex;align-items:center;justify-content:center;font-family:Outfit,sans-serif;font-weight:800;font-size:14px;flex-shrink:0';
+      span.textContent=initials;
+      el.parentNode.replaceChild(span,el);
+    }
+  }
 
   // Meta
   set('atencionA',q.contacto||q.atencionA||'—');

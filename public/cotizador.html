@@ -409,6 +409,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
           <option value="sent">Enviado</option>
         </select>
       </div>
+      <div class="field"><label>Elaborado por</label>
+        <input type="text" id="elaboradoPor" placeholder="Nombre del responsable">
+      </div>
       <div class="field" id="notasField"><label>Notas adicionales</label>
         <textarea id="notas" rows="3"></textarea>
       </div>
@@ -1213,6 +1216,7 @@ async function saveQuote(){
     formaPago: document.getElementById('formaPago').value,
     incluye: document.getElementById('instalacion').value,
     notas: document.getElementById('notas').value,
+    elaboradoPor: document.getElementById('elaboradoPor').value,
     items,
     margenResumen: {costoMateriales:costMat, costoMO:costMO, costoViaticos:costViat, costoKits:costKits,
       costoTotalReal:costMat+costMO+costViat+costKits, utilidadBruta:subtotal-(costMat+costMO+costViat+costKits),

@@ -1,869 +1,572 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TRN — Propuesta Solar Poste v1 | Coeur Mexicana</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --navy: #0B1A2E;
-      --navy2: #112240;
-      --amber: #F5A623;
-      --orange: #FF6B35;
-      --green: #2ECC71;
-      --teal: #00B894;
-      --white: #F8FAFE;
-      --gray: #8892B0;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRN — Propuesta Solar Poste v1 | Coeur Mexicana</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--navy:#0B1A2E;--navy2:#112240;--amber:#F5A623;--orange:#FF6B35;--green:#2ECC71;--teal:#00B894;--blue:#4DABF7;--red:#E74C3C;--white:#F8FAFE;--light:#CCD6F6;--gray:#8892B0;}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--navy);color:var(--white);font-family:'DM Sans',sans-serif;line-height:1.7;overflow-x:hidden;}
+h1,h2,h3,h4{font-family:'Outfit',sans-serif;}
+header{position:sticky;top:0;z-index:100;background:rgba(11,26,46,.96);backdrop-filter:blur(16px);border-bottom:1px solid rgba(245,166,35,.12);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between;}
+.logo{font-family:'Outfit',sans-serif;font-weight:900;font-size:1.55rem;color:var(--amber);letter-spacing:-1px;}
+.logo span{display:block;font-size:.5rem;font-weight:500;color:var(--gray);letter-spacing:2.5px;text-transform:uppercase;}
+.badge-v3{background:var(--green);color:#061a0a;font-family:'Outfit',sans-serif;font-weight:800;font-size:.72rem;padding:.32rem .9rem;border-radius:20px;letter-spacing:.5px;}
+.container{max-width:1100px;margin:0 auto;padding:0 2rem;}
+section{padding:3.5rem 0;}
+.divider{height:1px;background:linear-gradient(90deg,transparent,rgba(245,166,35,.15),transparent);margin:0 2rem;}
+.section-label{font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--amber);margin-bottom:.5rem;}
+h2.section-title{font-size:1.75rem;font-weight:800;letter-spacing:-.5px;margin-bottom:1rem;}
+.client-card{background:var(--navy2);border:1px solid rgba(245,166,35,.14);border-radius:14px;padding:1.25rem 1.75rem;display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;}
+.client-field span{display:block;font-size:.62rem;color:var(--amber);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:.2rem;}
+.client-field p{font-size:.88rem;color:var(--light);}
+.version-title{font-size:2.2rem;font-weight:900;letter-spacing:-1px;line-height:1.1;margin-bottom:.75rem;}
+.version-title em{font-style:normal;color:var(--green);}
+.version-sub{color:var(--gray);font-size:.96rem;max-width:680px;margin-bottom:1.5rem;}
 
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+/* DIAGRAM */
+.diagram-outer{background:var(--navy2);border:1px solid rgba(245,166,35,.1);border-radius:18px;padding:1.75rem;overflow:hidden;}
+#poleSVG{display:block;margin:0 auto;max-width:100%;height:auto;}
 
-    body {
-      background: var(--navy);
-      color: var(--white);
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 400;
-      font-size: 16px;
-      line-height: 1.6;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
+/* flow legend */
+.flow-legend{display:flex;gap:1.5rem;justify-content:center;margin-top:1rem;flex-wrap:wrap;}
+.fl-item{display:flex;align-items:center;gap:.45rem;font-size:.74rem;color:var(--gray);}
+.fl-line{width:26px;height:2px;}
+.fl-dot{width:8px;height:8px;border-radius:50%;}
 
-    .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+/* steps */
+.steps{display:flex;flex-direction:column;gap:.7rem;margin-top:1.75rem;}
+.step{display:flex;gap:.9rem;align-items:flex-start;opacity:0;transform:translateX(-20px);transition:opacity .5s ease,transform .5s ease;}
+.step.vis{opacity:1;transform:none;}
+.snum{min-width:26px;height:26px;border-radius:7px;background:rgba(245,166,35,.13);border:1px solid rgba(245,166,35,.28);color:var(--amber);font-family:'Outfit',sans-serif;font-weight:800;font-size:.78rem;display:flex;align-items:center;justify-content:center;}
+.sbody strong{display:block;font-size:.88rem;color:var(--white);margin-bottom:.15rem;}
+.sbody span{font-size:.8rem;color:var(--gray);line-height:1.5;}
 
-    /* ── Keyframes ── */
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+/* metrics */
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-top:1.25rem;}
+.metric-card{background:var(--navy2);border:1px solid rgba(245,166,35,.1);border-radius:13px;padding:1.1rem 1rem;text-align:center;opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.metric-card.vis{opacity:1;transform:none;}
+.metric-icon{font-size:1.4rem;margin-bottom:.35rem;}
+.mval{font-family:'Outfit',sans-serif;font-size:1.75rem;font-weight:900;color:var(--amber);}
+.mval.g{color:var(--green);}
+.mlbl{font-size:.7rem;color:var(--gray);text-transform:uppercase;letter-spacing:1px;margin-top:.2rem;}
 
-    @keyframes pulseGlow {
-      0%, 100% { box-shadow: 0 0 8px rgba(245,166,35,0.3); }
-      50% { box-shadow: 0 0 24px rgba(245,166,35,0.7); }
-    }
+/* analysis */
+.analysis-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1.25rem;}
+.acard{background:var(--navy2);border:1px solid rgba(245,166,35,.08);border-radius:13px;padding:1.1rem;}
+.acard h4{font-size:.82rem;font-weight:700;color:var(--amber);margin-bottom:.5rem;}
+.acard .bnum{font-family:'JetBrains Mono',monospace;font-size:1.55rem;font-weight:700;color:var(--white);display:block;margin-bottom:.2rem;}
+.acard p{font-size:.78rem;color:var(--gray);line-height:1.55;}
 
-    @keyframes pulseGlowSVG {
-      0%, 100% { opacity: 0.4; r: 3; }
-      50% { opacity: 1; r: 5; }
-    }
+/* charts */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-top:1.5rem;}
+.chart-card{background:var(--navy2);border:1px solid rgba(245,166,35,.08);border-radius:14px;padding:1.25rem;}
+.chart-card h3{font-size:.85rem;font-weight:700;color:var(--light);margin-bottom:.9rem;}
+.chart-wrap{position:relative;height:190px;}
 
-    @keyframes flowLine {
-      to { stroke-dashoffset: -20; }
-    }
+/* table */
+.equip-table{width:100%;border-collapse:collapse;margin-top:1rem;}
+.equip-table th{text-align:left;padding:.55rem .75rem;font-size:.62rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--amber);border-bottom:2px solid rgba(245,166,35,.2);font-family:'Outfit',sans-serif;}
+.equip-table td{padding:.6rem .75rem;border-bottom:1px solid rgba(255,255,255,.04);font-size:.8rem;}
+.equip-table td:nth-child(3){font-family:'JetBrains Mono',monospace;color:var(--amber);text-align:center;}
+.equip-table td:last-child{font-size:.73rem;color:var(--gray);}
+.equip-table tr:hover td{background:rgba(245,166,35,.03);}
+.tag-g{display:inline-block;padding:.1rem .45rem;border-radius:4px;font-size:.63rem;font-weight:600;background:rgba(46,204,113,.15);color:var(--green);}
 
-    @keyframes shimmer {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(200%); }
-    }
+/* changes */
+.changes-box{background:rgba(46,204,113,.05);border:1px solid rgba(46,204,113,.2);border-radius:13px;padding:1.1rem 1.4rem;margin-top:1.4rem;}
+.changes-box h4{color:var(--green);font-size:.82rem;font-weight:700;margin-bottom:.7rem;}
+.ci{display:flex;align-items:flex-start;gap:.45rem;margin-bottom:.38rem;font-size:.8rem;color:var(--light);}
 
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-5px); }
-    }
+/* guarantees */
+.guar-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1.25rem;}
+.guar-card{background:var(--navy2);border:1px solid rgba(255,255,255,.06);border-radius:13px;padding:1.1rem;}
+.guar-card .gi{font-size:1.3rem;margin-bottom:.5rem;}
+.guar-card h4{font-size:.82rem;font-weight:700;color:var(--light);margin-bottom:.35rem;}
+.guar-card p{font-size:.76rem;color:var(--gray);line-height:1.5;}
 
-    @keyframes signalPulse {
-      0% { opacity: 0.8; transform: scale(1); }
-      100% { opacity: 0; transform: scale(1.6); }
-    }
+/* cot banner */
+.cot-banner{background:linear-gradient(135deg,rgba(46,204,113,.09),rgba(0,184,148,.05));border:1px solid rgba(46,204,113,.28);border-radius:14px;padding:1.25rem 1.75rem;margin-top:1.75rem;display:flex;align-items:center;gap:.75rem;}
+.cot-banner .cbi{font-size:1.7rem;}
+.cot-banner h3{font-size:.95rem;font-weight:700;color:var(--green);}
+.cot-banner p{font-size:.78rem;color:var(--gray);margin-top:.15rem;}
+.cot-banner p strong{color:var(--white);}
 
-    .animate-on-scroll {
-      opacity: 0;
-      transform: translateY(30px);
-      transition: opacity 0.6s ease, transform 0.6s ease;
-    }
-    .animate-on-scroll.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
+footer{background:var(--navy2);border-top:1px solid rgba(245,166,35,.07);padding:1.25rem 2rem;text-align:center;font-size:.76rem;color:var(--gray);}
 
-    /* ── Header ── */
-    header {
-      background: var(--navy);
-      border-bottom: 2px solid rgba(245,166,35,0.2);
-      padding: 20px 0;
-      position: relative;
-    }
-    .header-inner {
-      display: flex; align-items: center; justify-content: space-between;
-      flex-wrap: wrap; gap: 12px;
-    }
-    .logo-group { display: flex; flex-direction: column; }
-    .logo {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 900; font-size: 2rem; color: var(--amber);
-      letter-spacing: 6px; line-height: 1;
-    }
-    .logo-sub {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.65rem; color: var(--gray);
-      letter-spacing: 2.5px; text-transform: uppercase; margin-top: 4px;
-    }
-    .version-badge {
-      background: var(--amber); color: var(--navy);
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 500; font-size: 0.85rem;
-      padding: 6px 18px; border-radius: 6px;
-      letter-spacing: 1px;
-    }
-
-    /* ── Sections ── */
-    section { padding: 48px 0; }
-    section + section { border-top: 1px solid rgba(255,255,255,0.04); }
-
-    h1 {
-      font-family: 'Outfit', sans-serif;
-      font-size: 2rem; font-weight: 800; color: #fff;
-      margin-bottom: 8px; line-height: 1.2;
-    }
-    h2 {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.3rem; font-weight: 700; color: var(--amber);
-      margin-bottom: 20px; letter-spacing: 0.5px;
-    }
-    p.subtitle {
-      color: var(--gray); font-size: 1.05rem; max-width: 700px; margin-bottom: 32px;
-    }
-
-    /* ── Client Card ── */
-    .client-card {
-      background: var(--navy2);
-      border: 1px solid rgba(245,166,35,0.15);
-      border-radius: 12px; padding: 28px 32px;
-      display: grid; grid-template-columns: 1fr 1fr; gap: 20px 40px;
-    }
-    .client-card .label {
-      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px;
-      color: var(--amber); font-weight: 500; margin-bottom: 4px;
-    }
-    .client-card .value { color: #fff; font-weight: 500; font-size: 1rem; }
-
-    /* ── SVG Diagram ── */
-    .diagram-wrap {
-      background: rgba(0,0,0,0.35);
-      border: 1px solid rgba(245,166,35,0.1);
-      border-radius: 14px; padding: 24px 8px;
-      display: flex; justify-content: center;
-      overflow: hidden;
-      position: relative;
-    }
-    .diagram-wrap svg { max-width: 100%; height: auto; }
-
-    /* ── Metrics Grid ── */
-    .metrics-grid {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
-    }
-    .metric-card {
-      background: var(--navy2);
-      border: 1px solid rgba(245,166,35,0.12);
-      border-radius: 12px; padding: 24px 20px;
-      text-align: center;
-      opacity: 0; transform: translateY(30px);
-      transition: opacity 0.5s ease, transform 0.5s ease, box-shadow 0.3s ease;
-    }
-    .metric-card.visible {
-      opacity: 1; transform: translateY(0);
-    }
-    .metric-card:hover {
-      box-shadow: 0 0 20px rgba(245,166,35,0.1);
-      border-color: rgba(245,166,35,0.25);
-    }
-    .metric-icon { margin-bottom: 12px; }
-    .metric-icon svg { width: 36px; height: 36px; }
-    .metric-number {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 900; font-size: 2.2rem; line-height: 1;
-      margin-bottom: 6px;
-    }
-    .metric-label {
-      font-size: 0.82rem; color: var(--gray); font-weight: 500;
-    }
-
-    /* ── Table ── */
-    .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid rgba(245,166,35,0.1); }
-    table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
-    thead th {
-      background: rgba(245,166,35,0.15);
-      color: var(--amber); font-family: 'Outfit', sans-serif;
-      font-weight: 700; text-align: left;
-      padding: 14px 18px; white-space: nowrap;
-    }
-    tbody tr {
-      opacity: 0; transform: translateY(20px);
-      transition: opacity 0.4s ease, transform 0.4s ease;
-    }
-    tbody tr.visible { opacity: 1; transform: translateY(0); }
-    tbody tr:nth-child(odd) { background: var(--navy); }
-    tbody tr:nth-child(even) { background: var(--navy2); }
-    tbody tr:hover { background: rgba(245,166,35,0.06); }
-    tbody td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: top; }
-    .spec { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--gray); }
-
-    /* ── Guarantees ── */
-    .guarantees-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
-    }
-    .guarantee-card {
-      background: var(--navy2);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 12px; padding: 24px;
-      text-align: center;
-    }
-    .guarantee-card .g-icon { margin-bottom: 12px; }
-    .guarantee-card .g-icon svg { width: 40px; height: 40px; }
-    .guarantee-card .g-title {
-      font-family: 'Outfit', sans-serif; font-weight: 700;
-      color: #fff; font-size: 1rem; margin-bottom: 8px;
-    }
-    .guarantee-card .g-detail {
-      font-size: 0.85rem; color: var(--gray); line-height: 1.5;
-    }
-
-    /* ── Note ── */
-    .note-box {
-      background: rgba(245,166,35,0.06);
-      border-left: 4px solid var(--amber);
-      border-radius: 0 12px 12px 0;
-      padding: 20px 24px;
-      color: var(--gray); font-size: 0.93rem; line-height: 1.7;
-    }
-    .note-box strong { color: var(--amber); }
-
-    /* ── Footer ── */
-    footer {
-      border-top: 1px solid rgba(245,166,35,0.1);
-      padding: 32px 0; text-align: center;
-      font-size: 0.82rem; color: rgba(136,146,176,0.6);
-    }
-
-    /* ── Responsive ── */
-    @media (max-width: 768px) {
-      .client-card { grid-template-columns: 1fr; }
-      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
-      .guarantees-grid { grid-template-columns: 1fr; }
-      h1 { font-size: 1.4rem; }
-      .header-inner { flex-direction: column; align-items: flex-start; }
-      .metric-number { font-size: 1.8rem; }
-      table { font-size: 0.8rem; }
-      thead th, tbody td { padding: 10px 12px; }
-    }
-    @media (max-width: 480px) {
-      .metrics-grid { grid-template-columns: 1fr; }
-    }
-  </style>
+@media(max-width:760px){.client-card,.metrics-grid,.analysis-grid,.charts-grid,.guar-grid{grid-template-columns:1fr 1fr;}.version-title{font-size:1.65rem;}}
+@media(max-width:480px){.client-card,.metrics-grid,.analysis-grid,.charts-grid,.guar-grid{grid-template-columns:1fr;}}
+</style>
 </head>
 <body>
 
-  <!-- ═══ Header ═══ -->
-  <header>
-    <div class="container header-inner">
-      <div class="logo-group">
-        <div class="logo">TRN</div>
-        <div class="logo-sub">Telecomunicaciones y Redes del Norte</div>
-      </div>
-      <div class="version-badge">v1</div>
-    </div>
-  </header>
+<header>
+  <div class="logo">TRN<span>Telecomunicaciones y Redes del Norte</span></div>
+  <div class="badge-v3" style="background:#F5A623;color:#0B1A2E">v1</div>
+</header>
 
-  <!-- ═══ Hero / Client Info ═══ -->
-  <section>
-    <div class="container">
-      <h2>Cliente</h2>
-      <div class="client-card animate-on-scroll">
-        <div><div class="label">Empresa</div><div class="value">Coeur Mexicana S.A. de C.V.</div></div>
-        <div><div class="label">Contacto</div><div class="value">Rafael Carrillo</div></div>
-        <div><div class="label">Ubicaci&oacute;n</div><div class="value">Palmarejo, Ch&iacute;nipas, Chihuahua</div></div>
-        <div><div class="label">Proyecto</div><div class="value">Sistema Solar Aut&oacute;nomo</div></div>
-      </div>
-    </div>
-  </section>
+<div class="container">
+<section style="padding-bottom:1rem">
+  <div class="client-card">
+    <div class="client-field"><span>Empresa</span><p>Coeur Mexicana S.A. de C.V.</p></div>
+    <div class="client-field"><span>Contacto</span><p>Rafael Carrillo</p></div>
+    <div class="client-field"><span>Ubicación</span><p>Palmarejo, Chínipas, Chihuahua</p></div>
+    <div class="client-field"><span>Proyecto</span><p>Sistema Solar Autónomo</p></div>
+  </div>
+  <div class="section-label">Versión 1 — Diseño Inicial</div>
+  <h1 class="version-title">Diseño Inicial —<br><em>DC 48V</em>, Panel 710W TOPCon</h1>
+  <p class="version-sub">Primera propuesta del sistema. Panel único bifacial de alta potencia 710W TOPCon en arquitectura DC 48V. Sistema modular con batería PYTES 5.12 kWh y distribución directa a radios.</p>
+</section>
 
-  <!-- ═══ Version Title ═══ -->
-  <section>
-    <div class="container">
-      <h1 class="animate-on-scroll">Dise&ntilde;o Inicial &mdash; DC 48V, Panel 710W Bifacial TOPCon</h1>
-      <p class="subtitle animate-on-scroll">Arquitectura de 48V con panel &uacute;nico de alta potencia y bater&iacute;a modular</p>
-    </div>
-  </section>
+<div class="divider"></div>
 
-  <!-- ═══ Animated SVG Diagram ═══ -->
-  <section>
-    <div class="container">
-      <h2>Diagrama del Sistema</h2>
-      <div class="diagram-wrap animate-on-scroll">
-        <svg id="solarDiagram" viewBox="0 0 800 600" width="800" height="600" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <!-- Wood texture pattern -->
-            <pattern id="woodGrain" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-              <rect width="20" height="20" fill="#8B6914"/>
-              <line x1="0" y1="5" x2="20" y2="8" stroke="#9E7A1A" stroke-width="0.5" opacity="0.3"/>
-              <line x1="0" y1="12" x2="20" y2="15" stroke="#7A5C10" stroke-width="0.5" opacity="0.3"/>
-            </pattern>
-            <!-- Shimmer gradient -->
-            <linearGradient id="shimmerGrad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stop-color="rgba(255,255,255,0)" />
-              <stop offset="50%" stop-color="rgba(255,255,255,0.15)" />
-              <stop offset="100%" stop-color="rgba(255,255,255,0)" />
-            </linearGradient>
-          </defs>
+<!-- DIAGRAM SECTION -->
+<section>
+<div class="section-label">Diagrama del Sistema</div>
+<h2 class="section-title">Instalación integrada en el poste</h2>
+<div class="diagram-outer">
+<svg id="poleSVG" viewBox="0 0 760 720" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <pattern id="gp" width="40" height="40" patternUnits="userSpaceOnUse">
+    <path d="M40 0L0 0 0 40" fill="none" stroke="rgba(255,255,255,0.022)" stroke-width="0.5"/>
+  </pattern>
+  <filter id="fa" x="-60%" y="-60%" width="220%" height="220%">
+    <feGaussianBlur stdDeviation="4" result="b"/>
+    <feFlood flood-color="#F5A623" flood-opacity="0.65"/>
+    <feComposite in2="b" operator="in"/>
+    <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="fg" x="-60%" y="-60%" width="220%" height="220%">
+    <feGaussianBlur stdDeviation="4" result="b"/>
+    <feFlood flood-color="#2ECC71" flood-opacity="0.65"/>
+    <feComposite in2="b" operator="in"/>
+    <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="transparent"/>
+    <stop offset="48%" stop-color="rgba(255,255,255,0.16)"/>
+    <stop offset="52%" stop-color="rgba(255,255,255,0.16)"/>
+    <stop offset="100%" stop-color="transparent"/>
+  </linearGradient>
+  <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#2ECC71"/>
+    <stop offset="100%" stop-color="#1a9e52"/>
+  </linearGradient>
+  <linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#1a3a5c"/>
+    <stop offset="100%" stop-color="#0d2137"/>
+  </linearGradient>
+  <linearGradient id="poleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#9E7A1A" stop-opacity="0.4"/>
+    <stop offset="30%" stop-color="transparent"/>
+  </linearGradient>
+</defs>
 
-          <!-- Background subtle grid -->
-          <rect width="800" height="600" fill="none"/>
+<!-- BG -->
+<rect width="760" height="720" fill="url(#gp)"/>
 
-          <!-- ── GROUND ── -->
-          <line x1="200" y1="560" x2="600" y2="560" stroke="#556B82" stroke-width="2.5"/>
-          <line x1="230" y1="568" x2="570" y2="568" stroke="#556B82" stroke-width="1.8"/>
-          <line x1="260" y1="575" x2="540" y2="575" stroke="#556B82" stroke-width="1.2"/>
-          <!-- Earth symbol -->
-          <text x="400" y="595" text-anchor="middle" fill="#556B82" font-family="DM Sans" font-size="11">&#9178; Tierra f&iacute;sica</text>
+<!-- ZONE LABELS (left side) -->
+<line x1="76" y1="28" x2="76" y2="660" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+<text x="68" y="90" text-anchor="end" font-family="DM Sans,sans-serif" font-size="8.5" fill="#CCD6F6" opacity="0.75" font-weight="600">ZONA ALTA</text>
+<text x="68" y="101" text-anchor="end" font-family="DM Sans,sans-serif" font-size="7" fill="#8892B0" opacity="0.5">Radios PTP</text>
+<line x1="70" y1="94" x2="78" y2="94" stroke="rgba(255,255,255,0.12)" stroke-width="0.8"/>
 
-          <!-- ── WOODEN POLE ── -->
-          <rect x="390" y="130" width="20" height="430" rx="3" fill="url(#woodGrain)" stroke="#A07818" stroke-width="1"/>
-          <!-- Wood grain detail lines -->
-          <line x1="395" y1="140" x2="397" y2="555" stroke="#9E7A1A" stroke-width="0.6" opacity="0.35"/>
-          <line x1="403" y1="135" x2="405" y2="558" stroke="#7A5C10" stroke-width="0.4" opacity="0.25"/>
+<text x="68" y="290" text-anchor="end" font-family="DM Sans,sans-serif" font-size="8.5" fill="#CCD6F6" opacity="0.75" font-weight="600">ZONA MEDIA</text>
+<text x="68" y="301" text-anchor="end" font-family="DM Sans,sans-serif" font-size="7" fill="#8892B0" opacity="0.5">Paneles solares</text>
+<line x1="70" y1="294" x2="78" y2="294" stroke="rgba(255,255,255,0.12)" stroke-width="0.8"/>
 
-          <!-- ── SOLAR PANEL (710W Bifacial TOPCon) ── -->
-          <g id="solarPanel">
-            <!-- Mounting bracket -->
-            <line x1="400" y1="130" x2="400" y2="105" stroke="#999" stroke-width="3"/>
-            <line x1="370" y1="105" x2="430" y2="105" stroke="#999" stroke-width="2"/>
-            <line x1="370" y1="105" x2="310" y2="60" stroke="#999" stroke-width="2"/>
-            <line x1="430" y1="105" x2="490" y2="60" stroke="#999" stroke-width="2"/>
+<text x="68" y="510" text-anchor="end" font-family="DM Sans,sans-serif" font-size="8.5" fill="#CCD6F6" opacity="0.75" font-weight="600">ZONA BAJA</text>
+<text x="68" y="521" text-anchor="end" font-family="DM Sans,sans-serif" font-size="7" fill="#8892B0" opacity="0.5">Gabinete eléct.</text>
+<line x1="70" y1="514" x2="78" y2="514" stroke="rgba(255,255,255,0.12)" stroke-width="0.8"/>
 
-            <!-- Panel body -->
-            <rect x="310" y="15" width="180" height="90" rx="4" fill="#1a3a5c" stroke="#2E5C8A" stroke-width="2"/>
+<!-- POSTE MADERA -->
+<rect x="371" y="52" width="26" height="610" rx="3" fill="#7A5C10"/>
+<rect x="371" y="52" width="26" height="610" rx="3" fill="url(#poleGrad)"/>
+<line x1="377" y1="55" x2="377" y2="658" stroke="#9E7A1A" stroke-width="0.7" opacity="0.35"/>
+<line x1="383" y1="54" x2="383" y2="658" stroke="#8B6810" stroke-width="0.45" opacity="0.25"/>
+<line x1="389" y1="55" x2="389" y2="658" stroke="#9E7A1A" stroke-width="0.5" opacity="0.3"/>
+<text x="384" y="680" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="#7A5C10" font-weight="600" opacity="0.65">POSTE MADERA</text>
 
-            <!-- Solar cell grid (6 columns x 4 rows) -->
-            <line x1="340" y1="15" x2="340" y2="105" stroke="#2E5C8A" stroke-width="0.5" opacity="0.7"/>
-            <line x1="370" y1="15" x2="370" y2="105" stroke="#2E5C8A" stroke-width="0.5" opacity="0.7"/>
-            <line x1="400" y1="15" x2="400" y2="105" stroke="#2E5C8A" stroke-width="0.5" opacity="0.7"/>
-            <line x1="430" y1="15" x2="430" y2="105" stroke="#2E5C8A" stroke-width="0.5" opacity="0.7"/>
-            <line x1="460" y1="15" x2="460" y2="105" stroke="#2E5C8A" stroke-width="0.5" opacity="0.7"/>
+<!-- ========================
+     ZONA ALTA: MIMOSAS
+======================== -->
+<!-- MIMOSA #1 (izquierda) -->
+<!-- Brazo horizontal -->
+<line x1="371" y1="78" x2="245" y2="78" stroke="#667788" stroke-width="3.5" stroke-linecap="round"/>
+<!-- Abrazadera al poste -->
+<rect x="364" y="72" width="14" height="12" rx="2" fill="#445566" stroke="#556677" stroke-width="0.8"/>
+<!-- Cuerpo del radio -->
+<rect x="155" y="58" width="90" height="42" rx="6" fill="#0e1f36" stroke="#2ECC71" stroke-width="2"/>
+<!-- Pantalla / detalles -->
+<rect x="161" y="65" width="18" height="9" rx="2" fill="rgba(46,204,113,0.12)" stroke="rgba(46,204,113,0.3)" stroke-width="0.8"/>
+<circle cx="170" cy="69.5" r="2.8" fill="#2ECC71">
+  <animate attributeName="opacity" values="1;0.15;1" dur="2.4s" repeatCount="indefinite"/>
+</circle>
+<text x="205" y="75" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#ffffff" font-weight="700">MIMOSA B5x</text>
+<text x="205" y="87" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="#2ECC71" font-weight="600">#1 — 48V PoE</text>
+<!-- Antena física -->
+<line x1="155" y1="66" x2="132" y2="44" stroke="#CCD6F6" stroke-width="1.6"/>
+<circle cx="130" cy="42" r="3" fill="none" stroke="#CCD6F6" stroke-width="1.2"/>
+<!-- Ondas de señal -->
+<circle cx="130" cy="42" r="4" fill="none" stroke="#F8FAFE" stroke-width="0.9" opacity="0">
+  <animate attributeName="r" values="5;22" dur="2.2s" repeatCount="indefinite"/>
+  <animate attributeName="opacity" values="0.65;0" dur="2.2s" repeatCount="indefinite"/>
+</circle>
+<circle cx="130" cy="42" r="4" fill="none" stroke="#F8FAFE" stroke-width="0.9" opacity="0">
+  <animate attributeName="r" values="5;22" dur="2.2s" repeatCount="indefinite" begin="0.73s"/>
+  <animate attributeName="opacity" values="0.65;0" dur="2.2s" repeatCount="indefinite" begin="0.73s"/>
+</circle>
+<circle cx="130" cy="42" r="4" fill="none" stroke="#F8FAFE" stroke-width="0.9" opacity="0">
+  <animate attributeName="r" values="5;22" dur="2.2s" repeatCount="indefinite" begin="1.46s"/>
+  <animate attributeName="opacity" values="0.65;0" dur="2.2s" repeatCount="indefinite" begin="1.46s"/>
+</circle>
 
-            <line x1="310" y1="37" x2="490" y2="37" stroke="#2E5C8A" stroke-width="0.5" opacity="0.7"/>
-            <line x1="310" y1="60" x2="490" y2="60" stroke="#2E5C8A" stroke-width="0.5" opacity="0.7"/>
-            <line x1="310" y1="82" x2="490" y2="82" stroke="#2E5C8A" stroke-width="0.5" opacity="0.7"/>
+<!-- MIMOSA #2 (derecha) -->
+<line x1="397" y1="78" x2="523" y2="78" stroke="#667788" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="390" y="72" width="14" height="12" rx="2" fill="#445566" stroke="#556677" stroke-width="0.8"/>
+<rect x="523" y="58" width="90" height="42" rx="6" fill="#0e1f36" stroke="#2ECC71" stroke-width="2"/>
+<rect x="529" y="65" width="18" height="9" rx="2" fill="rgba(46,204,113,0.12)" stroke="rgba(46,204,113,0.3)" stroke-width="0.8"/>
+<circle cx="538" cy="69.5" r="2.8" fill="#2ECC71">
+  <animate attributeName="opacity" values="1;0.15;1" dur="2.4s" repeatCount="indefinite" begin="1.2s"/>
+</circle>
+<text x="563" y="75" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#ffffff" font-weight="700">MIMOSA B5x</text>
+<text x="563" y="87" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="#2ECC71" font-weight="600">#2 — 48V PoE</text>
+<!-- Antena física derecha -->
+<line x1="613" y1="66" x2="636" y2="44" stroke="#CCD6F6" stroke-width="1.6"/>
+<circle cx="638" cy="42" r="3" fill="none" stroke="#CCD6F6" stroke-width="1.2"/>
+<!-- Ondas derecha -->
+<circle cx="638" cy="42" r="4" fill="none" stroke="#F8FAFE" stroke-width="0.9" opacity="0">
+  <animate attributeName="r" values="5;22" dur="2.2s" repeatCount="indefinite" begin="0.4s"/>
+  <animate attributeName="opacity" values="0.65;0" dur="2.2s" repeatCount="indefinite" begin="0.4s"/>
+</circle>
+<circle cx="638" cy="42" r="4" fill="none" stroke="#F8FAFE" stroke-width="0.9" opacity="0">
+  <animate attributeName="r" values="5;22" dur="2.2s" repeatCount="indefinite" begin="1.13s"/>
+  <animate attributeName="opacity" values="0.65;0" dur="2.2s" repeatCount="indefinite" begin="1.13s"/>
+</circle>
 
-            <!-- Shimmer effect -->
-            <clipPath id="panelClip"><rect x="310" y="15" width="180" height="90" rx="4"/></clipPath>
-            <rect x="310" y="15" width="90" height="90" fill="url(#shimmerGrad)" clip-path="url(#panelClip)">
-              <animateTransform attributeName="transform" type="translate" values="-180,0;360,0" dur="3s" repeatCount="indefinite"/>
-            </rect>
+<!-- ========================
+     ZONA MEDIA: PANELES (apilados verticalmente)
+======================== -->
+<!-- Panel #1 (superior) — bracket izquierdo -->
+<line x1="371" y1="210" x2="242" y2="210" stroke="#8899AA" stroke-width="2.8" stroke-linecap="round"/>
+<rect x="236" y="205" width="8" height="10" rx="2" fill="#556677"/>
+<line x1="242" y1="210" x2="242" y2="275" stroke="#8899AA" stroke-width="2" opacity="0.5"/>
 
-            <!-- Panel label -->
-            <text x="400" y="8" text-anchor="middle" fill="var(--amber)" font-family="Outfit" font-size="13" font-weight="700">710W Bifacial TOPCon</text>
-          </g>
+<!-- Panel #1 -->
+<clipPath id="cp1"><rect x="100" y="192" width="142" height="82" rx="5"/></clipPath>
+<rect x="100" y="192" width="142" height="160" rx="5" fill="url(#pg)" stroke="#2E5C8A" stroke-width="2"/>
+<!-- Grilla celdas p1 -->
+<line x1="123" y1="192" x2="123" y2="274" stroke="#2E5C8A" stroke-width="0.6" opacity="0.55"/>
+<line x1="147" y1="192" x2="147" y2="274" stroke="#2E5C8A" stroke-width="0.6" opacity="0.55"/>
+<line x1="171" y1="192" x2="171" y2="274" stroke="#2E5C8A" stroke-width="0.6" opacity="0.55"/>
+<line x1="195" y1="192" x2="195" y2="274" stroke="#2E5C8A" stroke-width="0.6" opacity="0.55"/>
+<line x1="219" y1="192" x2="219" y2="274" stroke="#2E5C8A" stroke-width="0.6" opacity="0.55"/>
+<line x1="100" y1="219" x2="242" y2="219" stroke="#2E5C8A" stroke-width="0.6" opacity="0.55"/>
+<line x1="100" y1="247" x2="242" y2="247" stroke="#2E5C8A" stroke-width="0.6" opacity="0.55"/>
+<!-- Shimmer p1 -->
+<rect x="100" y="192" width="50" height="82" fill="url(#sg)" clip-path="url(#cp1)" opacity="0.7">
+  <animateTransform attributeName="transform" type="translate" values="-55,0;200,0" dur="3.8s" repeatCount="indefinite"/>
+</rect>
+<text x="171" y="185" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9.5" fill="#F5A623" font-weight="700">710W Bifacial TOPCon</text>
 
-          <!-- ── SUN (floating) ── -->
-          <g id="sunIcon" style="animation: float 3s ease-in-out infinite;">
-            <circle cx="680" cy="55" r="22" fill="#F5A623" opacity="0.9"/>
-            <circle cx="680" cy="55" r="30" fill="none" stroke="#F5A623" stroke-width="1" opacity="0.3">
-              <animate attributeName="r" values="30;36;30" dur="2s" repeatCount="indefinite"/>
-              <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite"/>
-            </circle>
-            <!-- Sun rays -->
-            <line x1="680" y1="20" x2="680" y2="12" stroke="#F5A623" stroke-width="2" opacity="0.5"/>
-            <line x1="680" y1="90" x2="680" y2="98" stroke="#F5A623" stroke-width="2" opacity="0.5"/>
-            <line x1="645" y1="55" x2="637" y2="55" stroke="#F5A623" stroke-width="2" opacity="0.5"/>
-            <line x1="715" y1="55" x2="723" y2="55" stroke="#F5A623" stroke-width="2" opacity="0.5"/>
-            <line x1="655" y1="30" x2="649" y2="24" stroke="#F5A623" stroke-width="2" opacity="0.4"/>
-            <line x1="705" y1="80" x2="711" y2="86" stroke="#F5A623" stroke-width="2" opacity="0.4"/>
-            <line x1="705" y1="30" x2="711" y2="24" stroke="#F5A623" stroke-width="2" opacity="0.4"/>
-            <line x1="655" y1="80" x2="649" y2="86" stroke="#F5A623" stroke-width="2" opacity="0.4"/>
-          </g>
+<!-- Panel #2 HIDDEN for v1 -->
+<!--
+<line x1="371" y1="325" x2="242" y2="325" stroke="#8899AA" stroke-width="2.8" stroke-linecap="round"/>
+<rect x="236" y="320" width="8" height="10" rx="2" fill="#556677"/>
+<line x1="242" y1="325" x2="242" y2="390" stroke="#8899AA" stroke-width="2" opacity="0.5"/>
 
-          <!-- ── MPPT CONTROLLER (XTRA-4415-N) ── -->
-          <g id="controller">
-            <rect x="460" y="210" width="100" height="55" rx="6" fill="#2a4a3a" stroke="#00B894" stroke-width="1.5"/>
-            <text x="510" y="232" text-anchor="middle" fill="#00B894" font-family="JetBrains Mono" font-size="10" font-weight="500">MPPT 40A</text>
-            <text x="510" y="248" text-anchor="middle" fill="var(--gray)" font-family="JetBrains Mono" font-size="8">XTRA-4415-N</text>
-            <text x="510" y="260" text-anchor="middle" fill="var(--gray)" font-family="JetBrains Mono" font-size="7">EPEVER</text>
-            <!-- Mounting bracket to pole -->
-            <line x1="410" y1="237" x2="460" y2="237" stroke="#999" stroke-width="1.5"/>
-          </g>
+<!-- Panel #2 -->
+<clipPath id="cp2"><rect x="100" y="307" width="142" height="82" rx="5"/></clipPath>
+<rect x="100" y="307" width="142" height="82" rx="5" fill="url(#pg)" stroke="#2E5C8A" stroke-width="1.6"/>
+<line x1="123" y1="307" x2="123" y2="389" stroke="#2E5C8A" stroke-width="0.6" opacity="0.55"/>
+<line x1="147" y1="307" x2="147" y2="389" stroke="#2E5C8A" stroke-width="0.6" opacity="0.55"/>
+<line x1="171" y1="307" x2="171" y2="389" stroke="#2E5C8A" stroke-width="0.6" opacity="0.55"/>
+<line x1="195" y1="307" x2="195" y2="389" stroke="#2E5C8A" stroke-width="0.6" opacity="0.55"/>
+<line x1="219" y1="307" x2="219" y2="389" stroke="#2E5C8A" stroke-width="0.6" opacity="0.55"/>
+<line x1="100" y1="334" x2="242" y2="334" stroke="#2E5C8A" stroke-width="0.6" opacity="0.55"/>
+<line x1="100" y1="362" x2="242" y2="362" stroke="#2E5C8A" stroke-width="0.6" opacity="0.55"/>
+<!-- Shimmer p2 -->
+<rect x="100" y="307" width="50" height="82" fill="url(#sg)" clip-path="url(#cp2)" opacity="0.7">
+  <animateTransform attributeName="transform" type="translate" values="-55,0;200,0" dur="3.8s" repeatCount="indefinite" begin="1.9s"/>
+</rect>
+<!-- p2 label hidden -->
 
-          <!-- ── BATTERY (PYTES EBOX48100R) ── -->
-          <g id="battery">
-            <rect x="460" y="310" width="120" height="80" rx="6" fill="#4a3a6a" stroke="#9B59B6" stroke-width="1.5"/>
-            <!-- Battery detail lines -->
-            <line x1="475" y1="335" x2="565" y2="335" stroke="#5C4580" stroke-width="0.5" opacity="0.5"/>
-            <text x="520" y="328" text-anchor="middle" fill="#BB86FC" font-family="JetBrains Mono" font-size="11" font-weight="500">PYTES 5.12kWh</text>
-            <text x="520" y="350" text-anchor="middle" fill="var(--gray)" font-family="JetBrains Mono" font-size="9">48V &middot; 100Ah</text>
-            <text x="520" y="366" text-anchor="middle" fill="var(--gray)" font-family="JetBrains Mono" font-size="8">LiFePO4</text>
-            <!-- LED indicator (pulsing green) -->
-            <circle cx="472" cy="380" r="3" fill="var(--green)">
-              <animate attributeName="r" values="3;5;3" dur="1.5s" repeatCount="indefinite"/>
-              <animate attributeName="opacity" values="0.5;1;0.5" dur="1.5s" repeatCount="indefinite"/>
-            </circle>
-            <!-- Bracket to pole -->
-            <line x1="410" y1="350" x2="460" y2="350" stroke="#999" stroke-width="1.5"/>
-          </g>
+<!-- Cable de paneles bajando al gabinete -->
+<line x1="242" y1="275" x2="242" y2="307" stroke="#F5A623" stroke-width="1.2" stroke-dasharray="4,3" opacity="0.5"/>
 
-          <!-- ── PoE INJECTOR #1 ── -->
-          <g id="poe1">
-            <rect x="240" y="280" width="70" height="35" rx="5" fill="var(--navy2)" stroke="var(--teal)" stroke-width="1.2"/>
-            <text x="275" y="298" text-anchor="middle" fill="var(--teal)" font-family="JetBrains Mono" font-size="9" font-weight="500">PoE #1</text>
-            <text x="275" y="310" text-anchor="middle" fill="var(--gray)" font-family="JetBrains Mono" font-size="7">90W DC</text>
-            <line x1="310" y1="297" x2="390" y2="297" stroke="#999" stroke-width="1"/>
-          </g>
+<!-- ========================
+     ZONA BAJA: GABINETE
+======================== -->
+<!-- Brazo gabinete al poste -->
+<line x1="397" y1="530" x2="432" y2="530" stroke="#8899AA" stroke-width="2.5" stroke-linecap="round"/>
 
-          <!-- ── PoE INJECTOR #2 ── -->
-          <g id="poe2">
-            <rect x="240" y="340" width="70" height="35" rx="5" fill="var(--navy2)" stroke="var(--teal)" stroke-width="1.2"/>
-            <text x="275" y="358" text-anchor="middle" fill="var(--teal)" font-family="JetBrains Mono" font-size="9" font-weight="500">PoE #2</text>
-            <text x="275" y="370" text-anchor="middle" fill="var(--gray)" font-family="JetBrains Mono" font-size="7">90W DC</text>
-            <line x1="310" y1="357" x2="390" y2="357" stroke="#999" stroke-width="1"/>
-          </g>
+<!-- Gabinete exterior -->
+<rect x="432" y="442" width="228" height="210" rx="9" fill="#0b1a2e" stroke="#2E4060" stroke-width="2.2"/>
+<rect x="432" y="442" width="228" height="18" rx="9" fill="#0f2240"/>
+<text x="546" y="455" text-anchor="middle" font-family="Outfit,sans-serif" font-size="8" fill="#667788" font-weight="600" letter-spacing="1.5">GABINETE ELÉCTRICO IP65</text>
+<!-- Tornillos -->
+<circle cx="441" cy="451" r="2.8" fill="none" stroke="#2E4060" stroke-width="1"/>
+<circle cx="651" cy="451" r="2.8" fill="none" stroke="#2E4060" stroke-width="1"/>
 
-          <!-- ── MIMOSA RADIO #1 ── -->
-          <g id="radio1">
-            <rect x="90" y="220" width="80" height="40" rx="5" fill="var(--navy2)" stroke="#E0E6ED" stroke-width="1.5"/>
-            <text x="130" y="238" text-anchor="middle" fill="#fff" font-family="JetBrains Mono" font-size="9" font-weight="500">Mimosa B5x</text>
-            <text x="130" y="252" text-anchor="middle" fill="var(--gray)" font-family="JetBrains Mono" font-size="7">#1</text>
-            <!-- Signal arcs -->
-            <path d="M 85 230 A 15 15 0 0 0 85 250" fill="none" stroke="#F5A623" stroke-width="1.2" opacity="0.6">
-              <animate attributeName="opacity" values="0.6;0.1;0.6" dur="1.5s" repeatCount="indefinite"/>
-            </path>
-            <path d="M 75 225 A 25 25 0 0 0 75 255" fill="none" stroke="#F5A623" stroke-width="1" opacity="0.4">
-              <animate attributeName="opacity" values="0.4;0.05;0.4" dur="1.5s" begin="0.3s" repeatCount="indefinite"/>
-            </path>
-            <path d="M 65 220 A 35 35 0 0 0 65 260" fill="none" stroke="#F5A623" stroke-width="0.8" opacity="0.2">
-              <animate attributeName="opacity" values="0.2;0.02;0.2" dur="1.5s" begin="0.6s" repeatCount="indefinite"/>
-            </path>
-            <!-- Mounting to pole -->
-            <line x1="170" y1="240" x2="390" y2="240" stroke="#777" stroke-width="1" stroke-dasharray="2,3"/>
-          </g>
+<!-- MPPT (interior izquierdo arriba) -->
+<rect x="444" y="470" width="94" height="54" rx="6" fill="#0d1e36" stroke="#4DABF7" stroke-width="1.4"/>
+<text x="491" y="489" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#4DABF7" font-weight="700">MPPT 60A</text>
+<text x="491" y="501" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="6.5" fill="#556B82">XTRA-4415-N</text>
+<text x="491" y="513" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="6.5" fill="#4DABF7" opacity="0.7">⊙ WiFi Activo</text>
+<circle cx="528" cy="478" r="3" fill="#4DABF7">
+  <animate attributeName="opacity" values="1;0.2;1" dur="2.1s" repeatCount="indefinite"/>
+</circle>
 
-          <!-- ── MIMOSA RADIO #2 ── -->
-          <g id="radio2">
-            <rect x="90" y="410" width="80" height="40" rx="5" fill="var(--navy2)" stroke="#E0E6ED" stroke-width="1.5"/>
-            <text x="130" y="428" text-anchor="middle" fill="#fff" font-family="JetBrains Mono" font-size="9" font-weight="500">Mimosa B5x</text>
-            <text x="130" y="442" text-anchor="middle" fill="var(--gray)" font-family="JetBrains Mono" font-size="7">#2</text>
-            <!-- Signal arcs -->
-            <path d="M 85 420 A 15 15 0 0 0 85 440" fill="none" stroke="#F5A623" stroke-width="1.2" opacity="0.6">
-              <animate attributeName="opacity" values="0.6;0.1;0.6" dur="1.5s" repeatCount="indefinite"/>
-            </path>
-            <path d="M 75 415 A 25 25 0 0 0 75 445" fill="none" stroke="#F5A623" stroke-width="1" opacity="0.4">
-              <animate attributeName="opacity" values="0.4;0.05;0.4" dur="1.5s" begin="0.3s" repeatCount="indefinite"/>
-            </path>
-            <path d="M 65 410 A 35 35 0 0 0 65 450" fill="none" stroke="#F5A623" stroke-width="0.8" opacity="0.2">
-              <animate attributeName="opacity" values="0.2;0.02;0.2" dur="1.5s" begin="0.6s" repeatCount="indefinite"/>
-            </path>
-            <line x1="170" y1="430" x2="390" y2="430" stroke="#777" stroke-width="1" stroke-dasharray="2,3"/>
-          </g>
+<!-- INVERSOR (interior derecho arriba) -->
+<rect x="550" y="470" width="98" height="54" rx="6" fill="#0d1e36" stroke="#2ECC71" stroke-width="1.8"/>
+<text x="599" y="490" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9.5" fill="#4DABF7" font-weight="700">Módulo WiFi</text>
+<text x="599" y="503" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#8892B0">EPEVER MT50</text>
+<text x="599" y="515" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="6.5" fill="#556B82">Monitor Remoto</text>
+<circle cx="638" cy="478" r="3" fill="#2ECC71">
+  <animate attributeName="opacity" values="1;0.2;1" dur="1.6s" repeatCount="indefinite" begin="0.8s"/>
+</circle>
 
-          <!-- ═══ ENERGY FLOW LINES (animated paths) ═══ -->
+<!-- BATERÍA (parte inferior del gabinete, grande) -->
+<rect x="444" y="537" width="204" height="98" rx="6" fill="#0d1e36" stroke="#F5A623" stroke-width="2"/>
+<!-- Terminal batería -->
+<rect x="533" y="531" width="18" height="8" rx="2" fill="#F5A623"/>
+<text x="546" y="562" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="11" fill="#F5A623" font-weight="700">100Ah · 51.2V LiFePO4</text>
+<text x="546" y="577" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#8892B0">Capacidad: 5.12 kWh</text>
+<!-- Barra nivel de carga animada -->
+<rect x="455" y="586" width="182" height="13" rx="4" fill="rgba(255,255,255,0.04)" stroke="rgba(245,166,35,0.2)" stroke-width="0.8"/>
+<rect x="455" y="586" width="182" height="13" rx="4" fill="url(#bg)">
+  <animate attributeName="width" values="25;170;100;170;45;170" dur="9s" repeatCount="indefinite"/>
+</rect>
+<!-- SOC label animado -->
+<text x="546" y="613" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#2ECC71" font-weight="600">
+  <animate attributeName="textContent" values="SOC: Cargando... 94%  ;SOC: Descargando 81%;SOC: Cargando... 87%  ;SOC: Carga completa 96%;SOC: Descargando 72%" dur="9s" repeatCount="indefinite"/>
+  SOC: Cargando... 94%
+</text>
+<!-- LED batería -->
+<circle cx="636" cy="546" r="3.2" fill="#2ECC71">
+  <animate attributeName="opacity" values="1;0.3;1" dur="1.9s" repeatCount="indefinite"/>
+</circle>
 
-          <!-- Panel → Controller (amber, 48V DC) -->
-          <path id="pathPanelCtrl" d="M 490 105 L 510 105 L 510 210" fill="none" stroke="var(--amber)" stroke-width="2" stroke-dasharray="6,4">
-            <animate attributeName="stroke-dashoffset" values="0;-20" dur="1s" repeatCount="indefinite"/>
-          </path>
-          <text x="525" y="165" fill="var(--amber)" font-family="JetBrains Mono" font-size="9" opacity="0.8">48V DC</text>
+<!-- Interconexiones INTERNAS del gabinete -->
+<!-- MPPT ↔ Batería (vertical) -->
+<line x1="491" y1="524" x2="491" y2="537" stroke="#F5A623" stroke-width="1.6" stroke-dasharray="4,2.5">
+  <animate attributeName="stroke-dashoffset" values="0;-13" dur="0.45s" repeatCount="indefinite"/>
+</line>
+<!-- Inv ↔ Batería -->
+<line x1="599" y1="524" x2="599" y2="537" stroke="#F5A623" stroke-width="1.6" stroke-dasharray="4,2.5">
+  <animate attributeName="stroke-dashoffset" values="0;-13" dur="0.45s" repeatCount="indefinite"/>
+</line>
+<!-- MPPT ↔ Inv (horizontal) -->
+<line x1="538" y1="497" x2="550" y2="497" stroke="#F5A623" stroke-width="1.4" stroke-dasharray="3,2">
+  <animate attributeName="stroke-dashoffset" values="0;-10" dur="0.4s" repeatCount="indefinite"/>
+</line>
 
-          <!-- Controller → Battery (amber) -->
-          <path id="pathCtrlBat" d="M 510 265 L 510 310" fill="none" stroke="var(--amber)" stroke-width="2" stroke-dasharray="6,4">
-            <animate attributeName="stroke-dashoffset" values="0;-20" dur="1s" repeatCount="indefinite"/>
-          </path>
+<!-- ========================
+     FLUJOS EXTERNOS (paths animados + partículas)
+======================== -->
 
-          <!-- Battery → PoE #1 (amber) -->
-          <path id="pathBatPoe1" d="M 460 330 L 390 330 L 390 297 L 310 297" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-dasharray="5,4">
-            <animate attributeName="stroke-dashoffset" values="0;-20" dur="1.2s" repeatCount="indefinite"/>
-          </path>
+<!-- PATH A: Paneles → MPPT (DC amber) -->
+<!-- Cable de paneles al poste y luego baja al gabinete -->
+<path id="pA" d="M 242,350 L 371,350 L 384,350 L 384,497 L 432,497" fill="none" stroke="#F5A623" stroke-width="2.2" stroke-dasharray="8,4.5">
+  <animate attributeName="stroke-dashoffset" values="62;0" dur="1.2s" repeatCount="indefinite"/>
+</path>
+<text x="280" y="344" font-family="JetBrains Mono,monospace" font-size="8" fill="#F5A623" opacity="0.85" font-weight="600">12V DC</text>
+<!-- Partícula DC → MPPT -->
+<circle r="3.8" fill="#F5A623" filter="url(#fa)">
+  <animateMotion dur="2.6s" repeatCount="indefinite" path="M 242,350 L 371,350 L 384,350 L 384,497 L 432,497"/>
+</circle>
+<circle r="3.8" fill="#F5A623" filter="url(#fa)" opacity="0.65">
+  <animateMotion dur="2.6s" repeatCount="indefinite" begin="1.3s" path="M 242,350 L 371,350 L 384,350 L 384,497 L 432,497"/>
+</circle>
 
-          <!-- Battery → PoE #2 (amber) -->
-          <path id="pathBatPoe2" d="M 460 360 L 390 360 L 390 357 L 310 357" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-dasharray="5,4">
-            <animate attributeName="stroke-dashoffset" values="0;-20" dur="1.2s" repeatCount="indefinite"/>
-          </path>
+<!-- PATH B: Inversor → Mimosa #1 izquierda (AC 120VAC verde) -->
+<path id="pB" d="M 432,490 L 400,490 L 400,140 L 371,140 L 371,79 L 245,79" fill="none" stroke="#2ECC71" stroke-width="2.4" stroke-dasharray="9,4.5">
+  <animate attributeName="stroke-dashoffset" values="54;0" dur="1.0s" repeatCount="indefinite"/>
+</path>
+<!-- Partícula AC → Mimosa 1 -->
+<circle r="4" fill="#2ECC71" filter="url(#fg)">
+  <animateMotion dur="2.9s" repeatCount="indefinite" path="M 432,490 L 400,490 L 400,140 L 371,140 L 371,79 L 245,79"/>
+</circle>
+<circle r="4" fill="#2ECC71" filter="url(#fg)" opacity="0.6">
+  <animateMotion dur="2.9s" repeatCount="indefinite" begin="1.45s" path="M 432,490 L 400,490 L 400,140 L 371,140 L 371,79 L 245,79"/>
+</circle>
 
-          <!-- PoE #1 → Radio #1 (teal, 48V PoE) -->
-          <path id="pathPoeRadio1" d="M 240 297 L 200 297 L 200 240 L 170 240" fill="none" stroke="var(--teal)" stroke-width="1.5" stroke-dasharray="5,4">
-            <animate attributeName="stroke-dashoffset" values="0;-20" dur="1s" repeatCount="indefinite"/>
-          </path>
-          <text x="190" y="270" fill="var(--teal)" font-family="JetBrains Mono" font-size="8" opacity="0.8">48V PoE</text>
+<!-- PATH C: Inversor → Mimosa #2 derecha (AC 120VAC verde) -->
+<path id="pC" d="M 648,490 L 680,490 L 680,140 L 523,140 L 523,100" fill="none" stroke="#2ECC71" stroke-width="2.4" stroke-dasharray="9,4.5">
+  <animate attributeName="stroke-dashoffset" values="54;0" dur="1.0s" repeatCount="indefinite" begin="0.5s"/>
+</path>
+<circle r="4" fill="#2ECC71" filter="url(#fg)">
+  <animateMotion dur="2.9s" repeatCount="indefinite" begin="0.5s" path="M 648,490 L 680,490 L 680,140 L 523,140 L 523,100"/>
+</circle>
+<!-- Label 120VAC -->
+<text x="695" y="320" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#2ECC71" font-weight="700" transform="rotate(-90,695,320)">48V DC</text>
 
-          <!-- PoE #2 → Radio #2 (teal, 48V PoE) -->
-          <path id="pathPoeRadio2" d="M 240 357 L 200 357 L 200 430 L 170 430" fill="none" stroke="var(--teal)" stroke-width="1.5" stroke-dasharray="5,4">
-            <animate attributeName="stroke-dashoffset" values="0;-20" dur="1s" repeatCount="indefinite"/>
-          </path>
-          <text x="190" y="400" fill="var(--teal)" font-family="JetBrains Mono" font-size="8" opacity="0.8">48V PoE</text>
+<!-- ========================
+     TIERRA FÍSICA
+======================== -->
+<line x1="328" y1="665" x2="440" y2="665" stroke="#445566" stroke-width="2.8"/>
+<line x1="340" y1="673" x2="428" y2="673" stroke="#445566" stroke-width="2.2"/>
+<line x1="354" y1="681" x2="414" y2="681" stroke="#445566" stroke-width="1.7"/>
+<line x1="368" y1="689" x2="400" y2="689" stroke="#445566" stroke-width="1.2"/>
+<line x1="384" y1="662" x2="384" y2="655" stroke="#445566" stroke-width="2.2"/>
+<text x="384" y="706" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="#445566">TIERRA FÍSICA</text>
 
-          <!-- ═══ LEGEND ═══ -->
-          <g transform="translate(550, 480)">
-            <rect x="-10" y="-15" width="220" height="95" rx="8" fill="rgba(11,26,46,0.85)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-            <text x="0" y="2" fill="var(--gray)" font-family="DM Sans" font-size="10" font-weight="500">LEYENDA</text>
-            <line x1="0" y1="20" x2="30" y2="20" stroke="var(--amber)" stroke-width="2.5" stroke-dasharray="6,3"/>
-            <text x="38" y="24" fill="var(--amber)" font-family="DM Sans" font-size="10">Corriente DC (48V)</text>
-            <line x1="0" y1="42" x2="30" y2="42" stroke="var(--teal)" stroke-width="2.5" stroke-dasharray="6,3"/>
-            <text x="38" y="46" fill="var(--teal)" font-family="DM Sans" font-size="10">PoE (48V)</text>
-            <!-- Sun icon in legend -->
-            <circle cx="10" cy="65" r="7" fill="var(--amber)" opacity="0.8"/>
-            <text x="38" y="69" fill="var(--gray)" font-family="DM Sans" font-size="10">Energ&iacute;a solar</text>
-          </g>
+<!-- ========================
+     LEYENDA
+======================== -->
+<rect x="90" y="620" width="255" height="78" rx="8" fill="rgba(6,15,30,.92)" stroke="rgba(245,166,35,.12)" stroke-width="1"/>
+<text x="104" y="637" font-family="Outfit,sans-serif" font-size="8" fill="#F5A623" font-weight="700" letter-spacing="0.5">LEYENDA</text>
+<line x1="104" y1="642" x2="337" y2="642" stroke="rgba(245,166,35,.15)" stroke-width="0.5"/>
+<!-- DC -->
+<line x1="104" y1="657" x2="134" y2="657" stroke="#F5A623" stroke-width="2.2" stroke-dasharray="7,3.5"/>
+<text x="140" y="661" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#F5A623">DC 12V (solar → batería)</text>
+<!-- AC -->
+<line x1="104" y1="676" x2="134" y2="676" stroke="#2ECC71" stroke-width="2.4" stroke-dasharray="8,4"/>
+<text x="140" y="680" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#2ECC71">AC 120V (inversor → radios)</text>
+<!-- Signal -->
+<circle cx="112" cy="692" r="4.5" fill="none" stroke="#F8FAFE" stroke-width="0.9" opacity="0.5"/>
+<text x="122" y="696" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#8892B0">Señal radio PTP</text>
 
-          <!-- Particle canvas layer (particles drawn by JS) -->
-          <g id="particleLayer"></g>
+</svg>
+</div><!-- diagram-outer -->
 
-        </svg>
-      </div>
-    </div>
-  </section>
+<!-- Flow legend -->
+<div class="flow-legend">
+  <div class="fl-item"><div class="fl-line" style="background:repeating-linear-gradient(90deg,#F5A623 0,#F5A623 7px,transparent 7px,transparent 11.5px)"></div>DC 12V solar</div>
+  <div class="fl-item"><div class="fl-line" style="background:repeating-linear-gradient(90deg,#2ECC71 0,#2ECC71 9px,transparent 9px,transparent 13.5px)"></div>120VAC a radios</div>
+  <div class="fl-item"><div class="fl-dot" style="background:#F8FAFE;opacity:.55"></div>Señal radio PTP</div>
+  <div class="fl-item"><div class="fl-dot" style="background:#2ECC71"></div>LED activo</div>
+</div>
 
-  <!-- ═══ Metrics Grid ═══ -->
-  <section>
-    <div class="container">
-      <h2>M&eacute;tricas del Sistema</h2>
-      <div class="metrics-grid">
-        <!-- Card 1: Potencia -->
-        <div class="metric-card" data-delay="0">
-          <div class="metric-icon">
-            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="18" cy="18" r="10" fill="none" stroke="var(--amber)" stroke-width="2"/>
-              <line x1="18" y1="4" x2="18" y2="8" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"/>
-              <line x1="18" y1="28" x2="18" y2="32" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"/>
-              <line x1="4" y1="18" x2="8" y2="18" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"/>
-              <line x1="28" y1="18" x2="32" y2="18" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"/>
-              <line x1="8" y1="8" x2="11" y2="11" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="25" y1="25" x2="28" y2="28" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="28" y1="8" x2="25" y2="11" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="11" y1="25" x2="8" y2="28" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <div class="metric-number" style="color: var(--amber);" data-target="710" data-suffix="W">0W</div>
-          <div class="metric-label">Potencia solar</div>
-        </div>
+<!-- Steps -->
+<div class="steps" style="margin-top:1.75rem">
+  <div class="step"><div class="snum">1</div><div class="sbody"><strong>Captación Solar</strong><span>Panel bifacial TOPCon 710W montado en el poste. Captura radiación frontal directa y radiación reflejada del entorno en su cara posterior (bifacial +30% en sitios con suelo claro).</span></div></div>
+  <div class="step"><div class="snum">2</div><div class="sbody"><strong>Regulación MPPT</strong><span>Controlador XTRA-4415-N rastrea el punto de máxima potencia. Carga la batería con eficiencia >98%. Monitoreo WiFi en tiempo real desde la app EPEVER.</span></div></div>
+  <div class="step"><div class="snum">3</div><div class="sbody"><strong>Almacenamiento LiFePO4</strong><span>Batería PYTES EBOX48100R 51.2V 100Ah (5.12 kWh) con animación de carga/descarga visible. Autonomía ~56h sin generación solar — máxima reserva para condiciones nubladas extendidas.</span></div></div>
+  <div class="step"><div class="snum">4</div><div class="sbody"><strong>Inversión 12V → 120VAC</strong><span>Los inyectores PoE industriales WIPOE58BTIDC toman 48V DC del bus de la batería y los entregan a cada radio Mimosa a través del cable Ethernet. Eficiencia >98%, sin conversión AC.</span></div></div>
+  <div class="step"><div class="snum">5</div><div class="sbody"><strong>Radios activos 24/7</strong><span>Los 2 radios Mimosa B5x en la cima del poste, uno a cada lado, mantienen el enlace PTP con sincronización GPS. Alimentados con PoE 48V desde los inyectores industriales.</span></div></div>
+</div>
 
-        <!-- Card 2: Bateria -->
-        <div class="metric-card" data-delay="150">
-          <div class="metric-icon">
-            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="6" y="10" width="22" height="18" rx="3" stroke="var(--teal)" stroke-width="2"/>
-              <rect x="28" y="16" width="3" height="6" rx="1" fill="var(--teal)"/>
-              <rect x="10" y="14" width="5" height="10" rx="1" fill="var(--teal)" opacity="0.8"/>
-              <rect x="17" y="14" width="5" height="10" rx="1" fill="var(--teal)" opacity="0.5"/>
-              <rect x="24" y="17" width="2" height="4" rx="0.5" fill="var(--teal)" opacity="0.25"/>
-            </svg>
-          </div>
-          <div class="metric-number" style="color: var(--teal);" data-target="5.12" data-suffix=" kWh" data-decimals="2">0 kWh</div>
-          <div class="metric-label">Capacidad bater&iacute;a</div>
-        </div>
+</section>
+<div class="divider"></div>
 
-        <!-- Card 3: Autonomia -->
-        <div class="metric-card" data-delay="300">
-          <div class="metric-icon">
-            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="18" cy="18" r="14" stroke="var(--green)" stroke-width="2"/>
-              <line x1="18" y1="18" x2="18" y2="9" stroke="var(--green)" stroke-width="2" stroke-linecap="round"/>
-              <line x1="18" y1="18" x2="25" y2="22" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round"/>
-              <circle cx="18" cy="18" r="2" fill="var(--green)"/>
-            </svg>
-          </div>
-          <div class="metric-number" style="color: var(--green);" data-target="40" data-prefix="~" data-suffix="h">0h</div>
-          <div class="metric-label">Autonom&iacute;a sin sol</div>
-        </div>
+<!-- MÉTRICAS -->
+<section>
+<div class="section-label">Parámetros del Sistema</div>
+<h2 class="section-title">Métricas clave</h2>
+<div class="metrics-grid">
+  <div class="metric-card"><div class="metric-icon">☀️</div><div class="mval" data-target="710" data-suffix="W">0W</div><div class="mlbl">Potencia solar total</div></div>
+  <div class="metric-card"><div class="metric-icon">🔋</div><div class="mval g" data-target="5.12" data-suffix=" kWh" data-dec="2">0 kWh</div><div class="mlbl">Capacidad batería</div></div>
+  <div class="metric-card"><div class="metric-icon">⏱</div><div class="mval" data-target="56" data-suffix="h">0h</div><div class="mlbl">Autonomía sin sol</div></div>
+  <div class="metric-card"><div class="metric-icon">📡</div><div class="mval g" data-target="50" data-suffix="W">0W</div><div class="mlbl">Consumo total radios</div></div>
+</div>
+</section>
+<div class="divider"></div>
 
-        <!-- Card 4: Voltaje -->
-        <div class="metric-card" data-delay="450">
-          <div class="metric-icon">
-            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M 20 4 L 10 20 L 17 20 L 15 32 L 27 14 L 19 14 Z" fill="var(--orange)" opacity="0.9"/>
-            </svg>
-          </div>
-          <div class="metric-number" style="color: var(--orange);" data-target="48" data-suffix="V">0V</div>
-          <div class="metric-label">Voltaje sistema</div>
-        </div>
-      </div>
-    </div>
-  </section>
+<!-- ANÁLISIS -->
+<section>
+<div class="section-label">Análisis de Consumo y Generación</div>
+<h2 class="section-title">Balance energético del sistema</h2>
+<div class="analysis-grid">
+  <div class="acard"><h4>Consumo diario</h4><span class="bnum">1.2 kWh</span><p>2 radios × 25W × 24h = 1,200 Wh/día. Consumo constante 24/7. Distribución DC 48V directa desde la batería a los inyectores PoE industriales.</p></div>
+  <div class="acard"><h4>Generación esperada</h4><span class="bnum">3.4 kWh</span><p>710W × 5.0 h pico solar (Chihuahua) = 3,550 Wh/día soleado. Excedente 2.35 kWh/día para carga completa de la batería PYTES.</p></div>
+  <div class="acard"><h4>Días de autonomía</h4><span class="bnum">~36 h</span><p>5.12 kWh × 80% DOD útil = 4.1 kWh ÷ 50W consumo = 82h máximo. Con DOD conservador 70% = 56h de reserva segura.</p></div>
+</div>
 
-  <!-- ═══ Equipment Table ═══ -->
-  <section>
-    <div class="container">
-      <h2>Equipamiento</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Equipo</th>
-              <th>Modelo</th>
-              <th>Cant.</th>
-              <th>Especificaci&oacute;n</th>
-            </tr>
-          </thead>
-          <tbody id="equipTable">
-            <tr>
-              <td>Panel Solar</td>
-              <td>Leapton 710W Bifacial TOPCon</td>
-              <td>1</td>
-              <td class="spec">Voc 45.5V, bifacial</td>
-            </tr>
-            <tr>
-              <td>Bater&iacute;a</td>
-              <td>PYTES EBOX48100R LiFePO4</td>
-              <td>1</td>
-              <td class="spec">51.2V, 100Ah, 5.12kWh</td>
-            </tr>
-            <tr>
-              <td>Controlador</td>
-              <td>XTRA-4415-N EPEVER MPPT</td>
-              <td>1</td>
-              <td class="spec">48V, 40A, Voc max 150V</td>
-            </tr>
-            <tr>
-              <td>Inyector PoE</td>
-              <td>Industrial DC 10-57V 90W</td>
-              <td>2</td>
-              <td class="spec">Para Mimosa B5x/B6x</td>
-            </tr>
-            <tr>
-              <td>Gabinete</td>
-              <td>Intemperie 700mm</td>
-              <td>1</td>
-              <td class="spec">Para poste 4&quot;-7&quot;</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
+<div class="charts-grid" style="margin-top:1.75rem">
+  <div class="chart-card"><h3>⚡ Generación solar vs consumo (día típico)</h3><div class="chart-wrap"><canvas id="c1"></canvas></div></div>
+  <div class="chart-card"><h3>🔋 Estado de carga — semana con días nublados</h3><div class="chart-wrap"><canvas id="c2"></canvas></div></div>
+  <div class="chart-card"><h3>☁️ Generación: día soleado vs nublado</h3><div class="chart-wrap"><canvas id="c3"></canvas></div></div>
+  <div class="chart-card"><h3>📊 Eficiencia del arreglo fotovoltaico anual</h3><div class="chart-wrap"><canvas id="c4"></canvas></div></div>
+</div>
+</section>
+<div class="divider"></div>
 
-  <!-- ═══ Guarantees ═══ -->
-  <section>
-    <div class="container">
-      <h2>Garant&iacute;a</h2>
-      <div class="guarantees-grid">
-        <div class="guarantee-card animate-on-scroll">
-          <div class="g-icon">
-            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="4" y="14" width="32" height="20" rx="3" stroke="var(--amber)" stroke-width="2"/>
-              <line x1="4" y1="22" x2="36" y2="22" stroke="var(--amber)" stroke-width="1" opacity="0.4"/>
-              <line x1="4" y1="28" x2="36" y2="28" stroke="var(--amber)" stroke-width="1" opacity="0.4"/>
-              <line x1="20" y1="14" x2="20" y2="34" stroke="var(--amber)" stroke-width="1" opacity="0.4"/>
-              <circle cx="20" cy="10" r="5" fill="var(--amber)" opacity="0.3"/>
-              <text x="20" y="13" text-anchor="middle" fill="var(--amber)" font-family="Outfit" font-size="7" font-weight="700">&#9728;</text>
-            </svg>
-          </div>
-          <div class="g-title">Paneles</div>
-          <div class="g-detail">12 a&ntilde;os producto<br>25 a&ntilde;os rendimiento</div>
-        </div>
-        <div class="guarantee-card animate-on-scroll" style="transition-delay: 0.15s;">
-          <div class="g-icon">
-            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="8" y="8" width="24" height="24" rx="4" stroke="var(--teal)" stroke-width="2"/>
-              <circle cx="20" cy="20" r="6" fill="none" stroke="var(--teal)" stroke-width="1.5"/>
-              <path d="M 17 20 L 19 22 L 24 17" stroke="var(--teal)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div class="g-title">Controlador / M&oacute;dulos</div>
-          <div class="g-detail">2 a&ntilde;os de garant&iacute;a<br>por el fabricante</div>
-        </div>
-        <div class="guarantee-card animate-on-scroll" style="transition-delay: 0.3s;">
-          <div class="g-icon">
-            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M 20 6 L 34 14 L 34 26 C 34 32 28 37 20 38 C 12 37 6 32 6 26 L 6 14 Z" fill="none" stroke="var(--green)" stroke-width="2"/>
-              <text x="20" y="27" text-anchor="middle" fill="var(--green)" font-family="Outfit" font-size="14" font-weight="700">T</text>
-            </svg>
-          </div>
-          <div class="g-title">Instalaci&oacute;n TRN</div>
-          <div class="g-detail">6 meses por defectos<br>de mano de obra</div>
-        </div>
-      </div>
-    </div>
-  </section>
+<!-- EQUIPAMIENTO -->
+<section>
+<div class="section-label">Lista de Materiales</div>
+<h2 class="section-title">Equipamiento del sistema</h2>
+<table class="equip-table">
+  <thead><tr><th>Equipo</th><th>Modelo</th><th>Cant</th><th>Especificación</th></tr></thead>
+  <tbody>
+    <tr><td>Panel Solar</td><td>EPCOM EPL34024AL 340W PERC Mono</td><td>2</td><td>340W c/u (680W total), Voc 41.2V</td></tr>
+    <tr><td>Batería LiFePO4</td><td>LI280A12PRO 280Ah</td><td>1</td><td>12V, 3.36 kWh, &gt;3,000 ciclos</td></tr>
+    <tr><td>Controlador MPPT</td><td>XTRA-4415-N EPEVER</td><td>1</td><td>12/24V, 60A, Voc máx 150V</td></tr>
+    <tr><td>Inversor</td><td>IP-350-11</td><td>1</td><td>12V→120VAC, 350W continuo</td></tr>
+    <tr><td>Radio PTP <span class="tag-g">v3</span></td><td>Mimosa B5x</td><td>2</td><td>802.11ac, GPS sync, PoE 120VAC integrado</td></tr>
+    <tr><td>Módulo WiFi</td><td>RS-485 WiFi Bridge</td><td>1</td><td>Monitoreo remoto del controlador</td></tr>
+    <tr><td>Estructura</td><td>Montaje lateral doble para poste</td><td>1</td><td>Aluminio, ajuste 15-45°, 2 paneles verticales</td></tr>
+    <tr><td>Gabinete</td><td>Intemperie IP65 700mm</td><td>1</td><td>Para poste 4"-7", riel DIN interior</td></tr>
+  </tbody>
+</table>
+<div class="changes-box" style="border-color:rgba(245,166,35,.25);background:rgba(245,166,35,.04)">
+  <h4 style="color:var(--amber)">Notas de la Versión 1</h4>
+  <div class="ci" style="color:var(--gray)"><svg width="13" height="13" viewBox="0 0 13 13"><circle cx="6.5" cy="6.5" r="5.5" fill="rgba(245,166,35,.15)" stroke="#F5A623" stroke-width="1.1"/><text x="6.5" y="9" text-anchor="middle" font-size="8" fill="#F5A623">i</text></svg>Sistema 48V — panel único 710W más económico pero de mayor peso y dimensiones para poste</div>
+  <div class="ci" style="color:var(--gray)"><svg width="13" height="13" viewBox="0 0 13 13"><circle cx="6.5" cy="6.5" r="5.5" fill="rgba(245,166,35,.15)" stroke="#F5A623" stroke-width="1.1"/><text x="6.5" y="9" text-anchor="middle" font-size="8" fill="#F5A623">i</text></svg>Mayor capacidad de batería (5.12 kWh vs 3.36 kWh) — autonomía extendida hasta 56h</div>
+  <div class="ci" style="color:var(--gray)"><svg width="13" height="13" viewBox="0 0 13 13"><circle cx="6.5" cy="6.5" r="5.5" fill="rgba(245,166,35,.15)" stroke="#F5A623" stroke-width="1.1"/><text x="6.5" y="9" text-anchor="middle" font-size="8" fill="#F5A623">i</text></svg>Requiere 2 inyectores PoE industriales para alimentar los radios desde 48V DC</div>
+</div>
+</section>
+<div class="divider"></div>
 
-  <!-- ═══ Note ═══ -->
-  <section>
-    <div class="container">
-      <div class="note-box animate-on-scroll">
-        <strong>Nota:</strong> Primera propuesta, panel &uacute;nico 710W m&aacute;s econ&oacute;mico pero m&aacute;s dif&iacute;cil de instalar en poste por peso y dimensiones.
-      </div>
-    </div>
-  </section>
+<!-- GARANTÍAS -->
+<section>
+<div class="section-label">Garantías y Soporte</div>
+<h2 class="section-title">Respaldo del sistema</h2>
+<div class="guar-grid">
+  <div class="guar-card"><div class="gi">🌞</div><h4>Paneles Solares</h4><p>Garantía de producto <strong>12 años</strong>. Garantía de rendimiento lineal <strong>25 años</strong> (≥80% potencia nominal).</p></div>
+  <div class="guar-card"><div class="gi">⚡</div><h4>Equipos Electrónicos</h4><p>Controlador MPPT, inversor y módulo WiFi con garantía <strong>2 años</strong> por defectos de fabricación.</p></div>
+  <div class="guar-card"><div class="gi">🔧</div><h4>Instalación TRN</h4><p>Trabajos de instalación y configuración garantizados por <strong>6 meses</strong> desde la fecha de entrega.</p></div>
+</div>
 
-  <!-- ═══ Footer ═══ -->
-  <footer>
-    <div class="container">
-      TRN &mdash; Telecomunicaciones y Redes del Norte &middot; San Mart&iacute;n 502, Chihuahua
-    </div>
-  </footer>
+</section>
+</div>
 
-  <script>
-    // ═══ IntersectionObserver: fadeInUp on scroll ═══
-    (function() {
-      var scrollObserver = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-            scrollObserver.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.15 });
+<footer>TRN — Telecomunicaciones y Redes del Norte · San Martín 502, Centro, Chihuahua, Chih. 31000</footer>
 
-      document.querySelectorAll('.animate-on-scroll').forEach(function(el) {
-        scrollObserver.observe(el);
-      });
-    })();
+<script>
+// Observe + animate
+const obs = (sel,cls) => {
+  const io = new IntersectionObserver(es => es.forEach((e,i) => { if(e.isIntersecting) setTimeout(()=>e.target.classList.add(cls),i*75); }), {threshold:.1});
+  document.querySelectorAll(sel).forEach(el=>io.observe(el));
+};
+obs('.step','vis'); obs('.metric-card','vis');
 
-    // ═══ IntersectionObserver: Metric cards with staggered entry ═══
-    (function() {
-      var cards = document.querySelectorAll('.metric-card');
-      var cardObserver = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
-          if (entry.isIntersecting) {
-            var delay = parseInt(entry.target.getAttribute('data-delay')) || 0;
-            setTimeout(function() {
-              entry.target.classList.add('visible');
-            }, delay);
-            cardObserver.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.2 });
-      cards.forEach(function(c) { cardObserver.observe(c); });
-    })();
+// CountUp
+const io2 = new IntersectionObserver(es => es.forEach(e => {
+  if(!e.isIntersecting) return;
+  const v = e.target.querySelector('[data-target]');
+  if(!v) return;
+  io2.unobserve(e.target);
+  const T=parseFloat(v.dataset.target),sfx=v.dataset.suffix||'',dec=parseInt(v.dataset.dec||0);
+  const t0=performance.now();
+  (function tick(now){
+    const p=Math.min((now-t0)/1300,1),ease=p<.5?2*p*p:-1+(4-2*p)*p;
+    v.textContent=(dec?( T*ease).toFixed(dec):Math.round(T*ease))+sfx;
+    if(p<1)requestAnimationFrame(tick);
+  })(t0);
+}),{threshold:.3});
+document.querySelectorAll('.metric-card').forEach(c=>io2.observe(c));
 
-    // ═══ IntersectionObserver: Counter animation ═══
-    (function() {
-      var numbers = document.querySelectorAll('.metric-number');
-      var counterObserver = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
-          if (entry.isIntersecting) {
-            animateCounter(entry.target);
-            counterObserver.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.5 });
+// Charts
+Chart.defaults.color='#8892B0'; Chart.defaults.borderColor='rgba(255,255,255,0.05)';
+const am='#F5A623',gr='#2ECC71',tl='#00B894',re='#E74C3C',or='#FF6B35';
 
-      numbers.forEach(function(n) { counterObserver.observe(n); });
+// C1 gen vs consumo
+new Chart(document.getElementById('c1'),{type:'line',data:{labels:['6h','7h','8h','9h','10h','11h','12h','13h','14h','15h','16h','17h','18h'],datasets:[{label:'Generación solar (W)',data:[0,15,60,130,200,248,265,260,238,185,115,50,6],borderColor:am,backgroundColor:'rgba(245,166,35,0.1)',fill:true,tension:.4,pointRadius:3,borderWidth:2.5},{label:'Consumo radios (W)',data:[50,50,50,50,50,50,50,50,50,50,50,50,50],borderColor:re,backgroundColor:'rgba(231,76,60,0.06)',fill:true,tension:.1,pointRadius:0,borderWidth:2,borderDash:[5,4]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:11,font:{size:9}}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'W',font:{size:8.5}},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{font:{size:8.5}},grid:{display:false}}}}});
 
-      function animateCounter(el) {
-        var target = parseFloat(el.getAttribute('data-target'));
-        var suffix = el.getAttribute('data-suffix') || '';
-        var prefix = el.getAttribute('data-prefix') || '';
-        var decimals = parseInt(el.getAttribute('data-decimals')) || 0;
-        var duration = 1500;
-        var startTime = null;
+// C2 SOC semanal
+const soc=[72,94,80,65,48,38,62];
+new Chart(document.getElementById('c2'),{type:'line',data:{labels:['Lun ☀','Mar ⛅','Mié ☁','Jue ☁','Vie 🌧','Sáb ⛅','Dom ☀'],datasets:[{label:'SOC batería (%)',data:soc,borderColor:am,backgroundColor:'rgba(245,166,35,0.1)',fill:true,tension:.4,pointRadius:6,pointBackgroundColor:soc.map(v=>v<40?re:v<60?or:gr),pointBorderColor:'#fff',pointBorderWidth:1.5,borderWidth:2.5},{label:'Límite seguro 20%',data:Array(7).fill(20),borderColor:'rgba(231,76,60,0.4)',borderDash:[5,4],borderWidth:1.5,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:11,font:{size:9}}}},scales:{y:{min:0,max:110,ticks:{callback:v=>v+'%',stepSize:20,font:{size:8.5}},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{font:{size:8.5}},grid:{display:false}}}}});
 
-        function step(timestamp) {
-          if (!startTime) startTime = timestamp;
-          var progress = Math.min((timestamp - startTime) / duration, 1);
-          // Ease out cubic
-          var eased = 1 - Math.pow(1 - progress, 3);
-          var current = eased * target;
+// C3 soleado vs nublado
+new Chart(document.getElementById('c3'),{type:'bar',data:{labels:['6h','8h','10h','12h','14h','16h','18h'],datasets:[{label:'Día soleado',data:[0,85,215,268,222,95,10],backgroundColor:'rgba(245,166,35,0.72)',borderColor:am,borderWidth:1.5,borderRadius:4},{label:'Día nublado',data:[0,22,62,88,72,30,4],backgroundColor:'rgba(136,146,176,0.38)',borderColor:'#8892B0',borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:11,font:{size:9}}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'W',font:{size:8.5}},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{font:{size:8.5}},grid:{display:false}}}}});
 
-          if (decimals > 0) {
-            el.textContent = prefix + current.toFixed(decimals) + suffix;
-          } else {
-            el.textContent = prefix + Math.floor(current) + suffix;
-          }
-
-          if (progress < 1) {
-            requestAnimationFrame(step);
-          } else {
-            if (decimals > 0) {
-              el.textContent = prefix + target.toFixed(decimals) + suffix;
-            } else {
-              el.textContent = prefix + target + suffix;
-            }
-          }
-        }
-        requestAnimationFrame(step);
-      }
-    })();
-
-    // ═══ IntersectionObserver: Table rows staggered ═══
-    (function() {
-      var rows = document.querySelectorAll('#equipTable tr');
-      var tableObserver = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
-          if (entry.isIntersecting) {
-            // Animate all rows with stagger
-            rows.forEach(function(row, i) {
-              setTimeout(function() {
-                row.classList.add('visible');
-              }, i * 100);
-            });
-            tableObserver.disconnect();
-          }
-        });
-      }, { threshold: 0.1 });
-
-      if (rows.length > 0) {
-        tableObserver.observe(rows[0]);
-      }
-    })();
-
-    // ═══ SVG Particle Animation (requestAnimationFrame) ═══
-    (function() {
-      var svg = document.getElementById('solarDiagram');
-      var particleLayer = document.getElementById('particleLayer');
-      if (!svg || !particleLayer) return;
-
-      // Define paths and their colors
-      var pathConfigs = [
-        { id: 'pathPanelCtrl', color: '#F5A623', count: 4, speed: 0.003 },
-        { id: 'pathCtrlBat', color: '#F5A623', count: 3, speed: 0.005 },
-        { id: 'pathBatPoe1', color: '#F5A623', count: 4, speed: 0.003 },
-        { id: 'pathBatPoe2', color: '#F5A623', count: 4, speed: 0.003 },
-        { id: 'pathPoeRadio1', color: '#00B894', count: 3, speed: 0.004 },
-        { id: 'pathPoeRadio2', color: '#00B894', count: 3, speed: 0.004 }
-      ];
-
-      var particles = [];
-
-      pathConfigs.forEach(function(cfg) {
-        var pathEl = document.getElementById(cfg.id);
-        if (!pathEl) return;
-        var totalLength = pathEl.getTotalLength();
-
-        for (var i = 0; i < cfg.count; i++) {
-          var circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-          circle.setAttribute('r', '3');
-          circle.setAttribute('fill', cfg.color);
-          circle.setAttribute('opacity', '0.85');
-          particleLayer.appendChild(circle);
-
-          particles.push({
-            el: circle,
-            path: pathEl,
-            totalLength: totalLength,
-            offset: i / cfg.count,
-            speed: cfg.speed,
-            progress: i / cfg.count
-          });
-        }
-      });
-
-      function animate() {
-        particles.forEach(function(p) {
-          p.progress += p.speed;
-          if (p.progress > 1) p.progress -= 1;
-
-          var point = p.path.getPointAtLength(p.progress * p.totalLength);
-          p.el.setAttribute('cx', point.x);
-          p.el.setAttribute('cy', point.y);
-
-          // Fade near ends
-          var fade = 1;
-          if (p.progress < 0.05) fade = p.progress / 0.05;
-          if (p.progress > 0.95) fade = (1 - p.progress) / 0.05;
-          p.el.setAttribute('opacity', (0.85 * fade).toFixed(2));
-        });
-
-        requestAnimationFrame(animate);
-      }
-
-      // Wait a tick for SVG to render before getting path lengths
-      requestAnimationFrame(function() {
-        // Re-calculate lengths after render
-        particles.forEach(function(p) {
-          p.totalLength = p.path.getTotalLength();
-        });
-        animate();
-      });
-    })();
-  </script>
-
+// C4 eficiencia anual
+new Chart(document.getElementById('c4'),{type:'line',data:{labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],datasets:[{label:'Eficiencia sistema (%)',data:[91,94,97,98,97,94,91,89,88,90,92,94],borderColor:tl,backgroundColor:'rgba(0,184,148,0.09)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:tl,borderWidth:2.5},{label:'Objetivo mínimo 88%',data:Array(12).fill(88),borderColor:'rgba(245,166,35,0.4)',borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:11,font:{size:9}}}},scales:{y:{min:80,max:100,ticks:{callback:v=>v+'%',font:{size:8.5}},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{font:{size:8.5}},grid:{display:false}}}}});
+</script>
 </body>
 </html>

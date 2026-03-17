@@ -454,6 +454,7 @@ document.querySelectorAll('.nav-item').forEach(item => {
 
 // ── Load all data ─────────────────────────────────
 async function loadAll() {
+  try {
   // Load clients AND users in parallel — merge names from users into clients
   const [cSnap, uSnap] = await Promise.all([
     db.collection('clients').get(),
@@ -512,18 +513,29 @@ async function loadAll() {
   let totalComments = 0;
 
   for (const cDoc of cSnap.docs) {
-    const pSnap = await cDoc.ref.collection('proposals').orderBy('updatedAt','desc').get().catch(()=>({docs:[]}));
+    const pSnap = await cDoc.ref.collection('proposals').get().catch(()=>({docs:[]}));
     pSnap.docs.forEach(pDoc => {
       const d = pDoc.data();
-      if (d._type === 'quote' || (d.folio && d.items)) {
+      if (d._type === 'quote' || (d.folio && d.items && !d.versions)) {
         allQuotes.push({id:pDoc.id, clientId:cDoc.id, ...d});
-      } else {
+      } else if (!d._type || d._type !== 'quote') {
         allProposals.push({id:pDoc.id, clientId:cDoc.id, ...d});
       }
     });
     const commSnap = await cDoc.ref.collection('comments').get().catch(()=>({size:0}));
     totalComments += commSnap.size;
   }
+  // Sort proposals by date client-side
+  allProposals.sort((a,b) => {
+    const ta = a.updatedAt?.toDate?.()?.getTime() || 0;
+    const tb = b.updatedAt?.toDate?.()?.getTime() || 0;
+    return tb - ta;
+  });
+  allQuotes.sort((a,b) => {
+    const ta = a.updatedAt?.toDate?.()?.getTime() || 0;
+    const tb = b.updatedAt?.toDate?.()?.getTime() || 0;
+    return tb - ta;
+  });
 
   document.getElementById('statProposals').textContent = allProposals.length;
   document.getElementById('statQuotes').textContent = allQuotes.length;
@@ -533,6 +545,10 @@ async function loadAll() {
   renderProposalsTable();
   renderQuotesTable();
   loadUsers();
+  } catch(err) {
+    console.error('loadAll error:', err);
+    showToast('❌ Error cargando datos: ' + err.message, true);
+  }
 }
 
 // ── Dashboard ────────────────────────────────────

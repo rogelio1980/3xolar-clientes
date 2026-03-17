@@ -247,13 +247,17 @@ auth.onAuthStateChanged(async user=>{
     const clientData=cSnap.exists?cSnap.data():{};
     const prop=pSnap.data();
 
-    // The quote may be: (1) a separate document via prop.quoteId, (2) embedded in prop.cotizacion
+    // The quote may be: (1) a separate document via prop.quoteId,
+    // (2) embedded in prop.cotizacion, (3) the doc itself IS the quote (has items/folio)
     let q={};
     if(prop.quoteId){
       const qSnap=await db.collection('clients').doc(clientId).collection('proposals').doc(prop.quoteId).get();
       if(qSnap.exists)q=qSnap.data();
     } else if(prop.cotizacion&&Object.keys(prop.cotizacion).length>0){
       q=prop.cotizacion;
+    } else if(prop.items||prop.folio||prop.partidas){
+      // The doc itself is the quote document (cotizador v4 saves quotes as standalone docs)
+      q=prop;
     }
 
     render(prop,q,clientData);

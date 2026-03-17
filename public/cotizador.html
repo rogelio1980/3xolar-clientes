@@ -481,6 +481,13 @@ let clients = {};
 let itemIdCounter = 0;
 let compIdCounter = 0;
 let savedDocId = null;
+let editClientId = null; // edit mode: existing client
+
+// Detect edit mode from URL params
+const _qp = new URLSearchParams(window.location.search);
+const _editId = _qp.get('edit');
+const _editClient = _qp.get('client');
+const IS_EDIT = !!(_editId && _editClient);
 
 const SYM = () => document.getElementById('moneda').value === 'USD' ? 'US$' : '$';
 const fmt = n => Number(n).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -511,14 +518,112 @@ async function init(){
   document.getElementById('folio').value = f;
   document.getElementById('folioBadge').textContent = f;
   await Promise.all([loadClients(), loadCatalog(), loadGarantiaTemplates(), loadKitTemplates()]);
-  addItem('producto');
-  addItem('producto');
+
+  if(IS_EDIT){
+    await loadExistingQuote(_editClient, _editId);
+  } else {
+    addItem('producto');
+    addItem('producto');
+  }
+
   applyCfg();
   setupCfgListeners();
   setupGarantia();
   document.getElementById('ivaSelect').addEventListener('change', recalc);
   document.getElementById('moneda').addEventListener('change', recalc);
   document.getElementById('btnSave').addEventListener('click', saveQuote);
+
+  if(IS_EDIT){
+    document.getElementById('btnSave').textContent = '💾 Guardar cambios';
+    // Show edit banner
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:rgba(77,171,247,.12);border:1px solid rgba(77,171,247,.3);border-radius:8px;padding:.6rem 1rem;margin-bottom:.75rem;font-size:.8rem;color:#4DABF7;font-family:Outfit,sans-serif;font-weight:600;';
+    banner.textContent = '✏️ Modo edición — los cambios se guardarán en la cotización existente';
+    document.querySelector('.actions-bar')?.before(banner);
+  }
+}
+
+/* ═══ LOAD EXISTING QUOTE (edit mode) ═══ */
+async function loadExistingQuote(clientId, quoteId){
+  try {
+    const snap = await db.collection('clients').doc(clientId).collection('proposals').doc(quoteId).get();
+    if(!snap.exists){ showToast('⚠️ Cotización no encontrada'); return; }
+    const q = snap.data();
+    savedDocId = quoteId;
+    editClientId = clientId;
+
+    // Set client selector
+    const sel = document.getElementById('clientSelect');
+    sel.value = clientId;
+    // Trigger change to fill empresa/contacto fields
+    sel.dispatchEvent(new Event('change'));
+
+    // Fill text fields
+    const fields = {
+      titulo: q.title||'', descripcion: q.description||'', folio: q.folio||'',
+      empresa: q.empresa||'', contacto: q.contacto||'', lugar: q.lugar||'',
+      vigencia: q.vigencia||30, fechaCot: q.fechaCot||'',
+      notas: q.notas||'', elaboradoPor: q.elaboradoPor||'',
+      formaPago: q.formaPago||'', instalacion: q.incluye||'',
+      garantiaDesc: q.garantiaDesc||''
+    };
+    Object.entries(fields).forEach(([id,val])=>{
+      const el = document.getElementById(id);
+      if(el) el.value = val;
+    });
+
+    // Folio badge
+    if(q.folio) document.getElementById('folioBadge').textContent = q.folio;
+
+    // Moneda & IVA
+    if(q.moneda){ const m=document.getElementById('moneda'); if(m) m.value=q.moneda; }
+    if(q.ivaRate!=null){ const iv=document.getElementById('ivaSelect'); if(iv) iv.value=q.ivaRate; }
+
+    // Estado
+    if(q.status){ const e=document.getElementById('estado'); if(e) e.value=q.status; }
+
+    // Tiempo entrega
+    if(q.tiempoEntrega){
+      const parts = q.tiempoEntrega.split(' ');
+      if(parts.length>=2){ 
+        const tn = document.getElementById('tiempoNum'); if(tn) tn.value=parts[0];
+        const tu = document.getElementById('tiempoUnidad'); if(tu) tu.value=parts.slice(1).join(' ')||'días hábiles';
+      }
+    }
+
+    // Garantia tipo
+    if(q.garantiaTipo){
+      const gt = document.getElementById('garantiaTipo');
+      if(gt){ gt.value=q.garantiaTipo; gt.dispatchEvent(new Event('change')); }
+    }
+
+    // Config flags
+    if(q.config){
+      ['cfgDisc','cfgSubtotals','cfgCred','cfgNotas'].forEach(id=>{
+        const key = id.replace('cfg','show').replace('Disc','Disc').replace('Subtotals','Subtotals').replace('Cred','Credito').replace('Notas','Notas');
+        const el = document.getElementById(id);
+        if(el && q.config[key.charAt(0).toLowerCase()+key.slice(1)] !== undefined)
+          el.checked = q.config[key.charAt(0).toLowerCase()+key.slice(1)];
+      });
+    }
+
+    // Load items
+    const itemsContainer = document.getElementById('itemsContainer');
+    itemsContainer.innerHTML = '';
+    const items = q.items || q.partidas || [];
+    if(items.length){
+      items.forEach(it => {
+        const tipo = it.tipo || 'producto';
+        addItem(tipo, it);
+      });
+    } else {
+      addItem('producto');
+    }
+    recalc();
+    showToast('✅ Cotización cargada para edición');
+  } catch(e){
+    showToast('❌ Error al cargar: '+e.message);
+  }
 }
 
 /* ═══ LOAD CLIENTS ═══ */
@@ -1171,7 +1276,7 @@ function getItems(){
 
 /* ═══ SAVE QUOTE ═══ */
 async function saveQuote(){
-  const clientId = document.getElementById('clientSelect').value;
+  const clientId = IS_EDIT ? editClientId : document.getElementById('clientSelect').value;
   const titulo = document.getElementById('titulo').value.trim();
   if(!clientId){showToast('⚠️ Selecciona un cliente');return}
   if(!titulo){showToast('⚠️ Ingresa un título');return}
@@ -1232,8 +1337,23 @@ async function saveQuote(){
   };
 
   try{
-    const docRef = await db.collection('clients').doc(clientId).collection('proposals').add(payload);
-    savedDocId = docRef.id;
+    // Determine target clientId (edit mode uses editClientId, new uses selector)
+    const targetClientId = IS_EDIT ? editClientId : clientId;
+
+    // Remove createdAt from update payload (only set on create)
+    if(IS_EDIT) delete payload.createdAt;
+    if(IS_EDIT) delete payload.versions; // preserve existing versions
+
+    let docRef;
+    if(IS_EDIT && savedDocId){
+      // UPDATE existing quote
+      docRef = db.collection('clients').doc(targetClientId).collection('proposals').doc(savedDocId);
+      await docRef.update(payload);
+    } else {
+      // CREATE new quote
+      docRef = await db.collection('clients').doc(targetClientId).collection('proposals').add(payload);
+      savedDocId = docRef.id;
+    }
 
     // Save descriptions to catalog
     const saveToCatalog = (text) => {

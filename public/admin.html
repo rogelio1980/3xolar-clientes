@@ -178,12 +178,15 @@ tr:hover td{background:rgba(245,166,35,.02)}
     <!-- ═══ CLIENTES ═══ -->
     <div class="panel" id="panel-clientes">
       <div class="panel-title">👥 Clientes</div>
+      <div style="background:rgba(77,171,247,.07);border:1px solid rgba(77,171,247,.2);border-radius:10px;padding:.7rem 1rem;margin-bottom:1rem;font-size:.78rem;color:#4DABF7;line-height:1.55">
+        <strong>Nota:</strong> Cada empresa es un cliente. Si una empresa tiene múltiples contactos (ej. Ricardo y Sergio de Coeur Mexicana), usa el mismo <em>ID de empresa</em> al crear cada usuario en la sección <strong>Usuarios</strong>, o edita sus datos aquí para que apunten al mismo registro de empresa.
+      </div>
       <div class="top-actions">
         <button class="btn-primary-sm" id="btnNewClient">+ Nuevo cliente</button>
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>Nombre</th><th>Empresa</th><th>Email</th><th>RFC</th><th>Logo</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>Nombre / Contacto</th><th>Empresa</th><th>Email</th><th>RFC</th><th>Logo</th><th>Acciones</th></tr></thead>
           <tbody id="clientsBody"></tbody>
         </table>
       </div>
@@ -448,14 +451,26 @@ async function loadAll() {
   document.getElementById('statClients').textContent = cSnap.size;
   renderClientsTable();
 
-  // Populate client filters
+  // Populate client filters — show name > company > email > id
   const filterSelects = ['filterClient','filterQuoteClient'];
   filterSelects.forEach(selId => {
     const sel = document.getElementById(selId);
     const cur = sel.value;
     sel.innerHTML = '<option value="">— Todos los clientes —</option>';
+    // Build unique company map (multiple users same company → show once per company)
+    const companyMap = {}; // companyKey → {_id, displayName}
     Object.values(allClients).forEach(c => {
-      sel.innerHTML += `<option value="${c._id}">${c.name||c._id} ${c.empresa?.nombre?'('+c.empresa.nombre+')':c.company?'('+c.company+')':''}</option>`;
+      const companyKey = (c.empresa?.nombre || c.company || '').toLowerCase().trim() || c._id;
+      const displayName = c.name
+        ? `${c.name}${(c.empresa?.nombre||c.company) ? ' — '+(c.empresa?.nombre||c.company) : ''}`
+        : (c.empresa?.nombre || c.company || c.email || c._id);
+      // If multiple users same company, keep the one with more data
+      if(!companyMap[companyKey] || !companyMap[companyKey].hasName) {
+        companyMap[companyKey] = {_id: c._id, displayName, hasName: !!c.name};
+      }
+    });
+    Object.values(companyMap).forEach(({_id, displayName}) => {
+      sel.innerHTML += `<option value="${_id}">${displayName}</option>`;
     });
     sel.value = cur;
   });
@@ -515,14 +530,16 @@ function renderClientsTable() {
   const clients = Object.values(allClients);
   if (!clients.length) { cBody.innerHTML = '<tr><td colspan="6" class="empty-state">Sin clientes registrados</td></tr>'; return; }
   clients.forEach(c => {
+    const displayName = c.name || c.empresa?.nombre || c.company || c.email || c._id;
+    const companyName = c.empresa?.nombre || c.company || '';
     const rfc = c.empresa?.rfc || '';
     const hasLogo = !!(c.empresa?.logoBase64);
     const logoCell = hasLogo
       ? `<img src="${c.empresa.logoBase64}" style="max-height:28px;max-width:70px;border-radius:4px">`
       : '<span style="color:var(--gray);font-size:.7rem">—</span>';
     cBody.innerHTML += `<tr>
-      <td style="font-weight:500">${c.name||''}</td>
-      <td>${c.empresa?.nombre||c.company||''}</td>
+      <td style="font-weight:500">${displayName}</td>
+      <td>${companyName}</td>
       <td style="font-size:.8rem">${c.email||''}</td>
       <td class="info-tag">${rfc}</td>
       <td>${logoCell}</td>
@@ -530,7 +547,7 @@ function renderClientsTable() {
         <div class="actions-cell">
           <button class="btn-action" onclick="openEditClient('${c._id}')">✏️ Editar</button>
           <button class="btn-action green" onclick="gotoClientProposals('${c._id}')">Propuestas</button>
-          <button class="btn-action danger" onclick="askDeleteClient('${c._id}','${(c.name||'').replace(/'/g,"\\'")}')">🗑</button>
+          <button class="btn-action danger" onclick="askDeleteClient('${c._id}','${(displayName).replace(/'/g,"\\'")}')">🗑</button>
         </div>
       </td>
     </tr>`;

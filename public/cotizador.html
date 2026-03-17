@@ -653,15 +653,21 @@ function fillItemRow(row, tipo, it){
     }
   } else if(tipo==='mo'){
     const mf=it.moFields||{};
-    setQ('.i-tec',    mf.tecnicos||it.qty||1);
-    setQ('.i-dias',   mf.dias||1);
-    setQ('.i-tarifa', mf.tarifaDia||it.price||0);
+    const tec = mf.tecnicos||it.qty||1;
+    const dias = mf.dias||1;
+    // Calculate tarifaDia from total if not stored directly
+    const tarifaDia = mf.tarifaDia||it.price||(it.total&&tec&&dias ? Math.round(it.total/(tec*dias)*100)/100 : 0);
+    setQ('.i-tec',    tec);
+    setQ('.i-dias',   dias);
+    setQ('.i-tarifa', tarifaDia);
     setQ('.c-moReal', mf.costoRealDia||0);
   } else if(tipo==='viatico'){
     const vf=it.viaFields||{};
+    const cantidad = vf.cantidad||it.qty||1;
+    const costoUnit = vf.costoUnit||it.price||(it.total&&cantidad ? Math.round(it.total/cantidad*100)/100 : 0);
     setQ('.i-concepto', vf.concepto||'');
-    setQ('.i-vqty',     vf.cantidad||it.qty||1);
-    setQ('.i-vcosto',   vf.costoUnit||it.price||0);
+    setQ('.i-vqty',     cantidad);
+    setQ('.i-vcosto',   costoUnit);
     setQ('.c-vReal',    vf.costoReal||0);
   } else if(tipo==='kit'){
     setQ('.i-qty',   it.qty||1);

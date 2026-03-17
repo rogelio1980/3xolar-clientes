@@ -635,14 +635,14 @@ document.getElementById('filterQuoteStatus').addEventListener('change', renderQu
 // ── Client modal ──────────────────────────────────
 document.getElementById('btnNewClient').onclick = () => openClientModal();
 
-function openClientModal(clientId=null) {
+async function openClientModal(clientId=null) {
   const modal = document.getElementById('clientModal');
   const isEdit = !!clientId;
   document.getElementById('clientModalTitle').textContent = isEdit ? 'Editar cliente' : 'Nuevo cliente';
   document.getElementById('btnSaveClient').textContent = isEdit ? 'Guardar cambios' : 'Guardar cliente';
   document.getElementById('cEditId').value = clientId || '';
 
-  // Reset
+  // Reset all fields
   ['cName','cEmail','cCompany','cPhone','cRazonSocial','cRFC','cDomicilio','cCiudad','cEstado','cCP','cLogoBase64'].forEach(id => {
     document.getElementById(id).value = '';
   });
@@ -650,34 +650,46 @@ function openClientModal(clientId=null) {
   document.getElementById('cUsoCFDI').value = '';
   document.getElementById('cLogoPreview').style.display = 'none';
   document.getElementById('logoHint').style.display = '';
+  document.getElementById('billingDetails').open = false;
 
-  if (isEdit && allClients[clientId]) {
-    const c = allClients[clientId];
-    document.getElementById('cName').value = c.name || '';
-    document.getElementById('cEmail').value = c.email || '';
-    document.getElementById('cCompany').value = c.company || '';
-    document.getElementById('cPhone').value = c.phone || '';
-    if (c.empresa) {
-      const e = c.empresa;
-      document.getElementById('cRazonSocial').value = e.nombre || '';
-      document.getElementById('cRFC').value = e.rfc || '';
-      document.getElementById('cRegimen').value = e.regimenFiscal || '';
-      document.getElementById('cUsoCFDI').value = e.usoCFDI || '';
-      document.getElementById('cDomicilio').value = e.domicilio || '';
-      document.getElementById('cCiudad').value = e.ciudad || '';
-      document.getElementById('cEstado').value = e.estado || '';
-      document.getElementById('cCP').value = e.cp || '';
-      if (e.logoBase64) {
-        document.getElementById('cLogoBase64').value = e.logoBase64;
-        const prev = document.getElementById('cLogoPreview');
-        prev.src = e.logoBase64;
-        prev.style.display = 'block';
-        document.getElementById('logoHint').style.display = 'none';
-      }
-    }
-    document.getElementById('billingDetails').open = !!(c.empresa);
-  }
   modal.classList.add('show');
+  if (!isEdit) return;
+
+  // Try cache, fallback to direct Firestore fetch
+  let c = allClients[clientId];
+  if (!c) {
+    try {
+      const snap = await db.collection('clients').doc(clientId).get();
+      if (snap.exists) { c = {...snap.data(), _id: snap.id}; allClients[clientId] = c; }
+    } catch(e) { showToast('⚠️ Error cargando datos: '+e.message, true); return; }
+  }
+  if (!c) { showToast('⚠️ Cliente no encontrado', true); return; }
+
+  // Fill fields
+  document.getElementById('cName').value    = c.name    || '';
+  document.getElementById('cEmail').value   = c.email   || '';
+  document.getElementById('cCompany').value = c.company || c.empresa?.nombre || '';
+  document.getElementById('cPhone').value   = c.phone   || '';
+
+  if (c.empresa) {
+    const e = c.empresa;
+    document.getElementById('cRazonSocial').value = e.nombre        || '';
+    document.getElementById('cRFC').value         = e.rfc           || '';
+    document.getElementById('cRegimen').value     = e.regimenFiscal || '';
+    document.getElementById('cUsoCFDI').value     = e.usoCFDI       || '';
+    document.getElementById('cDomicilio').value   = e.domicilio     || '';
+    document.getElementById('cCiudad').value      = e.ciudad        || '';
+    document.getElementById('cEstado').value      = e.estado        || '';
+    document.getElementById('cCP').value          = e.cp            || '';
+    if (e.logoBase64) {
+      document.getElementById('cLogoBase64').value = e.logoBase64;
+      const prev = document.getElementById('cLogoPreview');
+      prev.src = e.logoBase64;
+      prev.style.display = 'block';
+      document.getElementById('logoHint').style.display = 'none';
+    }
+    document.getElementById('billingDetails').open = true;
+  }
 }
 
 function openEditClient(clientId) { openClientModal(clientId); }

@@ -554,67 +554,68 @@ async function loadExistingQuote(clientId, quoteId){
 
     // Set client selector
     const sel = document.getElementById('clientSelect');
+    // Try to set value; if option not yet present add it
+    if(!Array.from(sel.options).find(o=>o.value===clientId)){
+      const opt = document.createElement('option');
+      opt.value = clientId;
+      opt.textContent = q.empresa || clientId;
+      sel.appendChild(opt);
+    }
     sel.value = clientId;
-    // Trigger change to fill empresa/contacto fields
-    sel.dispatchEvent(new Event('change'));
 
     // Fill text fields
-    const fields = {
-      titulo: q.title||'', descripcion: q.description||'', folio: q.folio||'',
-      empresa: q.empresa||'', contacto: q.contacto||'', lugar: q.lugar||'',
-      vigencia: q.vigencia||30, fechaCot: q.fechaCot||'',
-      notas: q.notas||'', elaboradoPor: q.elaboradoPor||'',
-      formaPago: q.formaPago||'', instalacion: q.incluye||'',
-      garantiaDesc: q.garantiaDesc||''
-    };
-    Object.entries(fields).forEach(([id,val])=>{
-      const el = document.getElementById(id);
-      if(el) el.value = val;
-    });
-
-    // Folio badge
+    const setVal = (id, val) => { const el=document.getElementById(id); if(el&&val!=null) el.value=val; };
+    setVal('titulo', q.title||'');
+    setVal('descripcion', q.description||'');
+    setVal('folio', q.folio||'');
     if(q.folio) document.getElementById('folioBadge').textContent = q.folio;
+    setVal('empresa', q.empresa||'');
+    setVal('contacto', q.contacto||'');
+    setVal('lugar', q.lugar||'');
+    setVal('vigencia', q.vigencia||30);
+    setVal('fechaCot', q.fechaCot||'');
+    setVal('notas', q.notas||'');
+    setVal('elaboradoPor', q.elaboradoPor||'');
+    setVal('formaPago', q.formaPago||'');
+    setVal('instalacion', q.incluye||'');
+    setVal('garantiaDesc', q.garantiaDesc||'');
 
-    // Moneda & IVA
     if(q.moneda){ const m=document.getElementById('moneda'); if(m) m.value=q.moneda; }
     if(q.ivaRate!=null){ const iv=document.getElementById('ivaSelect'); if(iv) iv.value=q.ivaRate; }
-
-    // Estado
     if(q.status){ const e=document.getElementById('estado'); if(e) e.value=q.status; }
 
-    // Tiempo entrega
     if(q.tiempoEntrega){
-      const parts = q.tiempoEntrega.split(' ');
-      if(parts.length>=2){ 
-        const tn = document.getElementById('tiempoNum'); if(tn) tn.value=parts[0];
-        const tu = document.getElementById('tiempoUnidad'); if(tu) tu.value=parts.slice(1).join(' ')||'días hábiles';
+      const parts=q.tiempoEntrega.split(' ');
+      if(parts.length>=2){
+        setVal('tiempoNum', parts[0]);
+        setVal('tiempoUnidad', parts.slice(1).join(' ')||'días hábiles');
       }
     }
-
-    // Garantia tipo
     if(q.garantiaTipo){
-      const gt = document.getElementById('garantiaTipo');
+      const gt=document.getElementById('garantiaTipo');
       if(gt){ gt.value=q.garantiaTipo; gt.dispatchEvent(new Event('change')); }
     }
-
-    // Config flags
     if(q.config){
-      ['cfgDisc','cfgSubtotals','cfgCred','cfgNotas'].forEach(id=>{
-        const key = id.replace('cfg','show').replace('Disc','Disc').replace('Subtotals','Subtotals').replace('Cred','Credito').replace('Notas','Notas');
-        const el = document.getElementById(id);
-        if(el && q.config[key.charAt(0).toLowerCase()+key.slice(1)] !== undefined)
-          el.checked = q.config[key.charAt(0).toLowerCase()+key.slice(1)];
+      const cfg=q.config;
+      const map={cfgDisc:'showDisc',cfgSubtotals:'showSubtotals',cfgCred:'showCredito',cfgNotas:'showNotas'};
+      Object.entries(map).forEach(([elId,key])=>{
+        const el=document.getElementById(elId);
+        if(el&&cfg[key]!=null) el.checked=cfg[key];
       });
     }
 
-    // Load items
-    const itemsContainer = document.getElementById('itemsContainer');
-    itemsContainer.innerHTML = '';
-    const items = q.items || q.partidas || [];
+    // Load items — addItem creates empty row, then fillItemRow populates it
+    const itemsContainer=document.getElementById('itemsContainer');
+    itemsContainer.innerHTML='';
+    const items=q.items||q.partidas||[];
     if(items.length){
-      items.forEach(it => {
-        const tipo = it.tipo || 'producto';
-        addItem(tipo, it);
+      items.forEach(it=>{
+        const tipo=it.tipo||'producto';
+        addItem(tipo);
+        // Get the last added row and fill it
+        const rows=itemsContainer.querySelectorAll('.item-row');
+        const row=rows[rows.length-1];
+        if(row) fillItemRow(row, tipo, it);
       });
     } else {
       addItem('producto');
@@ -622,8 +623,73 @@ async function loadExistingQuote(clientId, quoteId){
     recalc();
     showToast('✅ Cotización cargada para edición');
   } catch(e){
+    console.error('loadExistingQuote error:', e);
     showToast('❌ Error al cargar: '+e.message);
   }
+}
+
+/* ═══ FILL ITEM ROW with saved data ═══ */
+function fillItemRow(row, tipo, it){
+  const setQ = (sel, val) => { const el=row.querySelector(sel); if(el&&val!=null) el.value=val; };
+  setQ('.i-desc', it.desc||'');
+  if(tipo==='producto'){
+    setQ('.i-qty',   it.qty||1);
+    setQ('.i-price', it.price||0);
+    setQ('.i-disc',  it.disc||0);
+    if(it.costoInterno){
+      setQ('.c-sku',   it.costoInterno.sku||'');
+      setQ('.c-part',  it.costoInterno.numParte||'');
+      setQ('.c-url',   it.costoInterno.urlProveedor||'');
+      setQ('.c-costo', it.costoInterno.costoUnitario||0);
+      setQ('.c-envio', it.costoInterno.costoEnvio||0);
+      if(it.costoInterno.incluyeIVA){
+        const radioSi=row.querySelector(`input[name="iva-${row.dataset.id}"][value="1"]`);
+        if(radioSi) radioSi.checked=true;
+      }
+      if(it.costoInterno.tieneDescuento){
+        const cb=row.querySelector('.c-descDist'); if(cb) cb.checked=true;
+      }
+    }
+  } else if(tipo==='mo'){
+    const mf=it.moFields||{};
+    setQ('.i-tec',    mf.tecnicos||it.qty||1);
+    setQ('.i-dias',   mf.dias||1);
+    setQ('.i-tarifa', mf.tarifaDia||it.price||0);
+    setQ('.c-moReal', mf.costoRealDia||0);
+  } else if(tipo==='viatico'){
+    const vf=it.viaFields||{};
+    setQ('.i-concepto', vf.concepto||'');
+    setQ('.i-vqty',     vf.cantidad||it.qty||1);
+    setQ('.i-vcosto',   vf.costoUnit||it.price||0);
+    setQ('.c-vReal',    vf.costoReal||0);
+  } else if(tipo==='kit'){
+    setQ('.i-qty',   it.qty||1);
+    setQ('.i-price', it.price||it.precio||0);
+    if(it.markupPct) setQ('.k-markup', it.markupPct);
+    if(it.modoPrecio){
+      const radio=row.querySelector(`input[name="kitmode-${row.dataset.id}"][value="${it.modoPrecio}"]`);
+      if(radio) radio.checked=true;
+    }
+    // Re-add componentes if any
+    if(it.componentes&&it.componentes.length){
+      const kitId=row.dataset.id;
+      const addCompBtn=row.querySelector('.btn-add-comp');
+      it.componentes.forEach(comp=>{
+        if(addCompBtn) addCompBtn.click();
+        const compRows=row.querySelectorAll('.kit-component');
+        const compRow=compRows[compRows.length-1];
+        if(compRow){
+          const setC=(sel,val)=>{const el=compRow.querySelector(sel);if(el&&val!=null)el.value=val;};
+          setC('.kc-desc', comp.desc||'');
+          setC('.kc-qty',  comp.qty||1);
+          setC('.kc-costo',comp.costoUnitario||0);
+          if(comp.incluyeIVA){ const iva=compRow.querySelector('.kc-iva'); if(iva) iva.checked=true; }
+        }
+      });
+    }
+  }
+  // Trigger recalc events on qty/price inputs
+  row.querySelectorAll('input[type="number"]').forEach(el=>el.dispatchEvent(new Event('input')));
 }
 
 /* ═══ LOAD CLIENTS ═══ */

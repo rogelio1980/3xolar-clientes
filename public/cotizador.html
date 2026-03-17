@@ -314,7 +314,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
           </select>
         </div>
       </div>
-      <div class="field"><label>Moneda</label><select id="moneda"><option value="MXN">MXN</option><option value="USD">USD</option></select></div>
+      <div class="field">
+        <label>Moneda</label>
+        <select id="moneda"><option value="MXN">MXN — Peso Mexicano</option><option value="USD">USD — Dólar</option></select>
+        <div id="tcRow" style="display:none;margin-top:.4rem;background:rgba(77,171,247,.08);border:1px solid rgba(77,171,247,.2);border-radius:7px;padding:.4rem .75rem;font-size:.75rem;color:#4DABF7;font-family:'JetBrains Mono',monospace">
+          <span id="tcLabel">Cargando tipo de cambio DOF…</span>
+          <span style="float:right;display:flex;gap:.5rem">
+            <span style="cursor:pointer;color:var(--gray);font-size:.7rem" onclick="setManualTC()">✏️ Manual</span>
+            <span style="cursor:pointer;color:var(--amber)" onclick="loadDOFRate()" title="Actualizar desde Banxico">↻ DOF</span>
+          </span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -480,7 +490,50 @@ let kitTemplates = [];
 let clients = {};
 let itemIdCounter = 0;
 let compIdCounter = 0;
-let savedDocId = null;
+let tipoCambioDOF = null; // MXN per 1 USD
+
+/* ═══ DOF EXCHANGE RATE ═══ */
+async function loadDOFRate() {
+  const row = document.getElementById('tcRow');
+  const label = document.getElementById('tcLabel');
+  if (!row || !label) return;
+  label.textContent = 'Consultando Banxico/DOF…';
+  row.style.display = 'block';
+  try {
+    // Banxico API - tipo de cambio FIX (SF43718)
+    const today = new Date();
+    const fmt2 = n => String(n).padStart(2,'0');
+    const dateStr = `${today.getFullYear()}-${fmt2(today.getMonth()+1)}-${fmt2(today.getDate())}`;
+    const url = `https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF43718/datos/${dateStr}/${dateStr}?token=none`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Banxico no disponible');
+    const data = await res.json();
+    const val = data?.bmx?.series?.[0]?.datos?.[0]?.dato;
+    if (!val || val === 'N/E') throw new Error('Sin dato hoy');
+    tipoCambioDOF = parseFloat(val.replace(',','.'));
+    label.textContent = `TC DOF hoy: $${tipoCambioDOF.toFixed(4)} MXN/USD`;
+    row.style.display = 'block';
+  } catch(e) {
+    // Fallback: use a reasonable recent rate
+    tipoCambioDOF = 17.15;
+    label.textContent = `TC referencia: $${tipoCambioDOF.toFixed(2)} MXN/USD (actualiza manualmente)`;
+    row.style.display = 'block';
+  }
+}
+
+async function setManualTC() {
+  const val = prompt('Ingresa el tipo de cambio MXN/USD:', tipoCambioDOF || '17.15');
+  if (!val) return;
+  const n = parseFloat(val);
+  if (isNaN(n) || n <= 0) { showToast('⚠️ Valor inválido'); return; }
+  tipoCambioDOF = n;
+  const label = document.getElementById('tcLabel');
+  if (label) label.textContent = `TC manual: $${n.toFixed(4)} MXN/USD`;
+  recalc();
+  showToast(`✅ Tipo de cambio: $${n.toFixed(4)}`);
+}
+
+
 let editClientId = null; // edit mode: existing client
 
 // Detect edit mode from URL params
@@ -530,7 +583,13 @@ async function init(){
   setupCfgListeners();
   setupGarantia();
   document.getElementById('ivaSelect').addEventListener('change', recalc);
-  document.getElementById('moneda').addEventListener('change', recalc);
+  document.getElementById('moneda').addEventListener('change', () => {
+    const isUSD = document.getElementById('moneda').value === 'USD';
+    const row = document.getElementById('tcRow');
+    if (row) row.style.display = isUSD ? 'block' : 'none';
+    if (isUSD && !tipoCambioDOF) loadDOFRate();
+    recalc();
+  });
   document.getElementById('btnSave').addEventListener('click', saveQuote);
 
   if(IS_EDIT){
@@ -1246,10 +1305,33 @@ function recalc(){
   const ivaRate = parseFloat(document.getElementById('ivaSelect').value) || 0;
   const iva = subtotal * ivaRate / 100;
   const grand = subtotal + iva;
+  const monedaVal = document.getElementById('moneda').value;
 
   document.getElementById('subtotalVal').textContent = sym + fmt(subtotal);
   document.getElementById('ivaVal').textContent = sym + fmt(iva);
   document.getElementById('totalVal').textContent = sym + fmt(grand);
+
+  // Show MXN equivalent when in USD mode
+  const tcRow = document.getElementById('tcRow');
+  if (monedaVal === 'USD' && tipoCambioDOF && tcRow) {
+    const grandMXN = grand * tipoCambioDOF;
+    const label = document.getElementById('tcLabel');
+    if (label && label.textContent.includes('TC')) {
+      // append equivalent if not already shown
+    }
+    // Show converted total note
+    let convEl = document.getElementById('mxnEquiv');
+    if (!convEl) {
+      convEl = document.createElement('div');
+      convEl.id = 'mxnEquiv';
+      convEl.style.cssText = 'font-size:.72rem;color:var(--gray);margin-top:.2rem;font-family:JetBrains Mono,monospace';
+      document.getElementById('totalVal').parentNode.after(convEl);
+    }
+    convEl.textContent = `≈ $${fmt(grandMXN)} MXN (TC $${tipoCambioDOF.toFixed(2)})`;
+  } else {
+    const convEl = document.getElementById('mxnEquiv');
+    if (convEl) convEl.textContent = '';
+  }
 
   // Rentabilidad global
   const costoTotal = costMat + costMO + costViat + costKits;

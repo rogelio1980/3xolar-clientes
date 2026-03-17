@@ -519,7 +519,7 @@ async function loadAll() {
     const pSnap = await cDoc.ref.collection('proposals').get().catch(()=>({docs:[]}));
     pSnap.docs.forEach(pDoc => {
       const d = pDoc.data();
-      if (d._type === 'quote' || (d.folio && d.items && !d.versions)) {
+      if (d._type === 'quote' || (d.folio && d.items && d.items.length > 0 && (!d.versions || d.versions.length === 0))) {
         allQuotes.push({id:pDoc.id, clientId:cDoc.id, ...d});
       } else if (!d._type || d._type !== 'quote') {
         allProposals.push({id:pDoc.id, clientId:cDoc.id, ...d});

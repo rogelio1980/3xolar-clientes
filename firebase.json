@@ -10,6 +10,9 @@
       { "source": "/admin", "destination": "/admin.html" },
       { "source": "/cotizador", "destination": "/cotizador.html" },
       { "source": "/cotizacion", "destination": "/cotizacion.html" },
+      { "source": "/coeur-mexicana/solar-poste-v1", "destination": "/coeur-mexicana/solar-poste-v1.html" },
+      { "source": "/coeur-mexicana/solar-poste-v2", "destination": "/coeur-mexicana/solar-poste-v2.html" },
+      { "source": "/coeur-mexicana/solar-poste-v3", "destination": "/coeur-mexicana/solar-poste-v3.html" },
       { "source": "**", "destination": "/index.html" }
     ]
   },

@@ -1093,7 +1093,9 @@ function addItem(tipo){
     // Apply suggested price
     row.querySelector('.k-apply').addEventListener('click', () => {
       const sugText = row.querySelector('.k-suggested').textContent;
-      const sugVal = parseFloat(sugText.replace(/[^0-9,]/g,'').replace(/,/g,'').replace(/\.(?=.*\.)/g,''));
+      // Clean currency string: remove symbols, then remove thousand-separator commas, keep decimal dot
+      const sugClean = sugText.replace(/[^0-9,.]/g,'').replace(/,(?=\d{3})/g,'');
+      const sugVal = parseFloat(sugClean);
       if(sugVal > 0){
         row.querySelector('.i-price').value = sugVal.toFixed(2);
         // Auto-switch to fixed mode after applying

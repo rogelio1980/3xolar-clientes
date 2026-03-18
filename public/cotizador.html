@@ -628,13 +628,9 @@ const garTexts = {
 };
 
 /* ═══ AUTH GUARD ═══ */
-auth.onAuthStateChanged(async user => {
-  if(!user){location.href='/';return}
-  const uSnap = await db.collection('users').doc(user.uid).get().catch(()=>null);
-  const ADMIN_EMAILS = ['rogelio@ittelecom.com.mx','arellanes@ittelecom.com.mx','rogelioguerra@gmail.com'];
-  const isAdminEmail = ADMIN_EMAILS.includes(user.email);
-  if(!isAdminEmail && (!uSnap||!uSnap.exists||!['admin','superadmin','vendedor'].includes(uSnap.data().role))){location.href='/portal';return}
-  init();
+auth.onAuthStateChanged(user => {
+  if(!user){ location.href='/'; return; }
+  init(); // Security enforced by Firestore rules
 });
 
 /* ═══ INIT ═══ */

@@ -95,7 +95,9 @@ const badgeMap = {draft:'badge-draft',review:'badge-review',sent:'badge-sent',ap
 
 auth.onAuthStateChanged(async user => {
   if (!user) { location.href = '/'; return; }
-  // Check role
+  // Check role - email fallback for admins
+  const ADMIN_EMAILS = ['rogelio@ittelecom.com.mx','arellanes@ittelecom.com.mx','rogelioguerra@gmail.com'];
+  if (ADMIN_EMAILS.includes(user.email)) { location.href = '/admin'; return; }
   const uSnap = await db.collection('users').doc(user.uid).get().catch(() => null);
   if (uSnap && uSnap.exists && uSnap.data().role === 'admin') {
     location.href = '/admin'; return;

@@ -76,7 +76,7 @@ function redirectUser(uid) {
   }
   // Then check Firestore role
   db.collection('users').doc(uid).get().then(snap => {
-    if (snap.exists && snap.data().role === 'admin') {
+    if (snap.exists && ['admin','superadmin','vendedor'].includes(snap.data().role)) {
       location.href = '/admin';
     } else {
       location.href = '/portal';

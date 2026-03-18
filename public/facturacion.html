@@ -1592,8 +1592,19 @@ let selectedPDFFile = null;
 let selectedPAC = 'facturapi';
 
 // ── AUTH ──
-auth.onAuthStateChanged(u => {
-  if (!u) { window.location.href = 'index.html'; return; }
+const FAC_ADMIN_EMAILS = ['rogelio@ittelecom.com.mx','arellanes@ittelecom.com.mx','rogelioguerra@gmail.com'];
+
+auth.onAuthStateChanged(async u => {
+  if (!u) { window.location.href = '/'; return; }
+  // Role guard: only superadmin/admin
+  if (!FAC_ADMIN_EMAILS.includes(u.email)) {
+    const snap = await db.collection('users').doc(u.uid).get().catch(()=>null);
+    const role = snap?.exists ? snap.data().role : 'client';
+    if (!['admin','superadmin'].includes(role)) {
+      window.location.href = '/admin';
+      return;
+    }
+  }
   currentUser = u;
   document.getElementById('userTag').textContent = u.email;
   loadAll();

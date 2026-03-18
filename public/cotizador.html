@@ -567,9 +567,11 @@ function convertAllPrices(toUSD, tc) {
       const el = row.querySelector('.i-price');
       // Only convert price if in fixed mode (markup mode recalculates automatically)
       const kitMode = row.querySelector('input[name="kitmode-'+row.dataset.id+'"]:checked')?.value;
-      if (el && parseFloat(el.value) && (tipo === 'producto' || kitMode !== 'markup')) {
+      // Always convert i-price (including kit markup mode) so currency stays consistent
+      if (el && parseFloat(el.value)) {
         el.value = round2(parseFloat(el.value) * factor);
       }
+      // NOTE: kc-costo (kit component costs) stay in MXN — recalc() applies costToDisplay() on them
       // Internal cost fields for productos (MXN entry)
       const cCosto = row.querySelector('.c-costo');
       if (cCosto && parseFloat(cCosto.value)) cCosto.value = round2(parseFloat(cCosto.value) * factor);
@@ -1463,7 +1465,11 @@ function getItems(){
           const cqty = parseFloat(c.querySelector('.kc-qty')?.value)||0;
           const ccosto = parseFloat(c.querySelector('.kc-costo')?.value)||0;
           const inclIVA = c.querySelector('.kc-iva')?.checked||false;
-          const costoTotalConIVA = cqty * ccosto * (inclIVA ? 1 : 1.16);
+          const costoMXN = cqty * ccosto * (inclIVA ? 1 : 1.16);
+          // Convert to display currency for consistent margin analysis
+          const monedaSave = document.getElementById('moneda')?.value || 'MXN';
+          const tcSave = (monedaSave === 'USD' && tipoCambioDOF > 0) ? tipoCambioDOF : 1;
+          const costoTotalConIVA = monedaSave === 'USD' ? costoMXN / tcSave : costoMXN;
           costTotal += costoTotalConIVA;
           item.componentes.push({
             desc: c.querySelector('.kc-desc')?.value||'',

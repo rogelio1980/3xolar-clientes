@@ -111,8 +111,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
 .gmb-btn:hover{opacity:.88}
 .gmb-result{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--teal);min-width:120px;text-align:right}
 
-.comp-header{display:grid;grid-template-columns:2fr 100px 100px 100px 100px 30px;gap:0.4rem;padding:0.35rem 0.5rem;border-bottom:1px solid rgba(0,184,148,0.2);font-family:'Outfit',sans-serif;font-size:0.6rem;font-weight:700;color:var(--teal);text-transform:uppercase}
-.kit-component{display:grid;grid-template-columns:2fr 100px 100px 100px 100px 30px;gap:0.4rem;padding:0.4rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.04);align-items:center}
+.comp-header{display:grid;grid-template-columns:2fr 90px 70px 90px 90px 30px;gap:0.4rem;padding:0.35rem 0.5rem;border-bottom:1px solid rgba(0,184,148,0.2);font-family:'Outfit',sans-serif;font-size:0.6rem;font-weight:700;color:var(--teal);text-transform:uppercase}
+.kit-component{display:grid;grid-template-columns:2fr 90px 70px 90px 90px 30px;gap:0.4rem;padding:0.4rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.04);align-items:center}
 .kit-component input,.kit-component select{padding:0.35rem 0.45rem;border:1px solid var(--border);border-radius:5px;background:var(--dark);color:var(--white);font-size:0.78rem;outline:none;width:100%}
 .kit-component input:focus{border-color:var(--teal)}
 .kit-component .comp-total{font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--amber)}
@@ -131,6 +131,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
 .kit-template-row button,.kit-template-row select{padding:0.35rem 0.7rem;border:1px solid var(--border);border-radius:6px;background:var(--dark);color:var(--gray);font-family:'Outfit',sans-serif;font-size:0.72rem;cursor:pointer}
 .kit-template-row button:hover{border-color:var(--teal);color:var(--teal)}
 @media(max-width:700px){.comp-header{display:none}.kit-component{grid-template-columns:1fr 80px 30px}.comp-extra{grid-template-columns:1fr}}
+
+
+/* ─── Moneda por componente ─── */
+.kc-moneda{padding:0.25rem 0.3rem!important;font-size:0.7rem!important;min-width:60px;background:var(--dark);border:1px solid var(--border);border-radius:4px;color:var(--amber);cursor:pointer}
+.kc-moneda:focus{border-color:var(--teal)}
+.kc-costo-usd{border-color:rgba(100,200,255,0.4)!important;color:#7fd8ff!important}
+.kc-costo-mxn{border-color:var(--border)!important;color:var(--white)!important}
 
 /* ═══ COST PANEL (details) ═══ */
 .cost-panel{padding:0.65rem 0.75rem;background:rgba(11,26,46,0.6);border-radius:8px;margin:0.3rem 0 0.5rem}
@@ -854,6 +861,20 @@ function fillItemRow(row, tipo, it){
           setC('.kc-qty',  comp.qty||1);
           setC('.kc-costo',comp.costoUnitario||0);
           if(comp.incluyeIVA){ const iva=compRow.querySelector('.kc-iva'); if(iva) iva.checked=true; }
+          if(comp.moneda && comp.moneda !== 'MXN'){
+            const ms=compRow.querySelector('.kc-moneda'); if(ms) ms.value=comp.moneda;
+            const ce=compRow.querySelector('.kc-costo'); if(ce) ce.className='kc-costo kc-costo-'+comp.moneda.toLowerCase();
+          }
+          if(comp.moneda && comp.moneda !== 'MXN'){
+            const ms=compRow.querySelector('.kc-moneda'); if(ms) ms.value=comp.moneda;
+            const ce=compRow.querySelector('.kc-costo'); if(ce) ce.className='kc-costo kc-costo-'+comp.moneda.toLowerCase();
+          }
+          if(comp.moneda && comp.moneda !== 'MXN'){
+            const monSel = compRow.querySelector('.kc-moneda');
+            if(monSel){ monSel.value = comp.moneda; }
+            const costoEl = compRow.querySelector('.kc-costo');
+            if(costoEl){ costoEl.className = 'kc-costo kc-costo-' + comp.moneda.toLowerCase(); }
+          }
         }
       });
     }
@@ -1107,7 +1128,7 @@ function addItem(tipo){
           <span>→ Precio sugerido: <span class="suggested k-suggested">$0.00</span></span>
           <button class="k-apply" type="button">Aplicar</button>
         </div>
-        <div class="comp-header"><div>Componente</div><div>Cant.</div><div>Costo unit.</div><div>¿c/IVA?</div><div>Costo total</div><div></div></div>
+        <div class="comp-header"><span>Componente</span><span>Cant.</span><span>Mon.</span><span>Costo unit.</span><span>Subtotal</span><span></span></div><div>Cant.</div><div>Costo unit.</div><div>¿c/IVA?</div><div>Costo total</div><div></div></div>
         <div class="kit-components" data-kit="${id}"></div>
         <button class="btn-add-component" type="button" onclick="addComponent('${id}')">＋ Agregar componente</button>
         <div class="kit-summary">
@@ -1201,7 +1222,8 @@ function addComponent(kitId){
   comp.innerHTML = `
     <div class="ac-wrap"><input type="text" class="kc-desc" placeholder="Componente (marca/modelo)" data-ac="${cid}"><div class="ac-list" id="ac-${cid}"></div></div>
     <div><input type="number" class="kc-qty" value="1" min="1" step="1"></div>
-    <div><input type="number" class="kc-costo" value="0" min="0" step="0.01"></div>
+    <div><select class="kc-moneda" title="Moneda del costo unitario" onchange="this.closest('.kit-component').querySelector('.kc-costo').className='kc-costo '+(this.value==='USD'?'kc-costo-usd':'kc-costo-mxn');recalc()"><option value="MXN">MXN</option><option value="USD">USD</option></select></div>
+    <div><input type="number" class="kc-costo kc-costo-mxn" value="0" min="0" step="0.01"></div>
     <div style="text-align:center"><input type="checkbox" class="kc-iva" title="¿Incluye IVA?"></div>
     <div class="comp-total">$0.00</div>
     <button class="btn-remove" onclick="this.closest('.kit-component').remove();recalc()" style="width:28px;height:28px;font-size:0.85rem">×</button>`;
@@ -1281,6 +1303,14 @@ function loadKitTemplate(sel, kitId){
       lastComp.querySelector('.kc-qty').value = comp.qty || 1;
       lastComp.querySelector('.kc-costo').value = comp.costoUnitario || 0;
       if(comp.incluyeIVA) lastComp.querySelector('.kc-iva').checked = true;
+      if(comp.moneda && comp.moneda !== 'MXN'){
+        const ms=lastComp.querySelector('.kc-moneda'); if(ms) ms.value=comp.moneda;
+        const ce=lastComp.querySelector('.kc-costo'); if(ce) ce.className='kc-costo kc-costo-'+comp.moneda.toLowerCase();
+      }
+      if(comp.moneda && comp.moneda !== 'MXN'){
+        const ms=lastComp.querySelector('.kc-moneda'); if(ms) ms.value=comp.moneda;
+        const ce=lastComp.querySelector('.kc-costo'); if(ce) ce.className='kc-costo kc-costo-'+comp.moneda.toLowerCase();
+      }
     }
     if(lastExtra && lastExtra.classList.contains('comp-extra')){
       if(comp.sku) lastExtra.querySelector('.kc-sku').value = comp.sku;
@@ -1385,7 +1415,11 @@ function recalc(){
           const cqty = parseFloat(c.querySelector('.kc-qty')?.value) || 0;
           const ccosto = parseFloat(c.querySelector('.kc-costo')?.value) || 0;
           const inclIVA = c.querySelector('.kc-iva')?.checked;
-          const compTotal = costToDisplay(cqty * ccosto * (inclIVA ? 1 : 1.16));
+          // Convertir costo a MXN según moneda ingresada por el usuario
+          const cMoneda = c.querySelector('.kc-moneda')?.value || 'MXN';
+          const costoMXN = cMoneda === 'USD' ? ccosto * (tipoCambioDOF || 17.15) : ccosto;
+          const costoBase = costoMXN * (inclIVA ? 1 : 1.16); // aplica IVA si no lo incluye
+          const compTotal = costToDisplay(cqty * costoBase); // convierte a moneda de cotización
           c.querySelector('.comp-total').textContent = sym + fmt(compTotal);
           c.querySelector('.comp-total').className = compTotal === 0 ? 'comp-total zero' : 'comp-total';
           compCostTotal += compTotal;

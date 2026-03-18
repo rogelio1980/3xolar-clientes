@@ -1,17 +1,26 @@
-name: Deploy to Firebase Hosting
+name: Deploy Portal TRN → Firebase
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_XOLAR_CLIENTES }}
-          projectId: xolar-clientes
-          channelId: live
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Write service account key
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_XOLAR_CLIENTES }}' | base64 -d > /tmp/sa.json
+
+      - name: Deploy Hosting
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/sa.json
+        run: |
+          firebase deploy \
+            --only hosting \
+            --project xolar-clientes

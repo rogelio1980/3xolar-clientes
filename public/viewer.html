@@ -186,6 +186,22 @@ const proposalId = params.get('id');
 // n8n webhook — comment notifications
 const N8N_WEBHOOK = 'https://s3lect.app.n8n.cloud/webhook/trn-comentarios';
 
+// WhatsApp Business API — direct notifications
+const WA_TOKEN   = 'EAANey7PEggYBQ7joSACwzQV625bnbp0697EaKgLzt8BwHxpCLc5qGdlGe1MCO5qmdxUWydiE4qbxBBaxfDh69k5uhVBZCz8iu7pKwdHpZBmHyu9I5KZBSm0OffJgdugZCqZBL6GtZCo7A65QUqpECyFtdUm9fmsN2UglxxMCEpH1SnGl7zrfIpIfBiEjQPZAQZDZD';
+const WA_PHONE_ID = '1075049469019777';  // Test number — swap for real ID when ready
+const WA_ADMIN_PHONE = '526141788443';   // Rogelio — always notified
+
+async function sendWhatsApp(to, body) {
+  if (!to || !to.match(/^\d{10,15}$/)) return;
+  try {
+    await fetch(`https://graph.facebook.com/v19.0/${WA_PHONE_ID}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + WA_TOKEN },
+      body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body } })
+    });
+  } catch(e) {}
+}
+
 let currentUid = null;
 let cId        = null;
 let cName      = 'Usuario';
@@ -365,6 +381,21 @@ async function sendComment() {
         timestamp: new Date().toISOString()
       })
     }).catch(()=>{});
+  } catch(e) {}
+
+  // WhatsApp direct notifications (parallel)
+  try {
+    const isClientMsg = !isAdmin;
+    const folio = document.querySelector('.proposal-folio')?.textContent || proposalId;
+    const typeLabel = currentType === 'approval' ? '✅ Aprobación' : currentType === 'revision' ? '✏️ Revisión' : '💬 Comentario';
+    if (isClientMsg) {
+      const msgAdmin = typeLabel + ' de ' + cName + '\nPropuesta: ' + folio + '\n\n"' + text + '"\n\n👉 ' + window.location.href;
+      sendWhatsApp(WA_ADMIN_PHONE, msgAdmin);
+    } else if (cPhone) {
+      const phone = cPhone.replace(/\D/g,'');
+      const msgClient = 'Hola ' + cName + ', TRN respondió tu propuesta ' + folio + ':\n\n"' + text + '"\n\n👉 ' + window.location.href;
+      sendWhatsApp(phone, msgClient);
+    }
   } catch(e) {}
 
   // Reset type to comment after approval/revision

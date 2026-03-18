@@ -447,6 +447,22 @@ tr:hover td{background:rgba(245,166,35,.02)}
 
 <div class="toast" id="toast"></div>
 
+<!-- ════════════ MODAL: VINCULAR COTIZACIÓN → PROPUESTA ════════════ -->
+<div class="modal-overlay" id="linkQuoteToProposalModal">
+  <div class="modal" style="max-width:420px">
+    <h3>Vincular cotización a propuesta</h3>
+    <p style="font-size:.82rem;color:var(--gray);margin-bottom:1rem">Selecciona la propuesta a la que quieres vincular esta cotización.</p>
+    <div class="field">
+      <label>Propuesta</label>
+      <select id="lqtpSelect"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="document.getElementById('linkQuoteToProposalModal').classList.remove('show')">Cancelar</button>
+      <button class="btn-primary-sm" id="btnConfirmLinkQtoP">Vincular</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -834,6 +850,10 @@ function renderQuotesTable() {
     const total = q.total || q.items?.reduce((s,i)=>s+(i.total||0),0) || 0;
     const cur = q.moneda || 'MXN';
     pBody_folio = q.folio || q.id.slice(0,8);
+    const linkedProp = allProposals.find(p => p.quoteId === q.id && p.clientId === q.clientId);
+    const linkBtn = linkedProp
+      ? `<span style="font-size:.68rem;color:var(--green);padding:.15rem .5rem;border:1px solid rgba(46,204,113,.2);border-radius:6px;white-space:nowrap">🔗 ${(linkedProp.title||'').slice(0,16)}…</span>`
+      : `<button class="btn-action green" onclick="openLinkQuoteToProposal('${q.clientId}','${q.id}')">🔗 Propuesta</button>`;
     qBody.innerHTML += `<tr>
       <td class="info-tag">${q.folio||'—'}</td>
       <td style="font-size:.8rem">${clientName}</td>
@@ -843,12 +863,13 @@ function renderQuotesTable() {
       <td style="font-size:.78rem;color:var(--gray)">${q.elaboradoPor||'—'}</td>
       <td class="info-tag">${fmtDate(q.updatedAt)||q.fechaCot||'—'}</td>
       <td>
-        <div class="actions-cell">
-          <a class="btn-action" href="/cotizacion?id=${q.id}&client=${q.clientId}" target="_blank">Ver PDF</a>
-          <a class="btn-action blue" href="/cotizador?edit=${q.id}&client=${q.clientId}" target="_blank">Editar</a>
-          <button class="btn-action" onclick="cycleStatus('${q.clientId}','${q.id}','${st}')">Estado</button>
-          ${!isInvoiced?`<button class="btn-action purple" onclick="openInvoiceModal('${q.clientId}','${q.id}')">📄 Factura</button>`:''}
-          <button class="btn-action danger" onclick="askDeleteQuote('${q.clientId}','${q.id}','${(q.folio||q.id).replace(/'/g,"\\'")}')">🗑</button>
+        <div class="actions-cell" style="gap:.28rem">
+          <a class="btn-action" href="/cotizacion?id=${q.id}&client=${q.clientId}" target="_blank">PDF</a>
+          <a class="btn-action blue" href="/cotizador?edit=${q.id}&client=${q.clientId}" target="_blank">✏️ Editar</a>
+          <button class="btn-action" onclick="cycleStatus('${q.clientId}','${q.id}','${st}')" title="Cambiar estado">⟳ Estado</button>
+          ${linkBtn}
+          ${!isInvoiced?`<button class="btn-action purple" onclick="openInvoiceModal('${q.clientId}','${q.id}')">📄</button>`:''}
+          <button class="btn-action danger" onclick="askDeleteQuote('${q.clientId}','${q.id}','${(q.folio||q.id).replace(/'/g,"\'")}')">🗑</button>
         </div>
       </td>
     </tr>`;
@@ -1273,6 +1294,40 @@ async function unlinkLinkedClient(ownerClientId, proposalId, removeId) {
   showToast('✅ Cliente desvinculado');
   loadAll();
 }
+
+// ── Link quote → proposal (from cotizaciones tab) ──
+let lqtpCtx = null;
+function openLinkQuoteToProposal(clientId, quoteId) {
+  const clientProposals = allProposals.filter(p => p.clientId === clientId && !p.quoteId);
+  if (!clientProposals.length) {
+    showToast('⚠️ Este cliente no tiene propuestas sin cotización vinculada', true);
+    return;
+  }
+  lqtpCtx = {clientId, quoteId};
+  const sel = document.getElementById('lqtpSelect');
+  sel.innerHTML = '<option value="">— Selecciona una propuesta —</option>';
+  clientProposals.forEach(p => {
+    sel.innerHTML += `<option value="${p.id}">${p.title||'Sin título'}</option>`;
+  });
+  document.getElementById('linkQuoteToProposalModal').classList.add('show');
+}
+
+document.getElementById('btnConfirmLinkQtoP').onclick = async () => {
+  if (!lqtpCtx) return;
+  const propId = document.getElementById('lqtpSelect').value;
+  if (!propId) { showToast('⚠️ Selecciona una propuesta', true); return; }
+  const q = allQuotes.find(x => x.id === lqtpCtx.quoteId);
+  if (!q) return;
+  await db.collection('clients').doc(lqtpCtx.clientId).collection('proposals').doc(propId).update({
+    quoteId: lqtpCtx.quoteId,
+    quoteData: { folio: q.folio||'', total: q.total||0, subtotal: q.subtotal||0, moneda: q.moneda||'MXN' },
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  document.getElementById('linkQuoteToProposalModal').classList.remove('show');
+  showToast('✅ Cotización vinculada a la propuesta');
+  lqtpCtx = null;
+  loadAll();
+};
 
 document.getElementById('btnLogout').onclick = () => auth.signOut().then(()=>location.href='/');
 </script>

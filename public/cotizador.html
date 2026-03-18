@@ -516,33 +516,31 @@ let kitTemplates = [];
 let clients = {};
 let itemIdCounter = 0;
 let compIdCounter = 0;
-let tipoCambioDOF = null; // MXN per 1 USD
+let tipoCambioDOF = 17.15; // MXN per 1 USD — fallback, se actualiza con API
 
 /* ═══ DOF EXCHANGE RATE ═══ */
 async function loadDOFRate() {
   const row = document.getElementById('tcRow');
   const label = document.getElementById('tcLabel');
   if (!row || !label) return;
-  label.textContent = 'Consultando Banxico/DOF…';
+  label.textContent = 'Consultando tipo de cambio…';
   row.style.display = 'block';
   try {
-    // Banxico API - tipo de cambio FIX (SF43718)
-    const today = new Date();
-    const fmt2 = n => String(n).padStart(2,'0');
-    const dateStr = `${today.getFullYear()}-${fmt2(today.getMonth()+1)}-${fmt2(today.getDate())}`;
-    const url = `https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF43718/datos/${dateStr}/${dateStr}?token=none`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Banxico no disponible');
+    // open.er-api.com — gratuito, sin auth, CORS habilitado
+    const res = await fetch('https://open.er-api.com/v6/latest/USD');
+    if (!res.ok) throw new Error('API no disponible');
     const data = await res.json();
-    const val = data?.bmx?.series?.[0]?.datos?.[0]?.dato;
-    if (!val || val === 'N/E') throw new Error('Sin dato hoy');
-    tipoCambioDOF = parseFloat(val.replace(',','.'));
-    label.textContent = `TC DOF hoy: $${tipoCambioDOF.toFixed(4)} MXN/USD`;
+    const mxn = data?.rates?.MXN;
+    if (!mxn) throw new Error('Sin dato MXN');
+    tipoCambioDOF = parseFloat(mxn.toFixed(4));
+    label.textContent = `TC live: $${tipoCambioDOF.toFixed(4)} MXN/USD ✓`;
     row.style.display = 'block';
   } catch(e) {
-    // Fallback: use a reasonable recent rate
-    tipoCambioDOF = 17.15;
-    label.textContent = `TC referencia: $${tipoCambioDOF.toFixed(2)} MXN/USD (actualiza manualmente)`;
+    // Fallback estable
+    if (!tipoCambioDOF || tipoCambioDOF === 17.15) {
+      tipoCambioDOF = 17.15;
+      label.textContent = `TC referencia: $${tipoCambioDOF.toFixed(2)} MXN/USD (clic para editar)`;
+    }
     row.style.display = 'block';
   }
 }
@@ -720,6 +718,31 @@ async function loadExistingQuote(clientId, quoteId){
     setVal('garantiaDesc', q.garantiaDesc||'');
 
     if(q.moneda){ const m=document.getElementById('moneda'); if(m) m.value=q.moneda; }
+    // Restore saved TC or load live rate if quote is in USD
+    if(q.tipoCambio && q.tipoCambio > 0) {
+      tipoCambioDOF = q.tipoCambio;
+      const lbl = document.getElementById('tcLabel');
+      const row = document.getElementById('tcRow');
+      if(lbl) lbl.textContent = `TC guardado: $${tipoCambioDOF.toFixed(4)} MXN/USD`;
+      if(row && q.moneda === 'USD') row.style.display = 'block';
+    } else if(q.moneda === 'USD') {
+      await loadDOFRate();
+      const row = document.getElementById('tcRow');
+      if(row) row.style.display = 'block';
+    }
+    // Restore saved TC or load live TC if quote is in USD
+    if(q.tipoCambio && q.tipoCambio > 0) {
+      tipoCambioDOF = q.tipoCambio;
+      const lbl = document.getElementById('tcLabel');
+      const row = document.getElementById('tcRow');
+      if(lbl) lbl.textContent = `TC guardado: $${tipoCambioDOF.toFixed(4)} MXN/USD`;
+      if(row && q.moneda === 'USD') row.style.display = 'block';
+    } else if(q.moneda === 'USD') {
+      // No TC saved — load live rate
+      await loadDOFRate();
+      const row = document.getElementById('tcRow');
+      if(row) row.style.display = 'block';
+    }
     if(q.ivaRate!=null){ const iv=document.getElementById('ivaSelect'); if(iv) iv.value=q.ivaRate; }
     if(q.status){ const e=document.getElementById('estado'); if(e) e.value=q.status; }
 
@@ -1568,6 +1591,7 @@ async function saveQuote(){
     tiempoEntrega, vigencia: parseInt(document.getElementById('vigencia').value)||30,
     fechaCot: document.getElementById('fechaCot').value,
     moneda, ivaRate, subtotal, iva, total,
+    tipoCambio: (moneda === 'USD' && tipoCambioDOF) ? tipoCambioDOF : null,
     garantiaTipo: document.getElementById('garantiaTipo').value,
     garantiaDesc: document.getElementById('garantiaDesc').value,
     formaPago: document.getElementById('formaPago').value,

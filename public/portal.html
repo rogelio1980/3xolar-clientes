@@ -97,38 +97,72 @@ auth.onAuthStateChanged(async user => {
   const first = name ? name.split(' ')[0] : '';
   document.getElementById('greeting').textContent = `Hola, ${first} 👋`;
 
-  // Load proposals
+  // Load proposals (own + linked)
   const grid = document.getElementById('grid');
-  db.collection('clients').doc(user.uid).collection('proposals')
-    .orderBy('updatedAt','desc')
-    .onSnapshot(snap => {
-      grid.innerHTML = '';
-      if (snap.empty) {
-        grid.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Aún no tienes propuestas.<br>Tu ejecutivo las creará pronto.</p></div>';
-        return;
-      }
-      snap.forEach(doc => {
-        const d = doc.data();
-        if (d._type === 'quote') return;
-        if (d.folio && d.items && Array.isArray(d.versions) && d.versions.length === 0) return;
-        const st = d.status || 'draft';
-        const vers = d.versions ? d.versions.length : 0;
-        const date = d.updatedAt ? new Date(d.updatedAt.toDate()).toLocaleDateString('es-MX') : '';
-        const tags = (d.tags || []).map(t => `<span class="tag">${t}</span>`).join('');
-        grid.innerHTML += `
-        <div class="prop-card" id="pc-${doc.id}">
-          <div class="del-confirm" id="dc-${doc.id}"><span>Eliminar?</span><button class="del-yes" onclick="confirmDel('${doc.id}',event)">Sí</button><button class="del-no" onclick="cancelDel('${doc.id}',event)">No</button></div><button class="btn-del" onclick="askDel('${doc.id}',event)">🗑</button><div onclick="location.href='/viewer?id=${doc.id}'">
-          <span class="badge ${badgeMap[st]}">${statusMap[st] || st}</span>
-          <div class="prop-title">${d.title || 'Sin título'}</div>
-          <div class="prop-desc">${d.description || ''}</div>
-          <div class="tags">${tags}</div>
-          <div class="prop-footer">
-            <span>${vers} version${vers !== 1 ? 'es' : ''} · ${date}</span>
-            <span class="arrow">→</span>
-          </div>
-        </div></div>`;
-      });
+  const uid = user.uid;
+
+  function renderCard(doc, d, isLinked) {
+    if (d._type === 'quote') return;
+    if (d.folio && d.items && Array.isArray(d.versions) && d.versions.length === 0) return;
+    const st = d.status || 'draft';
+    const vers = d.versions ? d.versions.length : 0;
+    const date = d.updatedAt ? new Date(d.updatedAt.toDate()).toLocaleDateString('es-MX') : '';
+    const tags = (d.tags || []).map(t => `<span class="tag">${t}</span>`).join('');
+    const linkedBadge = isLinked ? `<span class="tag" style="background:rgba(46,204,113,.15);color:#2ECC71;border-color:rgba(46,204,113,.2)">Compartida</span>` : '';
+    return `
+    <div class="prop-card" id="pc-${doc.id}">
+      ${!isLinked ? `<div class="del-confirm" id="dc-${doc.id}"><span>Eliminar?</span><button class="del-yes" onclick="confirmDel('${doc.id}',event)">Sí</button><button class="del-no" onclick="cancelDel('${doc.id}',event)">No</button></div><button class="btn-del" onclick="askDel('${doc.id}',event)">🗑</button>` : ''}
+      <div onclick="location.href='/viewer?id=${doc.id}'">
+      <span class="badge ${badgeMap[st]}">${statusMap[st] || st}</span>
+      <div class="prop-title">${d.title || 'Sin título'}</div>
+      <div class="prop-desc">${d.description || ''}</div>
+      <div class="tags">${tags}${linkedBadge}</div>
+      <div class="prop-footer">
+        <span>${vers} version${vers !== 1 ? 'es' : ''} · ${date}</span>
+        <span class="arrow">→</span>
+      </div>
+    </div></div>`;
+  }
+
+  async function loadAllProposals() {
+    grid.innerHTML = '';
+    const rendered = new Set();
+    const cards = [];
+
+    // Own proposals
+    const ownSnap = await db.collection('clients').doc(uid).collection('proposals')
+      .orderBy('updatedAt','desc').get();
+    ownSnap.forEach(doc => {
+      const d = doc.data();
+      const html = renderCard(doc, d, false);
+      if (html) { cards.push({ts: d.updatedAt?.toDate?.()?.getTime()||0, html}); rendered.add(doc.id); }
     });
+
+    // Linked proposals (where this client appears in linkedClients)
+    try {
+      const linkedSnap = await db.collectionGroup('proposals')
+        .where('linkedClients','array-contains', uid)
+        .get();
+      linkedSnap.forEach(doc => {
+        if (rendered.has(doc.id)) return;
+        const d = doc.data();
+        const html = renderCard(doc, d, true);
+        if (html) { cards.push({ts: d.updatedAt?.toDate?.()?.getTime()||0, html}); rendered.add(doc.id); }
+      });
+    } catch(e) {
+      // collectionGroup index may not exist yet — silently skip linked proposals
+      console.warn('linkedClients query not available yet:', e.message);
+    }
+
+    if (!cards.length) {
+      grid.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Aún no tienes propuestas.<br>Tu ejecutivo las creará pronto.</p></div>';
+      return;
+    }
+    cards.sort((a,b) => b.ts - a.ts);
+    grid.innerHTML = cards.map(c => c.html).join('');
+  }
+
+  loadAllProposals();
 });
 
 document.getElementById('btnLogout').onclick = () => auth.signOut().then(() => location.href = '/');

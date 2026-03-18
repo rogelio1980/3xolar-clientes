@@ -891,23 +891,6 @@ function renderDashboard() {
   });
   updateDashboardFinancials();
 }
-function __renderDashboard_REPLACED() {
-  const recent = allProposals.slice(0,10);
-  const rBody = document.getElementById('recentBody');
-  rBody.innerHTML = '';
-  if (!recent.length) { rBody.innerHTML = '<tr><td colspan="4" class="empty-state">Sin actividad reciente</td></tr>'; return; }
-  recent.forEach(p => {
-    const cl = allClients[p.clientId];
-    const clientName = cl ? (cl.name||cl._id) : p.clientId;
-    const st = p.status || 'draft';
-    rBody.innerHTML += `<tr>
-      <td style="font-size:.8rem">${clientName}</td>
-      <td><a href="/viewer?id=${p.id}" style="color:var(--light);text-decoration:none;font-size:.83rem">${p.title||'Sin título'}</a></td>
-      <td><span class="badge ${badgeMap[st]||'badge-draft'}">${statusMap[st]||st}</span></td>
-      <td class="info-tag">${fmtDate(p.updatedAt)}</td>
-    </tr>`;
-  });
-}
 
 // ── Clients table ─────────────────────────────────
 function renderClientsTable() {
@@ -1172,55 +1155,6 @@ function renderQuotesTable() {
       <button class="btn-action" onclick="quotePage=Math.min(${totalPages},quotePage+1);renderQuotesTable()" ${quotePage===totalPages?'disabled':''}>Siguiente →</button>`;
   }
 }
-function __renderQuotesTable_REPLACED() {
-  const filterClientId = document.getElementById('filterQuoteClient').value;
-  const filterStatus = document.getElementById('filterQuoteStatus').value;
-  const qBody = document.getElementById('quotesBody');
-  qBody.innerHTML = '';
-  let list = allQuotes;
-  if (filterClientId) list = list.filter(q => q.clientId === filterClientId);
-  if (filterStatus) list = list.filter(q => q.status === filterStatus);
-  if (!list.length) { qBody.innerHTML = '<tr><td colspan="7" class="empty-state">Sin cotizaciones</td></tr>'; return; }
-  list.forEach(q => {
-    const cl = allClients[q.clientId];
-    const clientName = cl ? (cl.name||cl._id) : q.clientId;
-    const st = q.status || 'draft';
-    const isInvoiced = q._invoiced;
-    const cur = q.moneda || 'MXN';
-    const sym = cur === 'USD' ? 'US$' : '$';
-    const total = q.total || q.items?.reduce((s,i)=>s+(i.total||0),0) || 0;
-    const statusBadge = isInvoiced
-      ? `<span class="badge badge-invoice">Facturada</span>`
-      : `<span class="badge ${badgeMap[st]||'badge-draft'}">${statusMap[st]||st}</span>`;
-    const linkedProp = allProposals.find(p => p.quoteId === q.id && p.clientId === q.clientId);
-    const propCell = linkedProp
-      ? `<span style="font-size:.75rem;color:var(--green);font-weight:600">✓ ${(linkedProp.title||'Propuesta').slice(0,22)}</span>`
-      : `<button class="btn-action green" style="font-size:.72rem" onclick="openLinkQuoteToProposal('${q.clientId}','${q.id}')">+ Vincular</button>`;
-    qBody.innerHTML += `<tr>
-      <td>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--light);font-weight:600">${q.folio||'—'}</div>
-        <div style="font-size:.68rem;color:var(--gray);margin-top:.1rem">${q.elaboradoPor||''}</div>
-      </td>
-      <td style="font-size:.82rem;font-weight:500">${clientName}</td>
-      <td>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--amber);font-weight:700">${total?sym+new Intl.NumberFormat('es-MX',{minimumFractionDigits:2}).format(total):'—'}</div>
-        <div style="font-size:.65rem;color:var(--gray)">${cur}</div>
-      </td>
-      <td>${statusBadge}</td>
-      <td>${propCell}</td>
-      <td class="info-tag" style="white-space:nowrap">${fmtDate(q.updatedAt)||q.fechaCot||'—'}</td>
-      <td>
-        <div style="display:flex;gap:.3rem;justify-content:flex-end;align-items:center;flex-wrap:nowrap">
-          <a class="btn-action" href="/cotizacion?id=${q.id}&client=${q.clientId}" target="_blank" title="Ver PDF">📄 PDF</a>
-          <a class="btn-action blue" href="/cotizador?edit=${q.id}&client=${q.clientId}" target="_blank" title="Editar">✏️</a>
-          <button class="btn-action" onclick="cycleStatus('${q.clientId}','${q.id}','${st}')" title="Cambiar estado">⟳</button>
-          ${!isInvoiced?`<button class="btn-action purple" onclick="openInvoiceModal('${q.clientId}','${q.id}')" title="Factura">🧾</button>`:''}
-          <button class="btn-action danger" onclick="askDeleteQuote('${q.clientId}','${q.id}','${(q.folio||q.id).replace(/'/g,"\'")}')">🗑</button>
-        </div>
-      </td>
-    </tr>`;
-  });
-}
 document.getElementById('filterQuoteClient').addEventListener('change', renderQuotesTable);
 document.getElementById('filterQuoteStatus').addEventListener('change', renderQuotesTable);
 
@@ -1373,16 +1307,6 @@ function askDeleteQuote(clientId, quoteId, context) {
   };
   document.getElementById('confirmTitle').textContent = '¿Eliminar cotización?';
   document.getElementById('confirmMsg').innerHTML = `Se eliminará permanentemente:<br><strong>${context||quoteId}</strong><br><br>Esta acción <strong>no se puede deshacer</strong>.`;
-  document.getElementById('confirmModal').classList.add('show');
-}
-function __askDeleteQuote_REPLACED(clientId, quoteId, folio) {
-  pendingDelete = async () => {
-    await db.collection('clients').doc(clientId).collection('proposals').doc(quoteId).delete();
-    showToast('🗑 Cotización eliminada');
-    loadAll();
-  };
-  document.getElementById('confirmTitle').textContent = '¿Eliminar cotización?';
-  document.getElementById('confirmMsg').innerHTML = `Se eliminará permanentemente la cotización <strong>${folio}</strong>.<br><br>Esta acción no se puede deshacer.`;
   document.getElementById('confirmModal').classList.add('show');
 }
 

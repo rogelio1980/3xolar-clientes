@@ -253,7 +253,7 @@ tr:hover td{background:rgba(245,166,35,.02)}
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>Folio</th><th>Cliente</th><th>Total</th><th>Moneda</th><th>Estado</th><th>Elaborado por</th><th>Fecha</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>Folio</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Propuesta</th><th>Fecha</th><th style="text-align:right">Acciones</th></tr></thead>
           <tbody id="quotesBody"></tbody>
         </table>
       </div>
@@ -838,37 +838,41 @@ function renderQuotesTable() {
   let list = allQuotes;
   if (filterClientId) list = list.filter(q => q.clientId === filterClientId);
   if (filterStatus) list = list.filter(q => q.status === filterStatus);
-  if (!list.length) { qBody.innerHTML = '<tr><td colspan="8" class="empty-state">Sin cotizaciones</td></tr>'; return; }
+  if (!list.length) { qBody.innerHTML = '<tr><td colspan="7" class="empty-state">Sin cotizaciones</td></tr>'; return; }
   list.forEach(q => {
     const cl = allClients[q.clientId];
     const clientName = cl ? (cl.name||cl._id) : q.clientId;
     const st = q.status || 'draft';
     const isInvoiced = q._invoiced;
+    const cur = q.moneda || 'MXN';
+    const sym = cur === 'USD' ? 'US$' : '$';
+    const total = q.total || q.items?.reduce((s,i)=>s+(i.total||0),0) || 0;
     const statusBadge = isInvoiced
       ? `<span class="badge badge-invoice">Facturada</span>`
       : `<span class="badge ${badgeMap[st]||'badge-draft'}">${statusMap[st]||st}</span>`;
-    const total = q.total || q.items?.reduce((s,i)=>s+(i.total||0),0) || 0;
-    const cur = q.moneda || 'MXN';
-    pBody_folio = q.folio || q.id.slice(0,8);
     const linkedProp = allProposals.find(p => p.quoteId === q.id && p.clientId === q.clientId);
-    const linkBtn = linkedProp
-      ? `<span style="font-size:.68rem;color:var(--green);padding:.15rem .5rem;border:1px solid rgba(46,204,113,.2);border-radius:6px;white-space:nowrap">🔗 ${(linkedProp.title||'').slice(0,16)}…</span>`
-      : `<button class="btn-action green" onclick="openLinkQuoteToProposal('${q.clientId}','${q.id}')">🔗 Propuesta</button>`;
+    const propCell = linkedProp
+      ? `<span style="font-size:.75rem;color:var(--green);font-weight:600">✓ ${(linkedProp.title||'Propuesta').slice(0,22)}</span>`
+      : `<button class="btn-action green" style="font-size:.72rem" onclick="openLinkQuoteToProposal('${q.clientId}','${q.id}')">+ Vincular</button>`;
     qBody.innerHTML += `<tr>
-      <td class="info-tag">${q.folio||'—'}</td>
-      <td style="font-size:.8rem">${clientName}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--amber)">${total?fmtMoney(total,cur):'—'}</td>
-      <td class="info-tag">${cur}</td>
-      <td>${statusBadge}</td>
-      <td style="font-size:.78rem;color:var(--gray)">${q.elaboradoPor||'—'}</td>
-      <td class="info-tag">${fmtDate(q.updatedAt)||q.fechaCot||'—'}</td>
       <td>
-        <div class="actions-cell" style="gap:.28rem">
-          <a class="btn-action" href="/cotizacion?id=${q.id}&client=${q.clientId}" target="_blank">PDF</a>
-          <a class="btn-action blue" href="/cotizador?edit=${q.id}&client=${q.clientId}" target="_blank">✏️ Editar</a>
-          <button class="btn-action" onclick="cycleStatus('${q.clientId}','${q.id}','${st}')" title="Cambiar estado">⟳ Estado</button>
-          ${linkBtn}
-          ${!isInvoiced?`<button class="btn-action purple" onclick="openInvoiceModal('${q.clientId}','${q.id}')">📄</button>`:''}
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--light);font-weight:600">${q.folio||'—'}</div>
+        <div style="font-size:.68rem;color:var(--gray);margin-top:.1rem">${q.elaboradoPor||''}</div>
+      </td>
+      <td style="font-size:.82rem;font-weight:500">${clientName}</td>
+      <td>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--amber);font-weight:700">${total?sym+new Intl.NumberFormat('es-MX',{minimumFractionDigits:2}).format(total):'—'}</div>
+        <div style="font-size:.65rem;color:var(--gray)">${cur}</div>
+      </td>
+      <td>${statusBadge}</td>
+      <td>${propCell}</td>
+      <td class="info-tag" style="white-space:nowrap">${fmtDate(q.updatedAt)||q.fechaCot||'—'}</td>
+      <td>
+        <div style="display:flex;gap:.3rem;justify-content:flex-end;align-items:center;flex-wrap:nowrap">
+          <a class="btn-action" href="/cotizacion?id=${q.id}&client=${q.clientId}" target="_blank" title="Ver PDF">📄 PDF</a>
+          <a class="btn-action blue" href="/cotizador?edit=${q.id}&client=${q.clientId}" target="_blank" title="Editar">✏️</a>
+          <button class="btn-action" onclick="cycleStatus('${q.clientId}','${q.id}','${st}')" title="Cambiar estado">⟳</button>
+          ${!isInvoiced?`<button class="btn-action purple" onclick="openInvoiceModal('${q.clientId}','${q.id}')" title="Factura">🧾</button>`:''}
           <button class="btn-action danger" onclick="askDeleteQuote('${q.clientId}','${q.id}','${(q.folio||q.id).replace(/'/g,"\'")}')">🗑</button>
         </div>
       </td>

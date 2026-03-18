@@ -3,20 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TRN — Visor de Propuesta</title>
+<title>TRN — Propuesta</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--dark:#0B1A2E;--navy:#112240;--mid:#1B3A5C;--amber:#F5A623;--orange:#FF6B35;--green:#2ECC71;--teal:#00B894;--white:#F8FAFE;--gray:#8892B0;--light:#CCD6F6;--danger:#e74c3c;--card:rgba(17,34,64,0.9);--border:rgba(245,166,35,0.15)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);min-height:100dvh;overflow-x:hidden}
-.topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0.75rem clamp(1rem,4vw,2rem);background:rgba(11,26,46,0.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);height:56px}
+html{height:100%}
+body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);min-height:100dvh;overflow-x:hidden;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0.75rem clamp(1rem,4vw,2rem);background:rgba(11,26,46,0.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);height:56px;flex-shrink:0}
 .topbar-left{display:flex;align-items:center;gap:0.75rem}
 .topbar-left img{height:36px}
 .topbar-title{font-family:'Outfit',sans-serif;font-weight:700;font-size:1rem;color:var(--light)}
-.topbar-actions{display:flex;gap:0.5rem}
+.topbar-actions{display:flex;gap:0.5rem;align-items:center}
 .btn-back,.btn-logout{padding:0.45rem 1rem;border:1px solid var(--border);border-radius:8px;background:transparent;color:var(--gray);font-family:'Outfit',sans-serif;font-size:0.8rem;cursor:pointer;transition:all .2s;text-decoration:none}
 .btn-back:hover,.btn-logout:hover{border-color:var(--amber);color:var(--amber)}
-.main-col{max-width:900px;margin:0 auto;padding:clamp(1rem,3vw,2rem)}
+.btn-pdf-cot{display:inline-flex;align-items:center;gap:.4rem;padding:.48rem 1.2rem;border-radius:8px;background:linear-gradient(135deg,#F5A623,#FF6B35);color:#0B1A2E;font-family:'Outfit',sans-serif;font-weight:700;font-size:.83rem;text-decoration:none;box-shadow:0 4px 14px rgba(245,166,35,.28);transition:all .2s}
+.btn-pdf-cot:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,166,35,.4)}
+
+/* Layout: content + chat sidebar */
+.page-body{display:flex;flex:1;overflow:hidden;min-height:0}
+.main-col{flex:1;overflow-y:auto;padding:clamp(1rem,3vw,2rem);max-width:760px}
+.chat-sidebar{width:360px;flex-shrink:0;display:flex;flex-direction:column;border-left:1px solid var(--border);background:rgba(11,26,46,0.6)}
+
+/* Proposal content */
 .proposal-title{font-family:'Outfit',sans-serif;font-size:clamp(1.25rem,3vw,1.75rem);font-weight:800;margin-bottom:0.5rem}
 .proposal-desc{color:var(--gray);margin-bottom:1rem;line-height:1.6}
 .tags{display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1.5rem}
@@ -29,7 +38,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
 .ver-info strong{color:var(--light);font-weight:500}
 .ver-link{color:var(--amber);text-decoration:none;font-size:0.8rem;font-family:'Outfit',sans-serif;font-weight:600}
 .ver-link:hover{text-decoration:underline}
-/* Quote table */
 .quote-view{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:clamp(1rem,2vw,1.5rem);margin-top:1rem}
 .quote-table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.85rem}
 .quote-table th{text-align:left;padding:0.6rem;border-bottom:2px solid var(--amber);font-family:'Outfit',sans-serif;font-weight:600;color:var(--amber);font-size:0.75rem;text-transform:uppercase}
@@ -39,46 +47,83 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
 .total-row{display:flex;justify-content:space-between;padding:0.5rem 0;font-size:0.9rem;border-bottom:1px solid var(--border)}
 .total-row.grand{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.15rem;color:var(--amber);border-bottom:none;border-top:2px solid var(--amber);margin-top:0.25rem;padding-top:0.75rem}
 .total-row .val{font-family:'JetBrains Mono',monospace}
-/* Guarantee & conditions */
 .guarantee-block,.conditions-block{margin-top:1.25rem;padding:1rem;background:rgba(0,0,0,0.15);border-radius:10px;border:1px solid var(--border)}
 .guarantee-block p,.conditions-block p{font-size:0.85rem;color:var(--gray);line-height:1.6}
 .cond-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem}
 .cond-item{font-size:0.82rem}
 .cond-item strong{display:block;font-family:'Outfit',sans-serif;font-size:0.7rem;color:var(--amber);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.15rem}
 .cond-item span{color:var(--light)}
-/* Sticky notes */
-.sticky-panel{display:none;background:rgba(0,0,0,.1);border-radius:12px;padding:.85rem 1rem;margin-top:.6rem;border:1px solid rgba(255,255,255,.06)}
-.sticky-panel.open{display:block}
-.sticky-notes{display:flex;flex-wrap:wrap;gap:.7rem;margin-bottom:.8rem;min-height:0}
-.sticky-note{padding:.65rem .8rem;border-radius:3px;font-size:.75rem;line-height:1.55;max-width:200px;min-width:110px;box-shadow:2px 3px 10px rgba(0,0,0,.3);position:relative;font-family:'DM Sans',sans-serif}
-.sticky-note:nth-child(5n+1){background:#FFF8DC;transform:rotate(-1.3deg);color:#333}
-.sticky-note:nth-child(5n+2){background:#E1F5FE;transform:rotate(.9deg);color:#1a3a4a}
-.sticky-note:nth-child(5n+3){background:#F3E5F5;transform:rotate(-.7deg);color:#3a1a4a}
-.sticky-note:nth-child(5n+4){background:#FFF3E0;transform:rotate(1.1deg);color:#4a2a00}
-.sticky-note:nth-child(5n+5){background:#E8F5E9;transform:rotate(-.5deg);color:#1a4a1a}
-.sticky-note.mine{background:#DCEDC8!important;color:#1a3a00!important;transform:rotate(.4deg)!important}
-.sticky-note-author{font-size:.62rem;font-weight:700;opacity:.5;margin-bottom:2px}
-.sticky-note-time{font-size:.59rem;opacity:.4;text-align:right;margin-top:4px}
-.sticky-inp-wrap{display:flex;gap:.5rem;align-items:flex-end}
-.sticky-inp{flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#fff;padding:.5rem .75rem;font-family:'DM Sans',sans-serif;font-size:.84rem;resize:none;min-height:38px;outline:none;transition:border-color .2s}
-.sticky-inp:focus{border-color:rgba(245,166,35,.4)}
-.sticky-save{background:linear-gradient(135deg,#F5A623,#FF6B35);border:none;color:#0B1A2E;padding:.46rem 1rem;border-radius:8px;font-family:'Outfit',sans-serif;font-weight:700;font-size:.8rem;cursor:pointer;opacity:.25;pointer-events:none;transition:all .2s;white-space:nowrap;flex-shrink:0}
-.sticky-save.active{opacity:1;pointer-events:auto;box-shadow:0 3px 12px rgba(245,166,35,.35)}
-.btn-sticky-toggle{display:inline-flex;align-items:center;gap:.4rem;padding:.28rem .75rem;border-radius:20px;background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.22);color:#F5A623;font-size:.72rem;font-weight:700;cursor:pointer;transition:all .18s;font-family:'Outfit',sans-serif}
-.btn-sticky-toggle:hover{background:rgba(245,166,35,.2)}
-.sticky-cnt{background:#F5A623;color:#0B1A2E;border-radius:50%;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:800}
-.btn-pdf-cot{display:inline-flex;align-items:center;gap:.4rem;padding:.48rem 1.2rem;border-radius:8px;background:linear-gradient(135deg,#F5A623,#FF6B35);color:#0B1A2E;font-family:'Outfit',sans-serif;font-weight:700;font-size:.83rem;text-decoration:none;box-shadow:0 4px 14px rgba(245,166,35,.28);transition:all .2s}
-.btn-pdf-cot:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,166,35,.4)}
-/* Loading */
 .loader{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem;padding:4rem;color:var(--gray)}
 .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-/* Empty */
 .empty-state{text-align:center;color:var(--gray);font-size:0.85rem;padding:2rem}
-@media(max-width:600px){.cond-grid{grid-template-columns:1fr}.quote-table th:nth-child(4),.quote-table td:nth-child(4){display:none}}
+
+/* ═══ CHAT BUBBLE SYSTEM ═══════════════════════════════ */
+.chat-header{padding:.85rem 1rem .6rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.chat-header-title{font-family:'Outfit',sans-serif;font-weight:700;font-size:.85rem;color:var(--light);display:flex;align-items:center;gap:.5rem}
+.chat-badge{background:var(--amber);color:#0B1A2E;border-radius:20px;padding:.1rem .5rem;font-size:.65rem;font-weight:800;font-family:'Outfit',sans-serif}
+.chat-badge.hidden{display:none}
+.chat-messages{flex:1;overflow-y:auto;padding:.75rem 1rem;display:flex;flex-direction:column;gap:.6rem;scroll-behavior:smooth}
+.chat-messages::-webkit-scrollbar{width:4px}
+.chat-messages::-webkit-scrollbar-track{background:transparent}
+.chat-messages::-webkit-scrollbar-thumb{background:rgba(245,166,35,.2);border-radius:2px}
+.chat-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:.5rem;color:var(--gray);font-size:.8rem;padding:2rem;text-align:center}
+.chat-empty-icon{font-size:2rem;opacity:.4}
+
+/* Bubble wrapper */
+.bubble-wrap{display:flex;flex-direction:column;max-width:86%}
+.bubble-wrap.from-them{align-self:flex-start;align-items:flex-start}
+.bubble-wrap.from-me{align-self:flex-end;align-items:flex-end}
+
+/* Bubble */
+.bubble{padding:.55rem .8rem;border-radius:16px;font-size:.82rem;line-height:1.55;word-break:break-word;position:relative}
+.from-them .bubble{background:rgba(27,58,92,0.95);border:1px solid rgba(204,214,246,0.08);border-top-left-radius:4px;color:var(--light)}
+.from-me .bubble{background:linear-gradient(135deg,rgba(0,184,148,0.25),rgba(0,184,148,0.15));border:1px solid rgba(0,184,148,0.3);border-top-right-radius:4px;color:var(--white)}
+
+/* Meta info */
+.bubble-meta{display:flex;align-items:center;gap:.35rem;margin-top:2px}
+.bubble-author{font-size:.67rem;font-weight:600;color:var(--gray)}
+.from-me .bubble-author{color:rgba(0,184,148,.8)}
+.bubble-time{font-size:.62rem;color:var(--gray);opacity:.7}
+.bubble-status{font-size:.62rem;color:rgba(0,184,148,.7)}
+
+/* Type indicator */
+.bubble-type{display:inline-block;font-size:.6rem;font-weight:700;padding:.05rem .35rem;border-radius:4px;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+.type-approval{background:rgba(46,204,113,.15);color:#2ECC71}
+.type-revision{background:rgba(231,76,60,.15);color:#e74c3c}
+.type-comment{background:rgba(245,166,35,.1);color:var(--amber)}
+
+/* Input area */
+.chat-input-area{padding:.65rem .85rem;border-top:1px solid var(--border);background:rgba(11,26,46,0.5);flex-shrink:0}
+.chat-type-select{display:flex;gap:.4rem;margin-bottom:.5rem}
+.type-btn{padding:.2rem .6rem;border-radius:6px;font-size:.68rem;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--gray);font-family:'DM Sans',sans-serif;transition:all .15s}
+.type-btn.active-comment{background:rgba(245,166,35,.12);border-color:rgba(245,166,35,.3);color:var(--amber)}
+.type-btn.active-approval{background:rgba(46,204,113,.12);border-color:rgba(46,204,113,.3);color:#2ECC71}
+.type-btn.active-revision{background:rgba(231,76,60,.12);border-color:rgba(231,76,60,.3);color:#e74c3c}
+.chat-input-row{display:flex;gap:.5rem;align-items:flex-end}
+.chat-inp{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;color:var(--white);padding:.55rem .75rem;font-family:'DM Sans',sans-serif;font-size:.82rem;resize:none;min-height:38px;max-height:120px;outline:none;transition:border-color .2s;line-height:1.4}
+.chat-inp:focus{border-color:rgba(0,184,148,.4)}
+.chat-inp::placeholder{color:var(--gray)}
+.chat-send{background:linear-gradient(135deg,#00B894,#00a381);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.9rem;transition:all .2s;opacity:.4;pointer-events:none}
+.chat-send.ready{opacity:1;pointer-events:auto;box-shadow:0 3px 12px rgba(0,184,148,.35)}
+.chat-send.ready:hover{transform:scale(1.08)}
+
+/* Notification dot on portal (injected) */
+.unread-dot{width:8px;height:8px;background:#e74c3c;border-radius:50%;display:inline-block;margin-left:4px;animation:dotPulse 1.5s ease-in-out infinite}
+@keyframes dotPulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Mobile: stack vertically */
+@media(max-width:720px){
+  .page-body{flex-direction:column}
+  .chat-sidebar{width:100%;height:380px;border-left:none;border-top:1px solid var(--border)}
+  .main-col{max-width:100%}
+  .cond-grid{grid-template-columns:1fr}
+  .quote-table th:nth-child(4),.quote-table td:nth-child(4){display:none}
+}
 </style>
 </head>
 <body>
+
 <div class="topbar">
   <div class="topbar-left">
     <img src="assets/trn-logo.png" alt="TRN" onerror="this.outerHTML='<span style=\'font-family:Outfit,sans-serif;font-weight:800;color:#F5A623;font-size:1.2rem\'>TRN</span>'">
@@ -90,8 +135,41 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
     <button class="btn-logout" id="btnLogout">Salir</button>
   </div>
 </div>
-<div class="main-col" id="mainCol">
-  <div class="loader"><div class="spinner"></div><span>Cargando propuesta…</span></div>
+
+<div class="page-body">
+  <!-- Proposal content -->
+  <div class="main-col" id="mainCol">
+    <div class="loader"><div class="spinner"></div><span>Cargando propuesta…</span></div>
+  </div>
+
+  <!-- Chat sidebar -->
+  <div class="chat-sidebar">
+    <div class="chat-header">
+      <div class="chat-header-title">
+        💬 Comentarios
+        <span class="chat-badge hidden" id="unreadBadge">0</span>
+      </div>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-empty" id="chatEmpty">
+        <div class="chat-empty-icon">💬</div>
+        <span>Sin comentarios aún.<br>Escribe el primero abajo.</span>
+      </div>
+    </div>
+    <div class="chat-input-area">
+      <div class="chat-type-select" id="typeSelect">
+        <button class="type-btn active-comment" data-type="comment" onclick="setMsgType('comment')">💬 Comentario</button>
+        <button class="type-btn" data-type="approval" onclick="setMsgType('approval')">✅ Aprobación</button>
+        <button class="type-btn" data-type="revision" onclick="setMsgType('revision')">✏️ Revisión</button>
+      </div>
+      <div class="chat-input-row">
+        <textarea class="chat-inp" id="chatInp" placeholder="Escribe aquí..." rows="1"
+          oninput="onChatInput(this)"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendComment();}"></textarea>
+        <button class="chat-send" id="chatSend" onclick="sendComment()">➤</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -101,24 +179,34 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
 <script>
 firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();
-const db = firebase.firestore();
+const db   = firebase.firestore();
 const params = new URLSearchParams(location.search);
 const proposalId = params.get('id');
 
-let currentUid = null;
-let cId = null;
-let cName = 'Usuario';
-let isAdmin = false;
-const sL = {}; // section listeners
+// n8n webhook — comment notifications
+const N8N_WEBHOOK = 'https://s3lect.app.n8n.cloud/webhook/trn-comentarios';
 
+let currentUid = null;
+let cId        = null;
+let cName      = 'Usuario';
+let cPhone     = '';
+let cTelegram  = '';
+let isAdmin    = false;
+let currentType = 'comment';
+let chatListener = null;
+let unreadCount = 0;
+
+/* ── Auth ─────────────────────────────────── */
 auth.onAuthStateChanged(async user => {
   if (!user) { location.href = '/'; return; }
   currentUid = user.uid;
 
   const uSnap = await db.collection('users').doc(user.uid).get().catch(() => null);
   const uData = uSnap && uSnap.exists ? uSnap.data() : {};
-  isAdmin = uData.role === 'admin';
-  cName = uData.name || uData.email || 'Usuario';
+  isAdmin   = ['admin','superadmin'].includes(uData.role);
+  cName     = uData.name || uData.email || 'Usuario';
+  cPhone    = uData.phone || uData.telefono || '';
+  cTelegram = uData.telegramChatId || '';
 
   if (isAdmin) document.getElementById('btnBack').href = '/admin';
 
@@ -140,77 +228,163 @@ auth.onAuthStateChanged(async user => {
   }
 
   if (!propSnap || !propSnap.exists) {
-    document.getElementById('mainCol').innerHTML = '<div class="empty-state" style="color:var(--danger)">Propuesta no encontrada o sin permisos.</div>';
+    document.getElementById('mainCol').innerHTML = '<div class="empty-state" style="color:var(--danger)">Propuesta no encontrada.</div>';
     return;
   }
 
   renderProposal(propSnap.data());
+  initChat();
 });
 
-/* ── Helpers ────────────────────────────────── */
+document.getElementById('btnLogout').onclick = () => auth.signOut().then(() => location.href = '/');
+
+/* ── Chat system ───────────────────────────── */
+function setMsgType(type) {
+  currentType = type;
+  document.querySelectorAll('.type-btn').forEach(btn => {
+    btn.className = 'type-btn';
+    if (btn.dataset.type === type) btn.classList.add('active-' + type);
+  });
+}
+
+function onChatInput(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  document.getElementById('chatSend').classList.toggle('ready', el.value.trim().length > 0);
+}
+
+function initChat() {
+  if (!cId || !proposalId) return;
+  const ref = db.collection('clients').doc(cId)
+    .collection('comments')
+    .where('proposalId','==',proposalId)
+    .orderBy('createdAt','asc');
+
+  chatListener = ref.onSnapshot(snap => {
+    renderChatMessages(snap.docs);
+    // Mark as read
+    snap.docs.forEach(doc => {
+      const d = doc.data();
+      if (!(d.readBy||[]).includes(currentUid)) {
+        doc.ref.update({ readBy: firebase.firestore.FieldValue.arrayUnion(currentUid) }).catch(()=>{});
+      }
+    });
+    // Unread count for admin view (messages from client not read by any admin)
+    unreadCount = 0;
+    document.getElementById('unreadBadge').classList.add('hidden');
+  });
+}
+
+function renderChatMessages(docs) {
+  const container = document.getElementById('chatMessages');
+  const empty = document.getElementById('chatEmpty');
+
+  if (!docs || docs.length === 0) {
+    if (empty) empty.style.display = 'flex';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  // Keep only non-empty divs (preserve empty state element)
+  const existing = container.querySelectorAll('.bubble-wrap');
+  existing.forEach(el => el.remove());
+
+  docs.forEach(doc => {
+    const d = doc.data();
+    const fromMe = d.uid === currentUid;
+    const role = d.authorRole || (d.isAdmin ? 'admin' : 'client');
+    const type = d.type || 'comment';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'bubble-wrap ' + (fromMe ? 'from-me' : 'from-them');
+    wrap.dataset.id = doc.id;
+
+    let typeBadge = '';
+    if (type === 'approval') typeBadge = '<span class="bubble-type type-approval">✅ Aprobación</span><br>';
+    else if (type === 'revision') typeBadge = '<span class="bubble-type type-revision">✏️ Revisión</span><br>';
+
+    const readCheck = fromMe ? '<span class="bubble-status">✓✓</span>' : '';
+
+    wrap.innerHTML =
+      '<div class="bubble">' + typeBadge + esc(d.text || '') + '</div>' +
+      '<div class="bubble-meta">' +
+        '<span class="bubble-author">' + esc(d.authorName || '') + '</span>' +
+        '<span class="bubble-time">' + fmtDate(d.createdAt) + '</span>' +
+        readCheck +
+      '</div>';
+
+    container.appendChild(wrap);
+  });
+
+  // Scroll to bottom
+  container.scrollTop = container.scrollHeight;
+}
+
+async function sendComment() {
+  const inp = document.getElementById('chatInp');
+  const text = inp.value.trim();
+  if (!text || !cId) return;
+
+  inp.value = '';
+  inp.style.height = 'auto';
+  document.getElementById('chatSend').classList.remove('ready');
+
+  const payload = {
+    proposalId,
+    text,
+    uid: currentUid,
+    authorName: cName,
+    authorRole: isAdmin ? 'admin' : 'client',
+    type: currentType,
+    clientPhone: cPhone,
+    clientTelegram: cTelegram,
+    readBy: [currentUid],
+    notified: false,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  // Save to Firestore
+  await db.collection('clients').doc(cId)
+    .collection('comments').add(payload).catch(console.error);
+
+  // Fire n8n webhook (non-blocking)
+  try {
+    fetch(N8N_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        proposalId,
+        folio: document.querySelector('.proposal-folio')?.textContent || proposalId,
+        clientName: cName,
+        clientPhone: cPhone,
+        clientTelegram: cTelegram,
+        authorRole: isAdmin ? 'admin' : 'client',
+        type: currentType,
+        text,
+        viewerUrl: 'https://xolar-clientes.web.app/viewer?id=' + proposalId,
+        timestamp: new Date().toISOString()
+      })
+    }).catch(()=>{});
+  } catch(e) {}
+
+  // Reset type to comment after approval/revision
+  if (currentType !== 'comment') setMsgType('comment');
+}
+
+/* ── Helpers ───────────────────────────────── */
 function esc(t) { return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function fmt(n) { return Number(n||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtDate(ts) {
   if (!ts) return '';
   try {
     const d = ts.toDate ? ts.toDate() : new Date(ts);
-    return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-  } catch(e) { return String(ts); }
-}
-
-/* ── Sticky-note comment system ─────────────── */
-function scInnerHtml(section) {
-  var sid='sci-'+section, svid='scsv-'+section;
-  return '<div class="sticky-notes" id="scm-'+section+'"></div>'+
-    '<div class="sticky-inp-wrap">'+
-    '<textarea id="'+sid+'" class="sticky-inp" placeholder="Escribe tu comentario..." rows="1"'+
-    ' oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\';'+
-    'document.getElementById(\'scsv-'+section+'\').classList.toggle(\'active\',this.value.trim().length>0);"'+
-    ' onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendSC(\''+section+'\');}"></textarea>'+
-    '<button id="'+svid+'" class="sticky-save" onclick="sendSC(\''+section+'\')">Guardar</button>'+
-    '</div>';
-}
-
-function toggleSC(section) {
-  const el = document.getElementById('sc-'+section);
-  if (!el) return;
-  el.classList.toggle('open');
-  if (el.classList.contains('open')) listenSC(section);
-}
-
-function listenSC(section) {
-  if (sL[section]) return;
-  const ref = db.collection('clients').doc(cId).collection('comments')
-    .where('proposalId','==',proposalId).where('section','==',section).orderBy('createdAt','asc');
-  sL[section] = ref.onSnapshot(snap => {
-    const cnt = document.getElementById('cnt-'+section);
-    if (cnt) cnt.textContent = snap.size || '0';
-    const msgsEl = document.getElementById('scm-'+section);
-    if (!msgsEl) return;
-    if (snap.empty) { msgsEl.innerHTML=''; return; }
-    msgsEl.innerHTML = snap.docs.map(doc => {
-      const c = doc.data(); const isMe = c.authorName === cName;
-      return '<div class="sticky-note'+(isMe?' mine':'')+'">'+
-        '<div class="sticky-note-author">'+esc(c.authorName||'')+'</div>'+
-        '<div>'+esc(c.text||'')+'</div>'+
-        '<div class="sticky-note-time">'+fmtDate(c.createdAt)+'</div></div>';
-    }).join('');
-  });
-}
-
-async function sendSC(section) {
-  const inp = document.getElementById('sci-'+section);
-  if (!inp) return;
-  const text = inp.value.trim();
-  if (!text || !cId) return;
-  inp.value = '';
-  inp.style.height = 'auto';
-  const sv = document.getElementById('scsv-'+section);
-  if (sv) sv.classList.remove('active');
-  await db.collection('clients').doc(cId).collection('comments').add({
-    proposalId, section, text, uid: currentUid, authorName: cName,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
+    const now = new Date();
+    const diff = now - d;
+    if (diff < 60000) return 'ahora';
+    if (diff < 3600000) return Math.floor(diff/60000) + ' min';
+    if (diff < 86400000) return Math.floor(diff/3600000) + ' h';
+    return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'});
+  } catch(e) { return ''; }
 }
 
 /* ── Render proposal ─────────────────────────── */
@@ -227,20 +401,14 @@ function renderProposal(d) {
     '</div>'
   ).join('');
 
-  // Quote banner (no inline table — cotización is in the separate PDF page)
   let quoteBannerHtml = '';
   const hasQuote = !!(d.items && d.items.length) || !!d.quoteId || !!d.quoteData;
   if (hasQuote) {
     const tLink = document.getElementById('topbar-cot-link');
-    if(tLink){
-      tLink.href='/cotizacion?id='+proposalId+'&client='+cId;
-      tLink.style.display='inline-flex';
-    }
-    // Build a simple banner with folio + total + PDF link
+    if(tLink){ tLink.href='/cotizacion?id='+proposalId+'&client='+cId; tLink.style.display='inline-flex'; }
     const sym = (d.moneda==='USD'||((d.quoteData||{}).moneda==='USD')) ? 'US$' : '$';
     const total = d.total || (d.quoteData||{}).total || 0;
     const folio = d.folio || (d.quoteData||{}).folio || '';
-    // If quoteId, try to load folio/total from that doc
     if (d.quoteId) {
       db.collection('clients').doc(cId).collection('proposals').doc(d.quoteId).get()
         .then(qSnap => {
@@ -259,34 +427,37 @@ function renderProposal(d) {
         '<div>'+
           '<div style="font-family:Outfit,sans-serif;font-weight:700;font-size:0.75rem;color:var(--amber);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.3rem">💰 Cotización vinculada</div>'+
           '<div id="quote-banner-data">'+(folio ? '<span style="font-family:JetBrains Mono,monospace;color:var(--light);font-size:0.85rem">'+esc(folio)+'</span> · ' : '')+
-            (total ? '<span style="font-family:Outfit,sans-serif;font-weight:800;color:var(--amber);font-size:1.1rem">'+sym+fmt(total)+'</span>' : '<span style="color:var(--gray);font-size:0.8rem">Cargando…</span>')+
+            (total ? '<span style="font-family:Outfit,sans-serif;font-weight:800;color:var(--amber);font-size:1.1rem">'+sym+fmt(total)+'</span>' : '')+
           '</div>'+
         '</div>'+
-        '<a href="/cotizacion?id='+proposalId+'&client='+cId+'" target="_blank" class="btn-pdf-cot" style="font-size:.78rem;padding:.4rem 1rem">⬇ Ver Cotización PDF</a>'+
+        '<a href="/cotizacion?id='+proposalId+'&client='+cId+'" target="_blank" class="btn-pdf-cot" style="padding:.45rem 1rem;font-size:.78rem">⬇ Ver cotización completa</a>'+
       '</div>';
   }
 
+  const folio = d.folio || '';
   main.innerHTML =
+    (folio ? '<div class="proposal-folio" style="font-family:JetBrains Mono,monospace;font-size:.75rem;color:var(--gray);margin-bottom:.3rem">'+esc(folio)+'</div>' : '')+
     '<h1 class="proposal-title">'+esc(d.title||'Sin título')+'</h1>'+
-    '<p class="proposal-desc">'+esc(d.description||'')+'</p>'+
-    '<div class="tags">'+tags+'</div>'+
-    (d.folio ? '<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.8rem;color:var(--gray);margin-bottom:0.5rem">Folio: '+esc(d.folio)+'</div>' : '')+
-    (d.empresa ? '<div style="font-size:0.82rem;color:var(--light);margin-bottom:0.25rem">'+esc(d.empresa)+'</div>' : '')+
-    (d.contacto ? '<div style="font-size:0.8rem;color:var(--gray);margin-bottom:1rem">Atención: '+esc(d.contacto)+'</div>' : '')+
-    (versions ? '<div class="section-label">Versiones</div><div class="version-list">'+versions+'</div>' : '')+
+    (d.description ? '<p class="proposal-desc">'+esc(d.description)+'</p>' : '')+
+    (tags ? '<div class="tags">'+tags+'</div>' : '')+
     quoteBannerHtml+
-    
-    '<div style="margin-top:1.5rem">'+
-      '<div class="section-label">Comentarios generales '+
-        '<button class="btn-sticky-toggle" onclick="toggleSC(\'general\')">💬 <span class="sticky-cnt" id="cnt-general">0</span></button>'+
-      '</div>'+
-      '<div class="sticky-panel" id="sc-general">'+scInnerHtml('general')+'</div>'+
-    '</div>';
+    (versions ? '<div class="section-label">📋 Versiones</div><div class="version-list">'+versions+'</div>' : '')+
+    (d.garantia && d.garantia.desc ? '<div class="section-label">🛡 Garantía</div><div class="guarantee-block"><p>'+esc(d.garantia.desc)+'</p></div>' : '')+
+    (d.condiciones ? '<div class="section-label">📄 Condiciones</div>'+buildConditions(d.condiciones) : '');
 }
 
-
-/* ── Logout ─────────────────────────────────── */
-document.getElementById('btnLogout').onclick = () => auth.signOut().then(() => location.href = '/');
+function buildConditions(c) {
+  const rows = [
+    ['Forma de pago', c.formaPago],['Incluye instalación', c.incluyeInstalacion],
+    ['Tiempo de entrega', c.tiempoEntrega ? c.tiempoEntrega+' '+(c.unidadTiempo||'días') : ''],
+    ['Lugar de entrega', c.lugarEntrega],['Elaborado por', c.elaboradoPor],
+    ['Notas adicionales', c.notas]
+  ].filter(r=>r[1]);
+  if (!rows.length) return '';
+  return '<div class="conditions-block"><div class="cond-grid">'+
+    rows.map(r=>'<div class="cond-item"><strong>'+esc(r[0])+'</strong><span>'+esc(r[1])+'</span></div>').join('')+
+  '</div></div>';
+}
 </script>
 </body>
 </html>

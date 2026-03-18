@@ -355,7 +355,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
 
     <div class="rent-panel" id="rentPanel">
       <div class="rent-title">📊 Análisis Interno</div>
-      <div class="rent-row"><span>Costo materiales:</span><span class="val" id="rMat">$0.00</span></div>
+      <div class="rent-row" id="rMatRow"><span>Costo productos / otros:</span><span class="val" id="rMat">$0.00</span></div>
       <div class="rent-row"><span>Costo mano de obra:</span><span class="val" id="rMO">$0.00</span></div>
       <div class="rent-row"><span>Costo viáticos:</span><span class="val" id="rViat">$0.00</span></div>
       <div class="rent-row"><span>Costo kits:</span><span class="val" id="rKits">$0.00</span></div>
@@ -1399,6 +1399,8 @@ function recalc(){
   const utilBruta = subtotal - costoTotal;
   const margenGlobal = subtotal > 0 ? (utilBruta/subtotal*100) : 0;
   document.getElementById('rMat').textContent = sym + fmt(costMat);
+      const rMatRow = document.getElementById('rMatRow');
+      if(rMatRow) rMatRow.style.display = costMat > 0 ? '' : 'none';
   document.getElementById('rMO').textContent = sym + fmt(costMO);
   document.getElementById('rViat').textContent = sym + fmt(costViat);
   document.getElementById('rKits').textContent = sym + fmt(costKits);

@@ -484,7 +484,7 @@ tr:hover td{background:rgba(245,166,35,.02)}
     <div class="panel" id="panel-cotizaciones">
       <div class="panel-title">💰 Cotizaciones</div>
       <div class="top-actions">
-        <a class="btn-primary-sm" href="/cotizador" target="_blank">+ Nueva cotización</a>
+        <a class="btn-primary-sm" href="/cotizador">+ Nueva cotización</a>
         <select id="filterQuoteClient" style="min-width:160px">
           <option value="">— Todos los clientes —</option>
         </select>
@@ -521,9 +521,13 @@ tr:hover td{background:rgba(245,166,35,.02)}
     <!-- ═══ FACTURACIÓN ═══ -->
     <div class="panel" id="panel-facturacion">
       <div class="panel-title">🧾 Facturación</div>
-      <div class="pending-dev">
-        <strong>Módulo en desarrollo</strong>
-        El módulo de facturación CFDI 4.0 estará disponible próximamente.
+      <div style="text-align:center;padding:3rem 2rem;">
+        <div style="font-size:3rem;margin-bottom:1rem;">🧾</div>
+        <div style="font-family:'Outfit',sans-serif;font-size:1.3rem;font-weight:700;margin-bottom:.5rem;">Módulo de Facturación CFDI 4.0</div>
+        <p style="color:var(--gray);margin-bottom:1.5rem;">Gestión de facturas, complementos de pago, nómina y configuración fiscal.</p>
+        <a href="/facturacion" target="_blank" style="display:inline-block;background:linear-gradient(135deg,#F5A623,#FF6B35);color:#0B1A2E;padding:.75rem 2rem;border-radius:50px;font-weight:700;text-decoration:none;font-family:'Outfit',sans-serif;">
+          Abrir módulo de facturación →
+        </a>
       </div>
     </div>
 
@@ -1047,14 +1051,14 @@ function renderProposalsTable() {
           </div>
           <div style="display:flex;gap:.35rem;flex-wrap:wrap">
             <a class="btn-action green" href="/cotizacion?id=${quoteId}&client=${p.clientId}" target="_blank">Ver PDF</a>
-            <a class="btn-action blue" href="/cotizador?edit=${quoteId}&client=${p.clientId}" target="_blank">✏️ Editar</a>
+            <a class="btn-action blue" href="/cotizador?edit=${quoteId}&client=${p.clientId}">✏️ Editar</a>
             <button class="btn-action danger" onclick="unlinkQuote('${p.clientId}','${p.id}')">Desvincular</button>
           </div>
         </div>`
       : `<div class="prop-quote-bar no-quote">
           <span style="font-size:.78rem;color:var(--gray)">Sin cotización vinculada</span>
           <div style="display:flex;gap:.35rem;flex-wrap:wrap">
-            <a class="btn-action green" href="/cotizador" target="_blank">+ Nueva cotización</a>
+            <a class="btn-action green" href="/cotizador">+ Nueva cotización</a>
             <button class="btn-action" onclick="openLinkQuoteModal('${p.clientId}','${p.id}')">🔗 Vincular existente</button>
           </div>
         </div>`;
@@ -1170,7 +1174,7 @@ function renderQuotesTable() {
       <div class="esc-icon">💰</div>
       <div class="esc-title">Sin cotizaciones</div>
       <div class="esc-sub">Crea la primera cotización para este cliente</div>
-      <a href="/cotizador" target="_blank" class="btn-primary-sm" style="margin-top:.75rem">+ Nueva cotización</a>
+      <a href="/cotizador" class="btn-primary-sm" style="margin-top:.75rem">+ Nueva cotización</a>
     </div></td></tr>`;
     document.getElementById('quotesPager')?.style && (document.getElementById('quotesPager').style.display='none');
     return;
@@ -1205,7 +1209,7 @@ function renderQuotesTable() {
       <td>
         <div style="display:flex;gap:.3rem;align-items:center">
           <a class="btn-action" href="/cotizacion?id=${q.id}&client=${q.clientId}" target="_blank" title="Ver PDF">PDF</a>
-          <a class="btn-action blue" href="/cotizador?edit=${q.id}&client=${q.clientId}" target="_blank" title="Editar">✏</a>
+          <a class="btn-action blue" href="/cotizador?edit=${q.id}&client=${q.clientId}" title="Editar">✏</a>
           <div class="dropdown-wrap">
             <button class="btn-action" onclick="toggleDropdown('${ddId}',this)" title="Más acciones">···</button>
             <div class="dropdown-menu" id="${ddId}">
@@ -2021,7 +2025,7 @@ async function duplicateQuote(clientId, quoteId){
   const ref = await db.collection('clients').doc(clientId).collection('proposals').add(newDoc);
   showToast('✅ Cotización duplicada: '+newFolio);
   loadAll();
-  setTimeout(()=>{ window.open('/cotizador?edit='+ref.id+'&client='+clientId,'_blank'); },600);
+  setTimeout(()=>{ location.href='/cotizador?edit='+ref.id+'&client='+clientId; },600);
 }
 
 // ══════════════════════════════════════════════════════
@@ -2063,7 +2067,7 @@ function openPreviewDrawer(clientId, quoteId){
     </div>
     <div class="pd-actions">
       <a class="btn-primary-sm" href="/cotizacion?id=${quoteId}&client=${clientId}" target="_blank">Ver PDF</a>
-      <a class="btn-outline" href="/cotizador?edit=${quoteId}&client=${clientId}" target="_blank">✏️ Editar</a>
+      <a class="btn-outline" href="/cotizador?edit=${quoteId}&client=${clientId}">✏️ Editar</a>
     </div>`;
   drawer.classList.add('show');
   document.body.style.overflow='hidden';
@@ -2120,7 +2124,7 @@ document.addEventListener('keydown', e => {
   }
   if((e.ctrlKey||e.metaKey) && e.key==='n' && document.getElementById('panel-cotizaciones')?.classList.contains('active')){
     e.preventDefault();
-    window.open('/cotizador','_blank');
+    location.href='/cotizador';
   }
   if(e.key==='Escape'){
     closePreviewDrawer();

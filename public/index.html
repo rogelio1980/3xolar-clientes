@@ -65,14 +65,30 @@ firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+const ADMIN_EMAILS = ['rogelio@ittelecom.com.mx', 'arellanes@ittelecom.com.mx', 'rogelioguerra@gmail.com'];
+
 function redirectUser(uid) {
+  const user = auth.currentUser;
+  // Check email first as fast fallback
+  if (user && ADMIN_EMAILS.includes(user.email)) {
+    location.href = '/admin';
+    return;
+  }
+  // Then check Firestore role
   db.collection('users').doc(uid).get().then(snap => {
     if (snap.exists && snap.data().role === 'admin') {
       location.href = '/admin';
     } else {
       location.href = '/portal';
     }
-  }).catch(() => { location.href = '/portal'; });
+  }).catch(() => {
+    // If Firestore fails, use email check
+    if (user && ADMIN_EMAILS.includes(user.email)) {
+      location.href = '/admin';
+    } else {
+      location.href = '/portal';
+    }
+  });
 }
 
 auth.onAuthStateChanged(user => {

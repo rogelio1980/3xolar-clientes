@@ -565,8 +565,12 @@ function convertAllPrices(toUSD, tc) {
     const tipo = row.dataset.tipo;
     if (tipo === 'producto' || tipo === 'kit') {
       const el = row.querySelector('.i-price');
-      if (el && parseFloat(el.value)) el.value = round2(parseFloat(el.value) * factor);
-      // Also convert internal cost fields
+      // Only convert price if in fixed mode (markup mode recalculates automatically)
+      const kitMode = row.querySelector('input[name="kitmode-'+row.dataset.id+'"]:checked')?.value;
+      if (el && parseFloat(el.value) && (tipo === 'producto' || kitMode !== 'markup')) {
+        el.value = round2(parseFloat(el.value) * factor);
+      }
+      // Internal cost fields for productos (MXN entry)
       const cCosto = row.querySelector('.c-costo');
       if (cCosto && parseFloat(cCosto.value)) cCosto.value = round2(parseFloat(cCosto.value) * factor);
       const cEnvio = row.querySelector('.c-envio');
@@ -582,10 +586,8 @@ function convertAllPrices(toUSD, tc) {
       const vReal = row.querySelector('.c-vReal');
       if (vReal && parseFloat(vReal.value)) vReal.value = round2(parseFloat(vReal.value) * factor);
     }
-    // kit components
-    row.querySelectorAll('.kc-costo').forEach(el => {
-      if (parseFloat(el.value)) el.value = round2(parseFloat(el.value) * factor);
-    });
+    // NOTE: kit component costs (.kc-costo) stay in MXN always
+    // costToDisplay() in recalc handles the display conversion — do NOT convert here
   });
 }
 
@@ -1089,8 +1091,13 @@ function addItem(tipo){
     // Apply suggested price
     row.querySelector('.k-apply').addEventListener('click', () => {
       const sugText = row.querySelector('.k-suggested').textContent;
-      const sugVal = parseFloat(sugText.replace(/[^0-9.-]/g,''));
-      if(sugVal > 0) row.querySelector('.i-price').value = sugVal.toFixed(2);
+      const sugVal = parseFloat(sugText.replace(/[^0-9,]/g,'').replace(/,/g,'').replace(/\.(?=.*\.)/g,''));
+      if(sugVal > 0){
+        row.querySelector('.i-price').value = sugVal.toFixed(2);
+        // Auto-switch to fixed mode after applying
+        const fixedRadio = row.querySelector('input[name="kitmode-'+row.dataset.id+'"][value="fijo"]');
+        if(fixedRadio){ fixedRadio.checked = true; row.querySelector('.kit-markup-row').style.display='none'; }
+      }
       recalc();
     });
     addComponent(id);

@@ -224,7 +224,28 @@ tr:hover td{background:rgba(245,166,35,.02)}
 .badge-review{background:rgba(245,166,35,.15);color:var(--amber)}
 .badge-sent{background:rgba(0,184,148,.15);color:var(--teal)}
 .badge-approved{background:rgba(46,204,113,.15);color:var(--green)}
+.badge-superadmin{background:rgba(108,92,231,.18);color:#A29BFE}
 .badge-admin{background:rgba(245,166,35,.15);color:var(--amber)}
+.badge-vendedor{background:rgba(0,184,148,.15);color:var(--teal)}
+.badge-client{background:rgba(136,146,176,.15);color:var(--gray)}
+.role-select{background:var(--navy);border:1px solid var(--border);border-radius:8px;color:var(--white);padding:.25rem .5rem;font-size:.75rem;cursor:pointer;outline:none}
+.role-select:focus{border-color:var(--amber)}
+/* Comments thread in admin */
+.comments-thread{display:flex;flex-direction:column;gap:.5rem;padding:.75rem;max-height:400px;overflow-y:auto}
+.ct-bubble{padding:.5rem .75rem;border-radius:12px;font-size:.82rem;line-height:1.5;max-width:80%}
+.ct-bubble.from-client{background:rgba(27,58,92,.9);border:1px solid rgba(204,214,246,.08);align-self:flex-start;border-top-left-radius:3px}
+.ct-bubble.from-admin{background:linear-gradient(135deg,rgba(0,184,148,.2),rgba(0,184,148,.12));border:1px solid rgba(0,184,148,.25);align-self:flex-end;border-top-right-radius:3px}
+.ct-meta{font-size:.65rem;color:var(--gray);margin-top:2px}
+.ct-type-badge{display:inline-block;font-size:.6rem;font-weight:700;padding:.05rem .3rem;border-radius:3px;margin-bottom:2px;text-transform:uppercase}
+.ct-approval{background:rgba(46,204,113,.15);color:#2ECC71}
+.ct-revision{background:rgba(231,76,60,.15);color:#e74c3c}
+.ct-input-area{padding:.6rem .75rem;border-top:1px solid var(--border);display:flex;gap:.4rem;align-items:flex-end;flex-shrink:0}
+.ct-inp{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:var(--white);padding:.4rem .65rem;font-family:'DM Sans',sans-serif;font-size:.8rem;resize:none;min-height:34px;outline:none}
+.ct-inp:focus{border-color:rgba(0,184,148,.4)}
+.ct-send{background:linear-gradient(135deg,#00B894,#00a381);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:.85rem;flex-shrink:0;opacity:.4;pointer-events:none}
+.ct-send.ready{opacity:1;pointer-events:auto}
+.ct-empty{text-align:center;color:var(--gray);font-size:.8rem;padding:1.5rem}
+.badge-unread{background:#e74c3c;color:#fff;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:800;margin-left:4px}
 .badge-client{background:rgba(0,184,148,.15);color:var(--teal)}
 .badge-paid{background:rgba(46,204,113,.2);color:var(--green)}
 .badge-pending{background:rgba(245,166,35,.15);color:var(--amber)}
@@ -381,8 +402,9 @@ tr:hover td{background:rgba(245,166,35,.02)}
       <div class="nav-item" data-panel="propuestas"><span class="nav-icon">📋</span><span class="nav-label">Propuestas</span></div>
       <div class="nav-item" data-panel="cotizaciones"><span class="nav-icon">💰</span><span class="nav-label">Cotizaciones</span></div>
       <div class="nav-section">Finanzas</div>
-      <div class="nav-item" data-panel="facturacion"><span class="nav-icon">🧾</span><span class="nav-label">Facturación</span></div>
+      <div class="nav-item" id="nav-facturacion" data-panel="facturacion"><span class="nav-icon">🧾</span><span class="nav-label">Facturación</span></div>
       <div class="nav-section">Sistema</div>
+      <div class="nav-item" id="nav-comentarios" data-panel="comentarios"><span class="nav-icon">💬</span><span class="nav-label">Comentarios <span class="badge-unread" id="comentBadge" style="display:none">0</span></span></div>
       <div class="nav-item" data-panel="usuarios"><span class="nav-icon">🔑</span><span class="nav-label">Usuarios</span></div>
     </nav>
     <div class="sidebar-collapse-btn" id="btnSidebarCollapse">
@@ -515,6 +537,13 @@ tr:hover td{background:rgba(245,166,35,.02)}
           <div class="field"><label>Contraseña temporal *</label><input id="newPass" type="text" placeholder="mínimo 6 caracteres"></div>
           <div class="field"><label>Nombre completo *</label><input id="newName"></div>
           <div class="field"><label>Empresa *</label><input id="newCompany"></div>
+          <div class="field"><label>Rol *</label>
+            <select id="newRole" style="background:var(--navy);border:1px solid var(--border);border-radius:8px;color:var(--white);padding:.45rem .65rem;font-size:.85rem;width:100%;outline:none">
+              <option value="client">Cliente (portal)</option>
+              <option value="vendedor">Vendedor / Técnico</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
         </div>
         <div class="msg-box" id="createMsg"></div>
         <button class="btn-primary-sm" id="btnCreateUser" style="margin-top:1rem">+ Crear usuario</button>
@@ -523,6 +552,27 @@ tr:hover td{background:rgba(245,166,35,.02)}
         <table><thead><tr><th>Nombre</th><th class="hide-sm">Email</th><th class="hide-sm">Empresa</th><th>Rol</th><th class="hide-md">UID</th><th>Acciones</th></tr></thead>
         <tbody id="usersBody"></tbody></table>
       </div>
+    </div>
+
+  
+    <!-- PANEL: COMENTARIOS -->
+    <div class="panel" id="panel-comentarios" style="display:none">
+      <div class="panel-title">💬 Comentarios del Portal</div>
+      <div style="display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap">
+        <input id="filterComentClient" type="text" placeholder="🔍 Filtrar por cliente o folio..." 
+          style="flex:1;min-width:200px;background:var(--navy);border:1px solid var(--border);border-radius:8px;color:var(--white);padding:.45rem .75rem;font-size:.82rem;outline:none">
+        <select id="filterComentType" style="background:var(--navy);border:1px solid var(--border);border-radius:8px;color:var(--white);padding:.45rem .6rem;font-size:.82rem;outline:none">
+          <option value="">Todos los tipos</option>
+          <option value="comment">💬 Comentarios</option>
+          <option value="approval">✅ Aprobaciones</option>
+          <option value="revision">✏️ Revisiones</option>
+        </select>
+        <select id="filterComentRead" style="background:var(--navy);border:1px solid var(--border);border-radius:8px;color:var(--white);padding:.45rem .6rem;font-size:.82rem;outline:none">
+          <option value="">Todos</option>
+          <option value="unread">Sin leer</option>
+        </select>
+      </div>
+      <div id="comentProposalList" style="display:flex;flex-direction:column;gap:1rem"></div>
     </div>
 
   </div><!-- /main -->
@@ -757,7 +807,27 @@ function navTo(panel) {
 auth.onAuthStateChanged(async user => {
   if (!user) { location.href = '/'; return; }
   const uSnap = await db.collection('users').doc(user.uid).get().catch(()=>null);
-  if (!uSnap?.exists || uSnap.data().role !== 'admin') { location.href = '/portal'; return; }
+  const uData = uSnap?.exists ? uSnap.data() : {};
+  const role = uData.role || 'client';
+  if (!['superadmin','admin','vendedor'].includes(role)) { location.href = '/portal'; return; }
+  window.currentUserRole = role;
+  window.currentUserUid  = user.uid;
+  // Permission helper
+  window.can = function(perm) {
+    const perms = {
+      superadmin: ['dashboard.analytics','dashboard.margen','clients.write','clients.delete',
+        'proposals.write','proposals.delete','quotes.write','quotes.delete','quotes.costos',
+        'facturacion.read','facturacion.write','facturacion.nomina','facturacion.config',
+        'users.read','users.write','comentarios.read'],
+      admin:     ['clients.write','clients.delete','proposals.write','proposals.delete',
+        'quotes.write','quotes.delete','facturacion.read','facturacion.write','comentarios.read'],
+      vendedor:  ['clients.read','proposals.read','proposals.write','quotes.write','comentarios.read']
+    };
+    return (perms[window.currentUserRole]||[]).includes(perm) ||
+           (perms[window.currentUserRole]||[]).includes(perm.split('.')[0]+'.read') ||
+           window.currentUserRole === 'superadmin';
+  };
+  applyRoleUI();
   loadAll();
 });
 
@@ -773,6 +843,9 @@ document.querySelectorAll('.nav-item').forEach(item => {
 
 // ── Load all data ─────────────────────────────────
 async function loadAll() {
+  // Store admin name for comments
+  db.collection('users').doc(window.currentUserUid||'').get()
+    .then(s=>{ if(s.exists) window._adminName = s.data().name||'TRN'; }).catch(()=>{});
   try {
   // Load clients AND users in parallel — merge names from users into clients
   const [cSnap, uSnap] = await Promise.all([
@@ -1394,13 +1467,37 @@ async function addVersion(clientId, proposalId, count) {
 }
 
 // ── Users ─────────────────────────────────────────
+async function applyRoleUI() {
+  const r = window.currentUserRole;
+  // Dashboard analytics — superadmin only
+  const analyticsEl = document.getElementById('dashAnalytics');
+  if (analyticsEl) analyticsEl.style.display = r==='superadmin' ? '' : 'none';
+  // Nav items by role
+  const navMap = {
+    'nav-facturacion': ['superadmin','admin'],
+    'nav-usuarios':    ['superadmin'],
+    'nav-comentarios': ['superadmin','admin','vendedor']
+  };
+  Object.entries(navMap).forEach(([id, roles]) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = roles.includes(r) ? '' : 'none';
+  });
+}
+
+function roleLabel(r) {
+  return {superadmin:'Super Admin', admin:'Admin', vendedor:'Vendedor', client:'Cliente'}[r] || r;
+}
+function roleBadgeClass(r) {
+  return {superadmin:'badge-superadmin', admin:'badge-admin', vendedor:'badge-vendedor', client:'badge-client'}[r] || 'badge-client';
+}
+
 async function loadUsers() {
   const uSnap = await db.collection('users').get();
   const uBody = document.getElementById('usersBody');
   uBody.innerHTML = '';
   uSnap.forEach(doc => {
     const d = doc.data();
-    const roleBadge = d.role==='admin' ? 'badge-admin' : 'badge-client';
+    const roleBadge = roleBadgeClass(d.role);
     uBody.innerHTML += `<tr>
       <td style="font-weight:500">${d.name||''}</td>
       <td style="font-size:.8rem">${d.email||''}</td>
@@ -1409,11 +1506,26 @@ async function loadUsers() {
       <td><span class="uid-text" title="${doc.id}">${doc.id}</span></td>
       <td>
         <div class="actions-cell">
-          <button class="btn-action" onclick="toggleRole('${doc.id}','${d.role||'client'}')">Rol</button>
+          <button class="btn-action" onchange="changeRole('${doc.id}', this.value, '${window.currentUserUid}')" class="role-select">
+            <option value="superadmin" ${(d.role==='superadmin')?'selected':''}>Super Admin</option>
+            <option value="admin"      ${(d.role==='admin')?'selected':''}>Admin</option>
+            <option value="vendedor"   ${(d.role==='vendedor')?'selected':''}>Vendedor</option>
+            <option value="client"     ${(!d.role||d.role==='client')?'selected':''}>Cliente</option>
+          </select>
         </div>
       </td>
     </tr>`;
   });
+}
+
+async function changeRole(uid, newRole, selfUid) {
+  if (uid === selfUid && newRole !== 'superadmin') {
+    showToast('⚠ No puedes cambiar tu propio rol'); return;
+  }
+  if (!['superadmin','admin','vendedor','client'].includes(newRole)) return;
+  await db.collection('users').doc(uid).update({role: newRole});
+  showToast('Rol actualizado: ' + roleLabel(newRole));
+  loadUsers();
 }
 
 async function toggleRole(uid, current) {
@@ -1442,7 +1554,7 @@ document.getElementById('btnCreateUser').onclick = async () => {
     const data = await res.json();
     if (data.error) throw new Error(data.error.message);
     const uid = data.localId;
-    await db.collection('users').doc(uid).set({email,name,company,role:'client'});
+    await db.collection('users').doc(uid).set({email,name,company,role:(document.getElementById('newRole')?.value||'client')});
     await db.collection('clients').doc(uid).set({email,name,company},{merge:true});
     msgBox.className='msg-box success';
     msgBox.textContent=`✅ Usuario creado · UID: ${uid}`;
@@ -2061,6 +2173,179 @@ document.addEventListener('DOMContentLoaded', ()=>{
   showSkeleton('quotesBody', 7);
   showSkeleton('clientsBody', 6);
 });
+
+
+// ══ COMMENTS PANEL ══════════════════════════════════════════
+let allComments = [];
+
+async function loadComentarios() {
+  const list = document.getElementById('comentProposalList');
+  if (!list) return;
+  list.innerHTML = '<div class="ct-empty">Cargando…</div>';
+
+  // Load all clients + their comments
+  const clientsSnap = await db.collection('clients').get();
+  let grouped = {}; // proposalId → {client, proposal, comments[]}
+
+  for (const cDoc of clientsSnap.docs) {
+    const clientData = cDoc.data();
+    const commSnap = await db.collection('clients').doc(cDoc.id)
+      .collection('comments').orderBy('createdAt','desc').limit(50).get();
+    if (commSnap.empty) continue;
+
+    for (const comm of commSnap.docs) {
+      const d = comm.data();
+      const pid = d.proposalId;
+      if (!pid) continue;
+      if (!grouped[pid]) {
+        grouped[pid] = { clientId: cDoc.id, clientName: clientData.name||clientData.email||cDoc.id, comments: [], folio: d.folio||pid };
+      }
+      grouped[pid].comments.push({ id: comm.id, ...d, clientId: cDoc.id });
+    }
+  }
+
+  // Load folio for each proposal
+  const propPromises = Object.keys(grouped).map(async pid => {
+    const cId = grouped[pid].clientId;
+    const pSnap = await db.collection('clients').doc(cId).collection('proposals').doc(pid).get().catch(()=>null);
+    if (pSnap?.exists) {
+      grouped[pid].folio = pSnap.data().folio || pid;
+      grouped[pid].title = pSnap.data().title || '';
+    }
+  });
+  await Promise.all(propPromises);
+
+  allComments = grouped;
+  renderComentarios(grouped);
+
+  // Update badge count
+  let totalUnread = 0;
+  Object.values(grouped).forEach(g => {
+    g.comments.forEach(cm => {
+      if (!(cm.readBy||[]).includes(window.currentUserUid) && cm.authorRole==='client') totalUnread++;
+    });
+  });
+  const badge = document.getElementById('comentBadge');
+  if (badge) { badge.textContent = totalUnread||''; badge.style.display = totalUnread?'inline-flex':'none'; }
+}
+
+function renderComentarios(grouped) {
+  const list = document.getElementById('comentProposalList');
+  const filterText = document.getElementById('filterComentClient')?.value.toLowerCase()||'';
+  const filterType = document.getElementById('filterComentType')?.value||'';
+  const filterRead = document.getElementById('filterComentRead')?.value||'';
+
+  const entries = Object.entries(grouped).filter(([pid, g]) => {
+    if (filterText && !g.clientName.toLowerCase().includes(filterText) && !g.folio.toLowerCase().includes(filterText)) return false;
+    if (filterType && !g.comments.some(c=>c.type===filterType)) return false;
+    if (filterRead==='unread' && !g.comments.some(c=>!(c.readBy||[]).includes(window.currentUserUid)&&c.authorRole==='client')) return false;
+    return true;
+  });
+
+  if (!entries.length) { list.innerHTML = '<div class="ct-empty">Sin comentarios que mostrar</div>'; return; }
+
+  list.innerHTML = '';
+  entries.forEach(([pid, g]) => {
+    const unread = g.comments.filter(cm=>!(cm.readBy||[]).includes(window.currentUserUid)&&cm.authorRole==='client').length;
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden';
+    
+    const header = `<div style="padding:.65rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+      <div>
+        <span style="font-family:Outfit,sans-serif;font-weight:700;font-size:.85rem">${esc(g.folio)}</span>
+        ${g.title ? `<span style="font-size:.78rem;color:var(--gray);margin-left:.5rem">${esc(g.title)}</span>` : ''}
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <span style="font-size:.75rem;color:var(--gray)">${esc(g.clientName)}</span>
+        ${unread ? `<span class="badge-unread">${unread}</span>` : ''}
+        <a href="/viewer?id=${pid}" target="_blank" style="font-size:.72rem;color:var(--amber);text-decoration:none">Ver propuesta ↗</a>
+      </div>
+    </div>`;
+
+    // Render last 10 comments reversed (oldest first)
+    const msgs = [...g.comments].reverse().slice(-10);
+    const bubbles = msgs.map(cm => {
+      const fromAdmin = cm.authorRole==='admin'||cm.isAdmin;
+      const typeBadge = cm.type==='approval' ? '<span class="ct-type-badge ct-approval">✅ Aprobación</span><br>' :
+                        cm.type==='revision'  ? '<span class="ct-type-badge ct-revision">✏️ Revisión</span><br>' : '';
+      const time = cm.createdAt ? fmtDateShort(cm.createdAt) : '';
+      return `<div style="display:flex;flex-direction:column;align-items:${fromAdmin?'flex-end':'flex-start'}">
+        <div class="ct-bubble ${fromAdmin?'from-admin':'from-client'}">${typeBadge}${esc(cm.text||'')}</div>
+        <div class="ct-meta">${esc(cm.authorName||'')} · ${time}</div>
+      </div>`;
+    }).join('');
+
+    const thread = `<div class="comments-thread">${bubbles||'<div class="ct-empty">Sin mensajes aún</div>'}</div>`;
+
+    // Reply input
+    const replyArea = `<div class="ct-input-area">
+      <textarea class="ct-inp" id="ctinp-${pid}" placeholder="Responder a ${esc(g.clientName)}..." rows="1"
+        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';document.getElementById('ctsend-${pid}').classList.toggle('ready',this.value.trim().length>0)"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAdminComment('${pid}','${g.clientId}');}"></textarea>
+      <button class="ct-send" id="ctsend-${pid}" onclick="sendAdminComment('${pid}','${g.clientId}')">➤</button>
+    </div>`;
+
+    card.innerHTML = header + thread + replyArea;
+    list.appendChild(card);
+  });
+}
+
+async function sendAdminComment(proposalId, clientId) {
+  const inp = document.getElementById('ctinp-' + proposalId);
+  const text = inp?.value.trim();
+  if (!text) return;
+  inp.value = ''; inp.style.height = 'auto';
+  document.getElementById('ctsend-'+proposalId)?.classList.remove('ready');
+
+  await db.collection('clients').doc(clientId).collection('comments').add({
+    proposalId, text,
+    uid: window.currentUserUid,
+    authorName: window._adminName || 'TRN',
+    authorRole: 'admin',
+    type: 'comment',
+    readBy: [window.currentUserUid],
+    notified: false,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  // Fire n8n webhook to notify client
+  const g = allComments[proposalId];
+  try {
+    fetch('https://s3lect.app.n8n.cloud/webhook/trn-comentarios', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        proposalId, folio: g?.folio||proposalId,
+        clientName: g?.clientName||'Cliente',
+        clientPhone: '', clientTelegram: '',
+        authorRole: 'admin', type: 'comment', text,
+        viewerUrl: 'https://xolar-clientes.web.app/viewer?id='+proposalId,
+        timestamp: new Date().toISOString()
+      })
+    }).catch(()=>{});
+  } catch(e){}
+
+  loadComentarios();
+  showToast('Respuesta enviada ✓');
+}
+
+function fmtDateShort(ts) {
+  if(!ts) return '';
+  try {
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    const diff = Date.now()-d;
+    if(diff<60000) return 'ahora';
+    if(diff<3600000) return Math.floor(diff/60000)+'m';
+    if(diff<86400000) return Math.floor(diff/3600000)+'h';
+    return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'});
+  } catch(e){return '';}
+}
+
+// Filter listeners
+['filterComentClient','filterComentType','filterComentRead'].forEach(id => {
+  document.getElementById(id)?.addEventListener('input', () => renderComentarios(allComments));
+  document.getElementById(id)?.addEventListener('change', () => renderComentarios(allComments));
+});
+// ═══════════════════════════════════════════════════════════════
 
 document.getElementById('btnLogout').onclick = () => auth.signOut().then(()=>location.href='/');
 

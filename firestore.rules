@@ -1,39 +1,55 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isSuperAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
+    }
     function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin','superadmin'];
+    }
+    function isVendedor() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['vendedor','admin','superadmin'];
+    }
+    function isInternalUser() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['vendedor','admin','superadmin'];
     }
 
     match /users/{userId} {
       allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
-      allow write: if request.auth != null && isAdmin();
+      allow create: if request.auth != null && isAdmin();
+      allow update: if request.auth != null && (
+        (request.auth.uid == userId && !('role' in request.resource.data.diff(resource.data).affectedKeys())) ||
+        isSuperAdmin()
+      );
+      allow delete: if request.auth != null && isSuperAdmin();
     }
 
     match /clients/{clientId} {
-      allow read: if request.auth != null && (request.auth.uid == clientId || isAdmin());
+      allow read: if request.auth != null && (request.auth.uid == clientId || isInternalUser());
       allow write: if request.auth != null && isAdmin();
 
       match /proposals/{proposalId} {
-        allow read: if request.auth != null && (request.auth.uid == clientId || isAdmin());
-        allow write: if request.auth != null && isAdmin();
+        allow read: if request.auth != null && (request.auth.uid == clientId || isInternalUser());
+        allow create, update: if request.auth != null && isVendedor();
+        allow delete: if request.auth != null && isAdmin();
       }
 
       match /comments/{commentId} {
-        allow read: if request.auth != null && (request.auth.uid == clientId || isAdmin());
+        allow read: if request.auth != null && (request.auth.uid == clientId || isInternalUser());
         allow create: if request.auth != null
-          && (request.auth.uid == clientId || isAdmin())
+          && (request.auth.uid == clientId || isInternalUser())
           && request.resource.data.text.size() > 0
           && request.resource.data.text.size() <= 2000;
-        allow update, delete: if false;
+        allow update: if request.auth != null && isInternalUser()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy','notified']);
+        allow delete: if false;
       }
     }
 
     match /catalog/{id} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow write: if request.auth != null && isVendedor();
     }
 
     match /garantiaTemplates/{id} {
@@ -43,6 +59,15 @@ service cloud.firestore {
 
     match /kitTemplates/{id} {
       allow read: if request.auth != null;
+      allow write: if request.auth != null && isVendedor();
+    }
+
+    match /nomina/{id} {
+      allow read, write: if request.auth != null && isSuperAdmin();
+    }
+
+    match /cfdi/{id} {
+      allow read: if request.auth != null && isAdmin();
       allow write: if request.auth != null && isAdmin();
     }
 

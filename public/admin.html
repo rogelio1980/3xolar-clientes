@@ -153,6 +153,12 @@ tr:hover td{background:rgba(245,166,35,.02)}
 .prop-quote-bar{border-top:1px solid rgba(46,204,113,.12);background:rgba(46,204,113,.04);padding:.6rem 1.4rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
 .prop-quote-bar.no-quote{background:rgba(245,166,35,.03);border-top-color:rgba(245,166,35,.08)}
 .no-prop{text-align:center;padding:2.5rem;color:var(--gray);font-size:.88rem;background:var(--card);border:1px solid var(--border);border-radius:12px}
+/* Multi-client chips */
+.prop-clients{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.3rem;align-items:center}
+.client-chip{padding:.15rem .55rem;border-radius:20px;font-size:.68rem;font-weight:600;background:rgba(245,166,35,.1);color:var(--amber);border:1px solid rgba(245,166,35,.2)}
+.client-chip.linked{background:rgba(46,204,113,.1);color:var(--green);border-color:rgba(46,204,113,.2)}
+.btn-link-client{font-size:.68rem;color:var(--gray);background:none;border:1px dashed rgba(255,255,255,.15);border-radius:20px;padding:.15rem .55rem;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+.btn-link-client:hover{color:var(--amber);border-color:rgba(245,166,35,.3)}
 </style>
 </head>
 <body>
@@ -247,7 +253,7 @@ tr:hover td{background:rgba(245,166,35,.02)}
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>Folio</th><th>Cliente</th><th>Total</th><th>Moneda</th><th>Estado</th><th>Elaborado por</th><th>Fecha</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>Folio</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Propuesta</th><th>Fecha</th><th style="text-align:right">Acciones</th></tr></thead>
           <tbody id="quotesBody"></tbody>
         </table>
       </div>
@@ -440,6 +446,22 @@ tr:hover td{background:rgba(245,166,35,.02)}
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ════════════ MODAL: VINCULAR COTIZACIÓN → PROPUESTA ════════════ -->
+<div class="modal-overlay" id="linkQuoteToProposalModal">
+  <div class="modal" style="max-width:420px">
+    <h3>Vincular cotización a propuesta</h3>
+    <p style="font-size:.82rem;color:var(--gray);margin-bottom:1rem">Selecciona la propuesta a la que quieres vincular esta cotización.</p>
+    <div class="field">
+      <label>Propuesta</label>
+      <select id="lqtpSelect"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="document.getElementById('linkQuoteToProposalModal').classList.remove('show')">Cancelar</button>
+      <button class="btn-primary-sm" id="btnConfirmLinkQtoP">Vincular</button>
+    </div>
+  </div>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -723,7 +745,11 @@ function renderProposalsTable() {
         <div>
           <div class="prop-title">${p.title||'Sin título'}</div>
           <div class="prop-meta">
-            <span class="prop-client">👤 ${clientName}</span>
+            <div class="prop-clients">
+              <span class="client-chip">👤 ${clientName}</span>
+              ${(p.linkedClients||[]).map(lid => `<span class="client-chip linked" data-lid="${lid}">👤 ...</span>`).join('')}
+              <button class="btn-link-client" onclick="openLinkClient('${p.clientId}','${p.id}')">+ cliente</button>
+            </div>
             <span class="badge ${badgeMap[st]||'badge-draft'}">${statusMap[st]||st}</span>
             <span style="font-size:.7rem;color:var(--gray)">${versions.length} versión${versions.length!==1?'es':''}</span>
             <span class="info-tag">${fmtDate(p.updatedAt)}</span>
@@ -812,33 +838,42 @@ function renderQuotesTable() {
   let list = allQuotes;
   if (filterClientId) list = list.filter(q => q.clientId === filterClientId);
   if (filterStatus) list = list.filter(q => q.status === filterStatus);
-  if (!list.length) { qBody.innerHTML = '<tr><td colspan="8" class="empty-state">Sin cotizaciones</td></tr>'; return; }
+  if (!list.length) { qBody.innerHTML = '<tr><td colspan="7" class="empty-state">Sin cotizaciones</td></tr>'; return; }
   list.forEach(q => {
     const cl = allClients[q.clientId];
     const clientName = cl ? (cl.name||cl._id) : q.clientId;
     const st = q.status || 'draft';
     const isInvoiced = q._invoiced;
+    const cur = q.moneda || 'MXN';
+    const sym = cur === 'USD' ? 'US$' : '$';
+    const total = q.total || q.items?.reduce((s,i)=>s+(i.total||0),0) || 0;
     const statusBadge = isInvoiced
       ? `<span class="badge badge-invoice">Facturada</span>`
       : `<span class="badge ${badgeMap[st]||'badge-draft'}">${statusMap[st]||st}</span>`;
-    const total = q.total || q.items?.reduce((s,i)=>s+(i.total||0),0) || 0;
-    const cur = q.moneda || 'MXN';
-    pBody_folio = q.folio || q.id.slice(0,8);
+    const linkedProp = allProposals.find(p => p.quoteId === q.id && p.clientId === q.clientId);
+    const propCell = linkedProp
+      ? `<span style="font-size:.75rem;color:var(--green);font-weight:600">✓ ${(linkedProp.title||'Propuesta').slice(0,22)}</span>`
+      : `<button class="btn-action green" style="font-size:.72rem" onclick="openLinkQuoteToProposal('${q.clientId}','${q.id}')">+ Vincular</button>`;
     qBody.innerHTML += `<tr>
-      <td class="info-tag">${q.folio||'—'}</td>
-      <td style="font-size:.8rem">${clientName}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--amber)">${total?fmtMoney(total,cur):'—'}</td>
-      <td class="info-tag">${cur}</td>
-      <td>${statusBadge}</td>
-      <td style="font-size:.78rem;color:var(--gray)">${q.elaboradoPor||'—'}</td>
-      <td class="info-tag">${fmtDate(q.updatedAt)||q.fechaCot||'—'}</td>
       <td>
-        <div class="actions-cell">
-          <a class="btn-action" href="/cotizacion?id=${q.id}&client=${q.clientId}" target="_blank">Ver PDF</a>
-          <a class="btn-action blue" href="/cotizador?edit=${q.id}&client=${q.clientId}" target="_blank">Editar</a>
-          <button class="btn-action" onclick="cycleStatus('${q.clientId}','${q.id}','${st}')">Estado</button>
-          ${!isInvoiced?`<button class="btn-action purple" onclick="openInvoiceModal('${q.clientId}','${q.id}')">📄 Factura</button>`:''}
-          <button class="btn-action danger" onclick="askDeleteQuote('${q.clientId}','${q.id}','${(q.folio||q.id).replace(/'/g,"\\'")}')">🗑</button>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--light);font-weight:600">${q.folio||'—'}</div>
+        <div style="font-size:.68rem;color:var(--gray);margin-top:.1rem">${q.elaboradoPor||''}</div>
+      </td>
+      <td style="font-size:.82rem;font-weight:500">${clientName}</td>
+      <td>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--amber);font-weight:700">${total?sym+new Intl.NumberFormat('es-MX',{minimumFractionDigits:2}).format(total):'—'}</div>
+        <div style="font-size:.65rem;color:var(--gray)">${cur}</div>
+      </td>
+      <td>${statusBadge}</td>
+      <td>${propCell}</td>
+      <td class="info-tag" style="white-space:nowrap">${fmtDate(q.updatedAt)||q.fechaCot||'—'}</td>
+      <td>
+        <div style="display:flex;gap:.3rem;justify-content:flex-end;align-items:center;flex-wrap:nowrap">
+          <a class="btn-action" href="/cotizacion?id=${q.id}&client=${q.clientId}" target="_blank" title="Ver PDF">📄 PDF</a>
+          <a class="btn-action blue" href="/cotizador?edit=${q.id}&client=${q.clientId}" target="_blank" title="Editar">✏️</a>
+          <button class="btn-action" onclick="cycleStatus('${q.clientId}','${q.id}','${st}')" title="Cambiar estado">⟳</button>
+          ${!isInvoiced?`<button class="btn-action purple" onclick="openInvoiceModal('${q.clientId}','${q.id}')" title="Factura">🧾</button>`:''}
+          <button class="btn-action danger" onclick="askDeleteQuote('${q.clientId}','${q.id}','${(q.folio||q.id).replace(/'/g,"\'")}')">🗑</button>
         </div>
       </td>
     </tr>`;
@@ -1176,6 +1211,125 @@ document.getElementById('btnSaveProposal').onclick = async () => {
   });
   document.getElementById('editProposalModal').classList.remove('show');
   showToast('✅ Propuesta actualizada');
+  loadAll();
+};
+
+// ── Multi-client linking ──────────────────────────
+async function openLinkClient(ownerClientId, proposalId) {
+  const [allSnap, propDoc] = await Promise.all([
+    db.collection('clients').get(),
+    db.collection('clients').doc(ownerClientId).collection('proposals').doc(proposalId).get()
+  ]);
+  const linked = propDoc.data()?.linkedClients || [];
+  const options = allSnap.docs
+    .filter(d => d.id !== ownerClientId && !linked.includes(d.id))
+    .map(d => {
+      const cd = d.data();
+      const label = cd.name ? `${cd.name}${cd.company?' — '+cd.company:''}` : (cd.email||d.id);
+      return `<option value="${d.id}">${label}</option>`;
+    }).join('');
+
+  // Resolve names of already-linked clients
+  const linkedNames = {};
+  await Promise.all(linked.map(async id => {
+    const cd = await db.collection('clients').doc(id).get();
+    const d = cd.data()||{};
+    linkedNames[id] = d.name ? `${d.name}${d.company?' — '+d.company:''}` : (d.email||id);
+  }));
+
+  const existing = linked.map(id => `
+    <div style="display:flex;justify-content:space-between;align-items:center;
+      padding:.35rem .7rem;background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.15);
+      border-radius:8px;margin-bottom:.4rem;font-size:.82rem;">
+      <span>👤 ${linkedNames[id]||id}</span>
+      <button onclick="unlinkLinkedClient('${ownerClientId}','${proposalId}','${id}')"
+        style="background:none;border:none;color:var(--orange);cursor:pointer;font-size:.8rem;">✕ Quitar</button>
+    </div>`).join('') || '<p style="font-size:.8rem;color:var(--gray);margin-bottom:.8rem">Sin clientes adicionales vinculados.</p>';
+
+  const div = document.createElement('div');
+  div.id = 'link-client-modal';
+  div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;display:flex;align-items:center;justify-content:center;padding:1rem';
+  div.innerHTML = `
+    <div style="background:var(--navy);border:1px solid var(--border);border-radius:16px;padding:1.75rem;width:100%;max-width:420px;">
+      <h3 style="font-family:'Outfit',sans-serif;font-weight:700;margin-bottom:1.2rem;color:var(--light)">Clientes vinculados</h3>
+      ${existing}
+      ${options ? `
+        <div style="margin-top:.8rem">
+          <label style="font-size:.7rem;font-weight:600;color:var(--gray);font-family:'Outfit',sans-serif;
+            text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.4rem">Agregar cliente</label>
+          <select id="newLinkedClientSel" style="width:100%;padding:.5rem;background:#0B1A2E;
+            border:1px solid rgba(245,166,35,.2);border-radius:8px;color:var(--white);font-family:'DM Sans',sans-serif">
+            <option value="">— Selecciona un cliente —</option>
+            ${options}
+          </select>
+        </div>` : '<p style="font-size:.78rem;color:var(--gray);margin-top:.5rem">No hay más clientes disponibles para vincular.</p>'}
+      <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.4rem">
+        <button onclick="document.getElementById('link-client-modal').remove()"
+          style="padding:.5rem 1.2rem;border:1px solid rgba(136,146,176,.3);border-radius:8px;
+          background:transparent;color:var(--gray);font-family:'Outfit',sans-serif;cursor:pointer">Cerrar</button>
+        ${options ? `<button onclick="linkClient('${ownerClientId}','${proposalId}')"
+          style="padding:.5rem 1.2rem;border:none;border-radius:8px;
+          background:linear-gradient(135deg,var(--amber),var(--orange));
+          color:#0B1A2E;font-family:'Outfit',sans-serif;font-weight:700;cursor:pointer">Vincular</button>` : ''}
+      </div>
+    </div>`;
+  document.body.appendChild(div);
+}
+
+async function linkClient(ownerClientId, proposalId) {
+  const sel = document.getElementById('newLinkedClientSel');
+  const newId = sel?.value;
+  if (!newId) { showToast('⚠️ Selecciona un cliente', true); return; }
+  await db.collection('clients').doc(ownerClientId).collection('proposals').doc(proposalId).update({
+    linkedClients: firebase.firestore.FieldValue.arrayUnion(newId),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  document.getElementById('link-client-modal')?.remove();
+  showToast('✅ Cliente vinculado a la propuesta');
+  loadAll();
+}
+
+async function unlinkLinkedClient(ownerClientId, proposalId, removeId) {
+  await db.collection('clients').doc(ownerClientId).collection('proposals').doc(proposalId).update({
+    linkedClients: firebase.firestore.FieldValue.arrayRemove(removeId),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  document.getElementById('link-client-modal')?.remove();
+  showToast('✅ Cliente desvinculado');
+  loadAll();
+}
+
+// ── Link quote → proposal (from cotizaciones tab) ──
+let lqtpCtx = null;
+function openLinkQuoteToProposal(clientId, quoteId) {
+  const clientProposals = allProposals.filter(p => p.clientId === clientId && !p.quoteId);
+  if (!clientProposals.length) {
+    showToast('⚠️ Este cliente no tiene propuestas sin cotización vinculada', true);
+    return;
+  }
+  lqtpCtx = {clientId, quoteId};
+  const sel = document.getElementById('lqtpSelect');
+  sel.innerHTML = '<option value="">— Selecciona una propuesta —</option>';
+  clientProposals.forEach(p => {
+    sel.innerHTML += `<option value="${p.id}">${p.title||'Sin título'}</option>`;
+  });
+  document.getElementById('linkQuoteToProposalModal').classList.add('show');
+}
+
+document.getElementById('btnConfirmLinkQtoP').onclick = async () => {
+  if (!lqtpCtx) return;
+  const propId = document.getElementById('lqtpSelect').value;
+  if (!propId) { showToast('⚠️ Selecciona una propuesta', true); return; }
+  const q = allQuotes.find(x => x.id === lqtpCtx.quoteId);
+  if (!q) return;
+  await db.collection('clients').doc(lqtpCtx.clientId).collection('proposals').doc(propId).update({
+    quoteId: lqtpCtx.quoteId,
+    quoteData: { folio: q.folio||'', total: q.total||0, subtotal: q.subtotal||0, moneda: q.moneda||'MXN' },
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  document.getElementById('linkQuoteToProposalModal').classList.remove('show');
+  showToast('✅ Cotización vinculada a la propuesta');
+  lqtpCtx = null;
   loadAll();
 };
 

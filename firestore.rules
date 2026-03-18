@@ -2,17 +2,28 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isAdminEmail() {
+      return request.auth.token.email in [
+        'rogelio@ittelecom.com.mx',
+        'arellanes@ittelecom.com.mx',
+        'rogelioguerra@gmail.com'
+      ];
+    }
     function isSuperAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
+      return isAdminEmail() ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
     }
     function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin','superadmin'];
+      return isAdminEmail() ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin','superadmin'];
     }
     function isVendedor() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['vendedor','admin','superadmin'];
+      return isAdminEmail() ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['vendedor','admin','superadmin'];
     }
     function isInternalUser() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['vendedor','admin','superadmin'];
+      return isAdminEmail() ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['vendedor','admin','superadmin'];
     }
 
     match /users/{userId} {

@@ -770,12 +770,13 @@ function fillItemRow(row, tipo, it){
     const mf=it.moFields||{};
     const tec = mf.tecnicos||it.qty||1;
     const dias = mf.dias||1;
-    // Calculate tarifaDia from total if not stored directly
-    const tarifaDia = mf.tarifaDia||it.price||(it.total&&tec&&dias ? Math.round(it.total/(tec*dias)*100)/100 : 0);
+    // Support both old field names (tarifa/costoReal) and new (tarifaDia/costoRealDia)
+    const tarifaDia = mf.tarifaDia||mf.tarifa||it.price||(it.total&&tec&&dias ? Math.round(it.total/(tec*dias)*100)/100 : 0);
+    const costoRealDia = mf.costoRealDia||mf.costoReal||0;
     setQ('.i-tec',    tec);
     setQ('.i-dias',   dias);
     setQ('.i-tarifa', tarifaDia);
-    setQ('.c-moReal', mf.costoRealDia||0);
+    setQ('.c-moReal', costoRealDia);
   } else if(tipo==='viatico'){
     const vf=it.viaFields||{};
     const cantidad = vf.cantidad||it.qty||1;
@@ -1519,7 +1520,13 @@ async function saveQuote(){
   let costMat=0, costMO=0, costViat=0, costKits=0;
   items.forEach(it => {
     if(it.tipo==='producto' && it.costoInterno) costMat += it.costoInterno.costoConIVA||0;
-    if(it.tipo==='mo' && it.moFields) costMO += it.moFields.costoRealTotal||0;
+    if(it.tipo==='mo' && it.moFields) {
+    // costoRealTotal in Firestore is always MXN — convert to display currency
+    const moRealMXN = it.moFields.costoRealTotal || 0;
+    const isUSDSave = document.getElementById('moneda')?.value === 'USD';
+    const tcSave2 = (isUSDSave && tipoCambioDOF > 0) ? tipoCambioDOF : 1;
+    costMO += isUSDSave ? moRealMXN / tcSave2 : moRealMXN;
+  }
     if(it.tipo==='viatico' && it.viaFields) costViat += it.viaFields.costoReal||it.total||0;
     if(it.tipo==='kit') costKits += it.costoTotalKit||0;
   });

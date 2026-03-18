@@ -526,9 +526,16 @@ async function setManualTC() {
   if (!val) return;
   const n = parseFloat(val);
   if (isNaN(n) || n <= 0) { showToast('⚠️ Valor inválido'); return; }
+  const oldTC = tipoCambioDOF;
   tipoCambioDOF = n;
   const label = document.getElementById('tcLabel');
   if (label) label.textContent = `TC manual: $${n.toFixed(4)} MXN/USD`;
+  // If already in USD mode and had a previous TC, re-scale prices
+  if (document.getElementById('moneda').value === 'USD' && oldTC && oldTC !== n) {
+    // Convert from old USD prices back to MXN then to new USD
+    convertAllPrices(false, oldTC); // USD→MXN with old TC
+    convertAllPrices(true, n);      // MXN→USD with new TC
+  }
   recalc();
   showToast(`✅ Tipo de cambio: $${n.toFixed(4)}`);
 }
@@ -548,7 +555,41 @@ const fmt = n => Number(n).toLocaleString('es-MX',{minimumFractionDigits:2,maxim
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000)}
 function genFolio(){return 'TRN-'+new Date().getFullYear()+'-'+(Math.floor(Math.random()*900)+100)}
 
-/* ═══ GARANTIA TEXTS ═══ */
+/* ═══ CONVERT ALL PRICES IN ITEMS ═══ */
+function convertAllPrices(toUSD, tc) {
+  // toUSD=true → divide by tc (MXN→USD), toUSD=false → multiply by tc (USD→MXN)
+  const factor = toUSD ? (1 / tc) : tc;
+  const round2 = n => Math.round(n * 100) / 100;
+
+  document.querySelectorAll('.item-row').forEach(row => {
+    const tipo = row.dataset.tipo;
+    if (tipo === 'producto' || tipo === 'kit') {
+      const el = row.querySelector('.i-price');
+      if (el && parseFloat(el.value)) el.value = round2(parseFloat(el.value) * factor);
+      // Also convert internal cost fields
+      const cCosto = row.querySelector('.c-costo');
+      if (cCosto && parseFloat(cCosto.value)) cCosto.value = round2(parseFloat(cCosto.value) * factor);
+      const cEnvio = row.querySelector('.c-envio');
+      if (cEnvio && parseFloat(cEnvio.value)) cEnvio.value = round2(parseFloat(cEnvio.value) * factor);
+    } else if (tipo === 'mo') {
+      const el = row.querySelector('.i-tarifa');
+      if (el && parseFloat(el.value)) el.value = round2(parseFloat(el.value) * factor);
+      const moReal = row.querySelector('.c-moReal');
+      if (moReal && parseFloat(moReal.value)) moReal.value = round2(parseFloat(moReal.value) * factor);
+    } else if (tipo === 'viatico') {
+      const el = row.querySelector('.i-vcosto');
+      if (el && parseFloat(el.value)) el.value = round2(parseFloat(el.value) * factor);
+      const vReal = row.querySelector('.c-vReal');
+      if (vReal && parseFloat(vReal.value)) vReal.value = round2(parseFloat(vReal.value) * factor);
+    }
+    // kit components
+    row.querySelectorAll('.kc-costo').forEach(el => {
+      if (parseFloat(el.value)) el.value = round2(parseFloat(el.value) * factor);
+    });
+  });
+}
+
+
 const garTexts = {
   fabricante: 'Los equipos cuentan con garantía según las condiciones del fabricante. TRN no se hace responsable por daños por mal uso o instalaciones realizadas por terceros.',
   contrato: 'Los equipos y trabajos de instalación quedan garantizados durante el período del contrato de servicio. Incluye atención a fallas, reemplazo de componentes defectuosos y mano de obra correctiva.',
@@ -583,11 +624,22 @@ async function init(){
   setupCfgListeners();
   setupGarantia();
   document.getElementById('ivaSelect').addEventListener('change', recalc);
-  document.getElementById('moneda').addEventListener('change', () => {
-    const isUSD = document.getElementById('moneda').value === 'USD';
-    const row = document.getElementById('tcRow');
-    if (row) row.style.display = isUSD ? 'block' : 'none';
-    if (isUSD && !tipoCambioDOF) loadDOFRate();
+
+  let lastMoneda = 'MXN'; // track previous currency to know direction
+  document.getElementById('moneda').addEventListener('change', async () => {
+    const newMoneda = document.getElementById('moneda').value;
+    const tcRow = document.getElementById('tcRow');
+    if (tcRow) tcRow.style.display = newMoneda === 'USD' ? 'block' : 'none';
+
+    // Load TC if switching to USD and don't have it yet
+    if (newMoneda === 'USD' && !tipoCambioDOF) await loadDOFRate();
+
+    const tc = tipoCambioDOF || 17.15;
+    if (newMoneda !== lastMoneda && tc > 0) {
+      const toUSD = newMoneda === 'USD'; // MXN→USD = divide, USD→MXN = multiply
+      convertAllPrices(toUSD, tc);
+      lastMoneda = newMoneda;
+    }
     recalc();
   });
   document.getElementById('btnSave').addEventListener('click', saveQuote);
@@ -1311,26 +1363,18 @@ function recalc(){
   document.getElementById('ivaVal').textContent = sym + fmt(iva);
   document.getElementById('totalVal').textContent = sym + fmt(grand);
 
-  // Show MXN equivalent when in USD mode
-  const tcRow = document.getElementById('tcRow');
-  if (monedaVal === 'USD' && tipoCambioDOF && tcRow) {
-    const grandMXN = grand * tipoCambioDOF;
-    const label = document.getElementById('tcLabel');
-    if (label && label.textContent.includes('TC')) {
-      // append equivalent if not already shown
-    }
-    // Show converted total note
-    let convEl = document.getElementById('mxnEquiv');
+  // Show MXN equivalent note when in USD mode
+  let convEl = document.getElementById('mxnEquiv');
+  if (monedaVal === 'USD' && tipoCambioDOF) {
     if (!convEl) {
       convEl = document.createElement('div');
       convEl.id = 'mxnEquiv';
-      convEl.style.cssText = 'font-size:.72rem;color:var(--gray);margin-top:.2rem;font-family:JetBrains Mono,monospace';
-      document.getElementById('totalVal').parentNode.after(convEl);
+      convEl.style.cssText = 'font-size:.72rem;color:var(--gray);text-align:right;margin-top:.3rem;font-family:"JetBrains Mono",monospace;';
+      document.querySelector('.total-row.grand')?.after(convEl);
     }
-    convEl.textContent = `≈ $${fmt(grandMXN)} MXN (TC $${tipoCambioDOF.toFixed(2)})`;
-  } else {
-    const convEl = document.getElementById('mxnEquiv');
-    if (convEl) convEl.textContent = '';
+    convEl.textContent = `≈ $${fmt(grand * tipoCambioDOF)} MXN (TC $${tipoCambioDOF.toFixed(2)})`;
+  } else if (convEl) {
+    convEl.textContent = '';
   }
 
   // Rentabilidad global

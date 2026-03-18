@@ -16,6 +16,13 @@
         { "fieldPath": "section", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "proposals",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "linkedClients", "arrayConfig": "CONTAINS" }
+      ]
     }
   ],
   "fieldOverrides": []

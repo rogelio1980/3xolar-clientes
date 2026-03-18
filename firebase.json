@@ -1,19 +1,74 @@
 {
   "hosting": {
     "public": "public",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
     "cleanUrls": true,
     "trailingSlash": false,
     "rewrites": [
-      { "source": "/portal", "destination": "/portal.html" },
-      { "source": "/viewer", "destination": "/viewer.html" },
-      { "source": "/admin", "destination": "/admin.html" },
-      { "source": "/cotizador", "destination": "/cotizador.html" },
-      { "source": "/cotizacion", "destination": "/cotizacion.html" },
-      { "source": "/coeur-mexicana/solar-poste-v1", "destination": "/coeur-mexicana/solar-poste-v1.html" },
-      { "source": "/coeur-mexicana/solar-poste-v2", "destination": "/coeur-mexicana/solar-poste-v2.html" },
-      { "source": "/coeur-mexicana/solar-poste-v3", "destination": "/coeur-mexicana/solar-poste-v3.html" },
-      { "source": "**", "destination": "/index.html" }
+      {
+        "source": "/portal",
+        "destination": "/portal.html"
+      },
+      {
+        "source": "/viewer",
+        "destination": "/viewer.html"
+      },
+      {
+        "source": "/admin",
+        "destination": "/admin.html"
+      },
+      {
+        "source": "/cotizador",
+        "destination": "/cotizador.html"
+      },
+      {
+        "source": "/cotizacion",
+        "destination": "/cotizacion.html"
+      },
+      {
+        "source": "/coeur-mexicana/solar-poste-v1",
+        "destination": "/coeur-mexicana/solar-poste-v1.html"
+      },
+      {
+        "source": "/coeur-mexicana/solar-poste-v2",
+        "destination": "/coeur-mexicana/solar-poste-v2.html"
+      },
+      {
+        "source": "/coeur-mexicana/solar-poste-v3",
+        "destination": "/coeur-mexicana/solar-poste-v3.html"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "/sw.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          },
+          {
+            "key": "Service-Worker-Allowed",
+            "value": "/"
+          }
+        ]
+      },
+      {
+        "source": "/manifest.json",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=3600"
+          }
+        ]
+      }
     ]
   },
   "firestore": {

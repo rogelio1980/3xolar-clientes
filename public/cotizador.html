@@ -1667,6 +1667,75 @@ function doPrint(){
 
 /* ═══ LOGOUT ═══ */
 document.getElementById('btnLogout').addEventListener('click', () => auth.signOut().then(()=>location.href='/'));
+
+
+// ═══ PHASE 5: AUTOSAVE ═══
+let autosaveTimer = null;
+let lastSavedContent = null;
+let autosaveEl = null;
+
+function initAutosave() {
+  autosaveEl = document.getElementById('autosaveIndicator');
+  if(!autosaveEl) return;
+  autosaveEl.style.display = 'block';
+  setAutosaveStatus('idle');
+  // Start autosave interval
+  autosaveTimer = setInterval(async () => {
+    const currentId = new URLSearchParams(location.search).get('edit');
+    if(!currentId) return; // Only autosave existing quotes
+    const titleEl = document.getElementById('quoteTitle') || document.getElementById('proyectoTitulo');
+    if(titleEl && !titleEl.value.trim()) return; // Don't autosave empty quotes
+    try {
+      setAutosaveStatus('saving');
+      await saveQuote(true); // pass silent=true
+      setAutosaveStatus('saved');
+      setTimeout(()=>setAutosaveStatus('idle'), 3000);
+    } catch(e) {
+      setAutosaveStatus('error');
+      console.error('Autosave error:', e);
+    }
+  }, 30000);
+}
+
+function setAutosaveStatus(status) {
+  if(!autosaveEl) return;
+  autosaveEl.className = 'autosave-indicator ' + (status !== 'idle' ? status : '');
+  const msgs = { idle: '', saving: '⟳ Guardando...', saved: '✓ Guardado', error: '✕ Error al guardar' };
+  autosaveEl.textContent = msgs[status] || '';
+  if(status === 'idle') autosaveEl.style.display = 'none';
+  else autosaveEl.style.display = 'block';
+}
+
+// Patch saveQuote to show autosave status on manual save
+const _origSaveQuote = typeof saveQuote !== 'undefined' ? saveQuote : null;
+
+// ═══ PHASE 5: KEYBOARD SHORTCUTS ═══
+document.addEventListener('keydown', e => {
+  // Ctrl+S = save
+  if((e.ctrlKey||e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    const saveBtn = document.querySelector('.btn-save-quote, #btnSaveQuote, button[onclick*="saveQuote"]');
+    if(saveBtn) saveBtn.click();
+    else if(typeof saveQuote === 'function') saveQuote();
+    setAutosaveStatus('saved');
+    setTimeout(()=>setAutosaveStatus('idle'), 2000);
+  }
+  // Escape = close modals
+  if(e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.show').forEach(m=>m.classList.remove('show'));
+  }
+  // Ctrl+N = new item (when in quote context)
+  if((e.ctrlKey||e.metaKey) && e.key === 'n') {
+    e.preventDefault();
+    // Focus first product add button
+    const addBtn = document.querySelector('.btn-add-producto, button[onclick*="addItem"][data-tipo=\"producto\"]');
+    if(addBtn) addBtn.click();
+  }
+});
+
+// Init autosave when page loads
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(initAutosave, 2000); // Wait for quote to load
+});
+
 </script>
-</body>
-</html>

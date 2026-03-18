@@ -1182,6 +1182,10 @@ function loadKitTemplate(sel, kitId){
 /* ═══ RECALC ═══ */
 function recalc(){
   const sym = SYM();
+  const isUSD = document.getElementById('moneda').value === 'USD';
+  const tc = (isUSD && tipoCambioDOF && tipoCambioDOF > 0) ? tipoCambioDOF : 1;
+  // costToDisplay: converts an MXN internal cost to display currency
+  const costToDisplay = mxn => isUSD ? mxn / tc : mxn;
   let subtotal = 0;
   let costMat = 0, costMO = 0, costViat = 0, costKits = 0;
 
@@ -1203,7 +1207,7 @@ function recalc(){
       const inclIVA = row.querySelector(`input[name="iva-${row.dataset.id}"]:checked`)?.value === '1';
       const costoBase = costo + envio;
       const costoConIVA = inclIVA ? costoBase : costoBase * 1.16;
-      const totalCostoItem = costoConIVA * qty;
+      const totalCostoItem = costToDisplay(costoConIVA * qty);
       const utilidad = total - totalCostoItem;
       const margen = total > 0 ? (utilidad / total * 100) : 0;
 
@@ -1227,7 +1231,7 @@ function recalc(){
       row.querySelector('.item-total').textContent = sym + fmt(total);
 
       const costoReal = parseFloat(row.querySelector('.c-moReal')?.value) || 0;
-      const costoRealTotal = tec * dias * costoReal;
+      const costoRealTotal = costToDisplay(tec * dias * costoReal);
       const utilMO = total - costoRealTotal;
       const margenMO = total > 0 ? (utilMO/total*100) : 0;
       const el1 = row.querySelector('.cr-moTotal');
@@ -1246,13 +1250,14 @@ function recalc(){
       row.querySelector('.item-total').textContent = sym + fmt(total);
 
       const vReal = parseFloat(row.querySelector('.c-vReal')?.value) || 0;
-      const utilV = total - vReal;
+      const vRealDisplay = costToDisplay(vReal);
+      const utilV = total - vRealDisplay;
       const elV = row.querySelector('.cr-vUtil');
       if(elV){
         elV.textContent = sym + fmt(utilV);
         row.querySelector('.cr-vSem').textContent = utilV < 0 ? '🔴' : utilV === 0 ? '🟡' : '🟢';
       }
-      if(vReal > 0) costViat += vReal; else costViat += total;
+      if(vReal > 0) costViat += vRealDisplay; else costViat += total;
 
     } else if(tipo === 'kit'){
       const qty = parseFloat(row.querySelector('.i-qty').value) || 0;
@@ -1269,7 +1274,7 @@ function recalc(){
           const cqty = parseFloat(c.querySelector('.kc-qty')?.value) || 0;
           const ccosto = parseFloat(c.querySelector('.kc-costo')?.value) || 0;
           const inclIVA = c.querySelector('.kc-iva')?.checked;
-          const compTotal = cqty * ccosto * (inclIVA ? 1 : 1.16);
+          const compTotal = costToDisplay(cqty * ccosto * (inclIVA ? 1 : 1.16));
           c.querySelector('.comp-total').textContent = sym + fmt(compTotal);
           c.querySelector('.comp-total').className = compTotal === 0 ? 'comp-total zero' : 'comp-total';
           compCostTotal += compTotal;

@@ -791,7 +791,7 @@ function fillItemRow(row, tipo, it){
     // Re-add componentes if any
     if(it.componentes&&it.componentes.length){
       const kitId=row.dataset.id;
-      const addCompBtn=row.querySelector('.btn-add-comp');
+      const addCompBtn=row.querySelector('.btn-add-component');
       it.componentes.forEach(comp=>{
         if(addCompBtn) addCompBtn.click();
         const compRows=row.querySelectorAll('.kit-component');

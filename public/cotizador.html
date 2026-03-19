@@ -350,13 +350,10 @@ Responde SOLO con la descripción, sin explicaciones ni comillas. Máximo 2 orac
     : `Genera una descripción profesional para una cotización. Instrucción: ${prompt}`;
 
   try {
-    // Get Firebase ID token for auth
-    const idToken = await firebase.auth().currentUser?.getIdToken();
-    const resp = await fetch('https://us-central1-xolar-clientes.cloudfunctions.net/claudeProxy', {
+    const resp = await fetch('https://morning-lab-b6d7trn-claude-proxy.rogelioguerra.workers.dev', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + (idToken || '')
       },
       body: JSON.stringify({
         system: systemPrompt,

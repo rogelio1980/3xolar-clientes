@@ -812,6 +812,9 @@ function navTo(panel) {
       p.classList.add('active');
       p.style.display='block'; // ensure visible even if inline style was set
     }
+    // Lazy-load panel data
+    if(panel==='comentarios' && typeof loadComentarios==='function') loadComentarios();
+    if(panel==='usuarios' && typeof loadUsuarios==='function' && !window._usuariosLoaded) { loadUsuarios(); window._usuariosLoaded=true; }
   }
 }
 const ADMIN_EMAILS = ['rogelio@ittelecom.com.mx','arellanes@ittelecom.com.mx','rogelioguerra@gmail.com'];
@@ -848,11 +851,7 @@ document.querySelectorAll('.nav-item,.bnav-item').forEach(item => {
   item.addEventListener('click', () => {
     const panel = item.dataset.panel;
     if(!panel) return;
-    navTo(panel);
-    // Lazy-load panel data on first visit
-    if(panel==='comentarios' && typeof loadComentarios==='function') loadComentarios();
-    if(panel==='usuarios' && typeof loadUsuarios==='function') loadUsuarios();
-    if(panel==='facturacion' && typeof loadFacturacion==='function') loadFacturacion();
+    navTo(panel); // navTo now handles lazy-loading panels
   });
 });
 

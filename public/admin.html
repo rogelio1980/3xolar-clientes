@@ -3163,50 +3163,148 @@ function openAIProposal(clientId, propId, title) {
   document.getElementById('aiPropResult').style.display = 'none';
   document.getElementById('aiPropResult').textContent = '';
   document.getElementById('aiPropGenBtn').disabled = false;
-  document.getElementById('aiPropGenBtn').textContent = '✨ Generar con IA';
+  document.getElementById('aiPropGenBtn').textContent = '✨ Generar contenido seleccionado';
+  // Initialize toggle styles
+  setTimeout(() => {
+    AI_SECTIONS.forEach(s => updateSectionStyle(s.id));
+  }, 50);
 }
 
 function buildAIProposalModal() {
   const modal = document.createElement('div');
   modal.id = 'aiProposalModal';
-  modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem';
+  modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);align-items:flex-start;justify-content:center;padding:1.5rem;overflow-y:auto';
   modal.innerHTML = `
-    <div style="background:var(--navy);border:1px solid var(--border);border-radius:16px;padding:1.75rem;width:100%;max-width:600px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+    <div style="background:var(--navy);border:1px solid var(--border);border-radius:16px;padding:1.75rem;width:100%;max-width:680px;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+      
+      <!-- Header -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
         <div>
-          <div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:1.1rem">🤖 Generar propuesta con IA</div>
+          <div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:1.1rem">🤖 Generar contenido con IA</div>
           <div id="aiPropTitle" style="font-size:.8rem;color:var(--gray);margin-top:.2rem"></div>
         </div>
         <button onclick="document.getElementById('aiProposalModal').style.display='none'" 
           style="background:none;border:none;color:var(--gray);font-size:1.2rem;cursor:pointer;padding:.3rem">✕</button>
       </div>
+
+      <!-- Nivel de complejidad -->
+      <div style="margin-bottom:1.25rem">
+        <label style="display:block;font-size:.72rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">Nivel de propuesta</label>
+        <div style="display:flex;gap:.5rem">
+          <button onclick="setComplexity('simple')" id="cxBtn-simple"
+            style="flex:1;padding:.5rem;border-radius:8px;font-family:'Outfit',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--gray);transition:all .15s">
+            ⚡ Simple<br><span style="font-weight:400;font-size:.68rem">1-2 secciones</span></button>
+          <button onclick="setComplexity('estandar')" id="cxBtn-estandar"
+            style="flex:1;padding:.5rem;border-radius:8px;font-family:'Outfit',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid rgba(245,166,35,.5);background:rgba(245,166,35,.08);color:var(--amber);transition:all .15s">
+            📋 Estándar<br><span style="font-weight:400;font-size:.68rem">3-5 secciones</span></button>
+          <button onclick="setComplexity('completa')" id="cxBtn-completa"
+            style="flex:1;padding:.5rem;border-radius:8px;font-family:'Outfit',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--gray);transition:all .15s">
+            🏆 Completa<br><span style="font-weight:400;font-size:.68rem">Todas las secciones</span></button>
+        </div>
+      </div>
+
+      <!-- Secciones con toggles -->
+      <div style="margin-bottom:1.25rem">
+        <label style="display:block;font-size:.72rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">Secciones a generar</label>
+        <div id="aiSectionsGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem">
+          ${buildSectionToggles()}
+        </div>
+      </div>
+
+      <!-- Prompt personalizado -->
       <div style="margin-bottom:1rem">
-        <label style="display:block;font-size:.75rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">
-          ¿Qué quieres que genere o modifique?
+        <label style="display:block;font-size:.72rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">
+          Instrucción adicional <span style="font-weight:400;text-transform:none">(opcional)</span>
         </label>
-        <textarea id="aiPropPrompt" rows="4" placeholder="Ej: Genera una propuesta para un sistema solar de 5kW para una empresa de telecomunicaciones en Chihuahua. Incluye paneles bifaciales, inversor híbrido y batería LiFePO4. Tono técnico profesional."
-          style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:8px;color:var(--white);padding:.65rem .75rem;font-family:'DM Sans',sans-serif;font-size:.88rem;resize:vertical;outline:none"></textarea>
+        <textarea id="aiPropPrompt" rows="3" placeholder="Ej: Tono formal. Destaca la autonomía del sistema. Menciona que el cliente ya tiene la infraestructura de montaje."
+          style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:8px;color:var(--white);padding:.65rem .75rem;font-family:'DM Sans',sans-serif;font-size:.85rem;resize:vertical;outline:none"></textarea>
       </div>
-      <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
-        <button onclick="setAITemplate('resumen')" style="font-size:.72rem;padding:.3rem .7rem;border-radius:6px;background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.3);color:var(--amber);cursor:pointer">📋 Resumen ejecutivo</button>
-        <button onclick="setAITemplate('tecnica')" style="font-size:.72rem;padding:.3rem .7rem;border-radius:6px;background:rgba(0,184,148,.1);border:1px solid rgba(0,184,148,.3);color:var(--teal);cursor:pointer">⚙️ Descripción técnica</button>
-        <button onclick="setAITemplate('beneficios')" style="font-size:.72rem;padding:.3rem .7rem;border-radius:6px;background:rgba(108,92,231,.1);border:1px solid rgba(108,92,231,.3);color:#a29bfe;cursor:pointer">✅ Beneficios del sistema</button>
-        <button onclick="setAITemplate('cronograma')" style="font-size:.72rem;padding:.3rem .7rem;border-radius:6px;background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.3);color:var(--green);cursor:pointer">📅 Cronograma de instalación</button>
-      </div>
+
+      <!-- Generar -->
       <button id="aiPropGenBtn" onclick="generateAIProposal()"
-        style="width:100%;padding:.7rem;background:linear-gradient(135deg,#6C5CE7,#a29bfe);border:none;border-radius:8px;color:white;font-family:'Outfit',sans-serif;font-weight:700;font-size:.9rem;cursor:pointer;margin-bottom:1rem">
-        ✨ Generar con IA
+        style="width:100%;padding:.75rem;background:linear-gradient(135deg,#6C5CE7,#a29bfe);border:none;border-radius:8px;color:white;font-family:'Outfit',sans-serif;font-weight:700;font-size:.92rem;cursor:pointer;margin-bottom:1rem">
+        ✨ Generar contenido seleccionado
       </button>
-      <div id="aiPropResult" style="display:none;background:rgba(108,92,231,.08);border:1px solid rgba(108,92,231,.25);border-radius:8px;padding:1rem;font-size:.88rem;line-height:1.7;color:var(--light);max-height:250px;overflow-y:auto;white-space:pre-wrap;margin-bottom:.75rem"></div>
+
+      <!-- Resultado -->
+      <div id="aiPropResult" style="display:none;background:rgba(108,92,231,.08);border:1px solid rgba(108,92,231,.25);border-radius:8px;padding:1rem;font-size:.87rem;line-height:1.75;color:var(--light);max-height:320px;overflow-y:auto;white-space:pre-wrap;margin-bottom:.75rem;font-family:'DM Sans',sans-serif"></div>
+      
+      <!-- Acciones post-generación -->
       <div id="aiPropActions" style="display:none;gap:.5rem;flex-wrap:wrap">
         <button onclick="copyAIResult()" style="padding:.4rem .9rem;border-radius:7px;background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.3);color:var(--amber);font-family:'Outfit',sans-serif;font-weight:600;font-size:.8rem;cursor:pointer">📋 Copiar</button>
         <button onclick="applyAIToVersion()" style="padding:.4rem .9rem;border-radius:7px;background:rgba(46,204,113,.15);border:1px solid rgba(46,204,113,.3);color:var(--green);font-family:'Outfit',sans-serif;font-weight:600;font-size:.8rem;cursor:pointer">✅ Guardar como nota interna</button>
         <button onclick="openEditorWithAI()" style="padding:.4rem .9rem;border-radius:7px;background:linear-gradient(135deg,var(--amber),var(--orange));border:none;color:#0B1A2E;font-family:'Outfit',sans-serif;font-weight:700;font-size:.8rem;cursor:pointer">✏️ Abrir editor con este texto</button>
+        <button onclick="generateAIProposal()" style="padding:.4rem .9rem;border-radius:7px;background:rgba(108,92,231,.15);border:1px solid rgba(108,92,231,.3);color:#a29bfe;font-family:'Outfit',sans-serif;font-weight:600;font-size:.8rem;cursor:pointer">🔄 Regenerar</button>
       </div>
     </div>
   `;
   document.body.appendChild(modal);
 }
+
+// Section definitions
+const AI_SECTIONS = [
+  { id:'resumen',      label:'📋 Resumen ejecutivo',         desc:'Problema, solución y beneficios en 2 párrafos',  default_estandar:true,  default_completa:true },
+  { id:'tecnica',      label:'⚙️ Descripción técnica',       desc:'Especificaciones, componentes y criterios',       default_estandar:true,  default_completa:true },
+  { id:'diagrama',     label:'📐 Esquema de sistema',         desc:'Descripción textual del diagrama de instalación', default_estandar:false, default_completa:true },
+  { id:'materiales',   label:'📦 Lista de materiales',        desc:'Equipos, modelos y cantidades recomendadas',      default_estandar:true,  default_completa:true },
+  { id:'energia',      label:'⚡ Balance energético',         desc:'Cálculo de generación vs consumo',                default_estandar:false, default_completa:true },
+  { id:'financiero',   label:'💰 Análisis financiero',        desc:'ROI, payback y ahorro estimado',                  default_estandar:false, default_completa:true },
+  { id:'cronograma',   label:'📅 Cronograma de instalación',  desc:'Fases: visita técnica → procura → instalación',   default_estandar:false, default_completa:true },
+  { id:'garantias',    label:'🛡️ Garantías y soporte',        desc:'Términos de garantía por componente',             default_estandar:true,  default_completa:true },
+  { id:'condiciones',  label:'📄 Condiciones comerciales',    desc:'Forma de pago, vigencia, alcance',                default_estandar:true,  default_completa:true },
+  { id:'ambiental',    label:'🌱 Impacto ambiental',          desc:'CO₂ evitado, huella de carbono',                  default_estandar:false, default_completa:true },
+  { id:'mantenimiento',label:'🔧 Plan de mantenimiento',      desc:'Calendario preventivo y correctivo',              default_estandar:false, default_completa:true },
+  { id:'riesgos',      label:'⚠️ Análisis de riesgos',        desc:'Identificación y mitigación de riesgos técnicos', default_estandar:false, default_completa:true },
+];
+
+function buildSectionToggles() {
+  return AI_SECTIONS.map(s => `
+    <label id="sec-label-${s.id}" style="display:flex;align-items:flex-start;gap:.5rem;padding:.5rem .65rem;border-radius:8px;border:1px solid var(--border);cursor:pointer;transition:all .15s;background:transparent">
+      <input type="checkbox" id="sec-${s.id}" ${s.default_estandar?'checked':''} 
+        style="width:15px;height:15px;accent-color:#6C5CE7;flex-shrink:0;margin-top:2px"
+        onchange="updateSectionStyle('${s.id}')">
+      <div>
+        <div style="font-size:.8rem;font-weight:600;color:var(--light)">${s.label}</div>
+        <div style="font-size:.67rem;color:var(--gray)">${s.desc}</div>
+      </div>
+    </label>`).join('');
+}
+
+function updateSectionStyle(id) {
+  const cb = document.getElementById('sec-'+id);
+  const lbl = document.getElementById('sec-label-'+id);
+  if(cb && lbl) {
+    lbl.style.border = cb.checked ? '1px solid rgba(108,92,231,.5)' : '1px solid var(--border)';
+    lbl.style.background = cb.checked ? 'rgba(108,92,231,.08)' : 'transparent';
+  }
+}
+
+function setComplexity(level) {
+  // Update button styles
+  ['simple','estandar','completa'].forEach(l => {
+    const btn = document.getElementById('cxBtn-'+l);
+    if(!btn) return;
+    if(l === level) {
+      btn.style.borderColor = 'rgba(245,166,35,.5)';
+      btn.style.background = 'rgba(245,166,35,.08)';
+      btn.style.color = 'var(--amber)';
+    } else {
+      btn.style.borderColor = 'var(--border)';
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--gray)';
+    }
+  });
+  // Set checkboxes
+  AI_SECTIONS.forEach(s => {
+    const cb = document.getElementById('sec-'+s.id);
+    if(!cb) return;
+    if(level === 'simple') cb.checked = ['resumen','tecnica'].includes(s.id);
+    else if(level === 'estandar') cb.checked = s.default_estandar;
+    else cb.checked = true; // completa = all
+    updateSectionStyle(s.id);
+  });
+}
+
 
 function setAITemplate(type) {
   const templates = {
@@ -3224,33 +3322,60 @@ async function generateAIProposal() {
   const btn = document.getElementById('aiPropGenBtn');
   const result = document.getElementById('aiPropResult');
   const actions = document.getElementById('aiPropActions');
+
+  // Collect selected sections
+  const selectedSections = AI_SECTIONS
+    .filter(s => document.getElementById('sec-'+s.id)?.checked)
+    .map(s => s.label + ' — ' + s.desc);
+
+  if (selectedSections.length === 0) {
+    showToast('Selecciona al menos una sección', true); return;
+  }
+
   const prompt = document.getElementById('aiPropPrompt').value.trim();
-  if (!prompt) { showToast('Escribe un prompt primero', true); return; }
 
   btn.disabled = true;
   btn.textContent = '⏳ Generando...';
   result.style.display = 'none';
   actions.style.display = 'none';
 
-  // Get proposal context from Firestore
+  // Get proposal context
   let context = '';
   try {
-    const snap = await db.collection('clients').doc(_aiPropClientId).collection('proposals').doc(_aiPropId).get();
+    const snap = await db.collection('clients').doc(_aiPropClientId)
+      .collection('proposals').doc(_aiPropId).get();
     if (snap.exists) {
       const d = snap.data();
-      const vers = (d.versions || []).map((v,i) => `v${i+1}: ${v.changelog||'sin descripción'}`).join(', ');
-      context = `Propuesta: "${d.title || 'Sin título'}"\nCliente: ${allClients[_aiPropClientId]?.name || _aiPropClientId}\nVersiones: ${vers}\nNotas: ${d.notasInternas||'ninguna'}`;
+      const cl = allClients[_aiPropClientId];
+      const clientName = cl ? (cl.name||cl.empresa?.nombre||cl.company||_aiPropClientId) : _aiPropClientId;
+      const vers = (d.versions||[]).map((v,i)=>`v${i+1}: ${v.changelog||'sin descripción'}`).join(' | ');
+      context = `Propuesta: "${d.title||'Sin título'}"\nCliente: ${clientName}\nVersiones: ${vers}${d.notasInternas?'\nNotas previas: '+d.notasInternas.slice(0,200):''}`;
     }
   } catch(e) {}
 
-  const systemPrompt = 'Eres un experto en redacción técnica y comercial para propuestas de energía solar y telecomunicaciones en México. Trabajas para TRN (Telecomunicaciones y Redes del Norte) en Chihuahua. Generas contenido profesional, claro y persuasivo para propuestas técnico-comerciales.';
-  const userMsg = (context ? `Contexto de la propuesta:\n${context}\n\n` : '') + `Solicitud: ${prompt}`;
+  const systemPrompt = `Eres un experto en redacción técnica y comercial para propuestas de energía solar, telecomunicaciones e infraestructura en México. Trabajas para TRN (Telecomunicaciones y Redes del Norte) en Chihuahua, Chih.
+Generas contenido profesional, claro y persuasivo. Usa formato Markdown. Usa encabezados ## para secciones. Para diagramas y esquemas, usa representaciones ASCII o describe el componente con claridad indicando que se necesita un diagrama visual.
+Para listas de materiales usa tablas Markdown. Para análisis financiero incluye números concretos cuando los tengas disponibles. Siempre usa terminología técnica apropiada.`;
+
+  const sectionsStr = selectedSections.map((s,i) => `${i+1}. ${s}`).join('\n');
+  const userMsg = `${context ? 'Contexto de la propuesta:\n'+context+'\n\n' : ''}Genera el siguiente contenido para esta propuesta técnico-comercial:
+
+SECCIONES SOLICITADAS:
+${sectionsStr}
+
+${prompt ? 'INSTRUCCIÓN ADICIONAL: '+prompt : ''}
+
+IMPORTANTE: Genera SOLO las secciones solicitadas, en ese orden, con contenido real y específico basado en el contexto de la propuesta.`;
 
   try {
     const resp = await fetch('https://morning-lab-b6d7trn-claude-proxy.rogelioguerra.workers.dev', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ system: systemPrompt, messages: [{ role: 'user', content: userMsg }], max_tokens: 800 })
+      body: JSON.stringify({
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMsg }],
+        max_tokens: 1500
+      })
     });
     const data = await resp.json();
     const text = data.content && data.content[0] && data.content[0].text;
@@ -3260,16 +3385,17 @@ async function generateAIProposal() {
       result.style.display = 'block';
       actions.style.display = 'flex';
     } else {
-      result.textContent = 'Error: ' + JSON.stringify(data).slice(0,120);
+      result.textContent = 'Error: ' + JSON.stringify(data).slice(0,150);
       result.style.display = 'block';
     }
   } catch(e) {
-    result.textContent = 'Error: ' + e.message;
+    result.textContent = 'Error de conexión: ' + e.message;
     result.style.display = 'block';
   }
   btn.disabled = false;
-  btn.textContent = '✨ Generar con IA';
+  btn.textContent = '✨ Generar contenido seleccionado';
 }
+
 
 function copyAIResult() {
   navigator.clipboard.writeText(window._aiPropLastResult || '').then(() => showToast('Copiado al clipboard ✅'));

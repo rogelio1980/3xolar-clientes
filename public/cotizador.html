@@ -936,6 +936,14 @@ function fillItemRow(row, tipo, it){
             const costoEl = compRow.querySelector('.kc-costo');
             if(costoEl){ costoEl.className = 'kc-costo kc-costo-' + comp.moneda.toLowerCase(); }
           }
+          // Restore SKU and URL from comp-extra row
+          const compExtra = compRow.nextElementSibling;
+          if(compExtra && compExtra.classList.contains('comp-extra')){
+            const skuEl = compExtra.querySelector('.kc-sku');
+            const urlEl = compExtra.querySelector('.kc-url');
+            if(skuEl && comp.sku) skuEl.value = comp.sku;
+            if(urlEl && comp.urlProveedor) urlEl.value = comp.urlProveedor;
+          }
         }
       });
     }

@@ -363,8 +363,25 @@ async function sendComment() {
   await db.collection('clients').doc(cId)
     .collection('comments').add(payload).catch(console.error);
 
-  // Fire n8n webhook (non-blocking)
+  // Fire n8n webhook (non-blocking) — incluye equipo dinámico de Firestore
   try {
+    // Consultar miembros activos del equipo TRN
+    let recipients = [];
+    try {
+      const eqSnap = await db.collection('equipoTRN').get();
+      eqSnap.forEach(doc => {
+        const d = doc.data();
+        if (d.notificaciones?.activo !== false) {
+          recipients.push({
+            nombre: d.nombre || '',
+            telegram_chat_id: d.notificaciones?.telegram_chat_id || '',
+            whatsapp: d.notificaciones?.whatsapp || '',
+            email: d.email || ''
+          });
+        }
+      });
+    } catch(eqErr) { console.warn('equipoTRN query failed:', eqErr); }
+
     fetch(N8N_WEBHOOK, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -378,7 +395,8 @@ async function sendComment() {
         type: currentType,
         text,
         viewerUrl: 'https://xolar-clientes.web.app/viewer?id=' + proposalId,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        recipients  // ← array dinámico de equipoTRN
       })
     }).catch(()=>{});
   } catch(e) {}

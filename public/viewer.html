@@ -382,23 +382,39 @@ async function sendComment() {
       });
     } catch(eqErr) { console.warn('equipoTRN query failed:', eqErr); }
 
-    fetch(N8N_WEBHOOK, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        proposalId,
-        folio: document.querySelector('.proposal-folio')?.textContent || proposalId,
-        clientName: cName,
-        clientPhone: cPhone,
-        clientTelegram: cTelegram,
-        authorRole: isAdmin ? 'admin' : 'client',
-        type: currentType,
-        text,
-        viewerUrl: 'https://xolar-clientes.web.app/viewer?id=' + proposalId,
-        timestamp: new Date().toISOString(),
-        recipients  // ← array dinámico de equipoTRN
-      })
-    }).catch(()=>{});
+    // Disparar un webhook por cada miembro del equipo con Telegram activo
+    const basePayload = {
+      proposalId,
+      folio: document.querySelector('.proposal-folio')?.textContent || proposalId,
+      clientName: cName,
+      clientPhone: cPhone,
+      clientTelegram: cTelegram,
+      authorRole: isAdmin ? 'admin' : 'client',
+      type: currentType,
+      text,
+      viewerUrl: 'https://xolar-clientes.web.app/viewer?id=' + proposalId,
+      timestamp: new Date().toISOString(),
+      recipients
+    };
+
+    // Si hay recipients con Telegram, disparar uno por cada uno
+    const tgRecipients = recipients.filter(r => r.telegram_chat_id);
+    if (tgRecipients.length > 0) {
+      tgRecipients.forEach(r => {
+        fetch(N8N_WEBHOOK, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...basePayload, telegram_chat_id: r.telegram_chat_id, recipient_nombre: r.nombre })
+        }).catch(()=>{});
+      });
+    } else {
+      // Fallback: mandar sin telegram_chat_id (como antes)
+      fetch(N8N_WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(basePayload)
+      }).catch(()=>{});
+    }
   } catch(e) {}
 
   // WhatsApp direct notifications (parallel)

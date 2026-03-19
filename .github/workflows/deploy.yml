@@ -22,20 +22,7 @@ jobs:
       - name: Write service account key
         run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_XOLAR_CLIENTES }}' | base64 -d > /tmp/sa.json
 
-      - name: Install Functions dependencies
-        run: cd functions && npm install
-
       - name: Deploy Hosting
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/sa.json
         run: firebase deploy --only hosting --project xolar-clientes
-
-      - name: Deploy Firestore Rules
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: /tmp/sa.json
-        run: firebase deploy --only firestore:rules --project xolar-clientes
-
-      - name: Deploy Functions
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: /tmp/sa.json
-        run: firebase deploy --only functions --project xolar-clientes

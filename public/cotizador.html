@@ -350,14 +350,18 @@ Responde SOLO con la descripción, sin explicaciones ni comillas. Máximo 2 orac
     : `Genera una descripción profesional para una cotización. Instrucción: ${prompt}`;
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    // Get Firebase ID token for auth
+    const idToken = await firebase.auth().currentUser?.getIdToken();
+    const resp = await fetch('https://us-central1-xolar-clientes.cloudfunctions.net/claudeProxy', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (idToken || '')
+      },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
         system: systemPrompt,
-        messages: [{ role: 'user', content: userMsg }]
+        messages: [{ role: 'user', content: userMsg }],
+        max_tokens: 300
       })
     });
     const data = await resp.json();

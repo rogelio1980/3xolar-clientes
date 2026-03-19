@@ -1,5 +1,5 @@
-// TRN Admin Service Worker — v2.0 (cache busted)
-const CACHE = 'trn-admin-v2';
+// TRN Admin Service Worker — v3.0 (cache busted)
+const CACHE = 'trn-admin-v3';
 const STATIC = [];
 
 self.addEventListener('install', e => {

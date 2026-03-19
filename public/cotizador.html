@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- TRN Cotizador v4.1 build:202603190006 -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -70,7 +71,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
 .item-row:hover{background:rgba(255,255,255,0.015)}
 .item-main{display:grid;grid-template-columns:2.5fr 80px 110px 80px 110px 36px;gap:0.5rem;padding:0.5rem 0.5rem;align-items:start}
 .item-main.no-disc{grid-template-columns:2.5fr 80px 110px 110px 36px}
-.item-main.kit-main{grid-template-columns:2.5fr 80px 120px 110px 36px;align-items:start;padding:0.6rem 0.5rem}
+.item-main.kit-main{grid-template-columns:2.5fr 80px 120px 110px 36px;align-items:start;padding:0.5rem 0.5rem}
+.item-main.kit-main.disc{grid-template-columns:2.5fr 80px 110px 80px 110px 36px}
 .item-row input,.item-row select{padding:0.4rem 0.5rem;border:1px solid var(--border);border-radius:5px;background:var(--dark);color:var(--white);font-size:0.82rem;outline:none;width:100%}
 .item-row input:focus{border-color:var(--amber)}
 .item-total{font-family:'JetBrains Mono',monospace;color:var(--amber);font-size:0.85rem;text-align:right}
@@ -118,7 +120,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);
 .col-disc{transition:opacity .2s}
 
 .comp-header{display:grid;grid-template-columns:2fr 80px 65px 90px 80px 80px 30px;gap:0.4rem;padding:0.35rem 0.5rem;border-bottom:1px solid rgba(0,184,148,0.2);font-family:'Outfit',sans-serif;font-size:0.6rem;font-weight:700;color:var(--teal);text-transform:uppercase}
-.kit-component{display:grid;grid-template-columns:2fr 80px 65px 90px 80px 30px;gap:0.35rem;padding:0.4rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.04);align-items:center}
+.kit-component{display:grid;grid-template-columns:2fr 80px 65px 90px 80px 80px 30px;gap:0.35rem;padding:0.4rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.04);align-items:center}
 .kit-component input,.kit-component select{padding:0.3rem 0.4rem;border:1px solid var(--border);border-radius:5px;background:var(--dark);color:var(--white);font-size:0.77rem;outline:none;width:100%}
 .kit-component input:focus{border-color:var(--teal)}
 .kit-component .comp-total{font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--amber);text-align:right}
@@ -850,6 +852,14 @@ function fillItemRow(row, tipo, it){
     setQ('.i-vcosto',   costoUnit);
     setQ('.c-vReal',    vf.costoReal||0);
   } else if(tipo==='kit'){
+    // Ensure kit-main + disc classes on loaded rows
+    const km = row.querySelector('.item-main');
+    if(km && !km.classList.contains('kit-main')) km.classList.add('kit-main');
+    if(km){
+      const discOn = document.getElementById('cfgDisc')?.checked;
+      km.classList.toggle('disc', !!discOn);
+      km.classList.toggle('no-disc', !discOn);
+    }
     setQ('.i-qty',   it.qty||1);
     setQ('.i-price', it.price||it.precio||0);
     if(it.markupPct) setQ('.k-markup', it.markupPct);
@@ -1015,8 +1025,11 @@ function applyCfg(){
         if(disc) km.classList.add('disc'); else km.classList.remove('disc');
       });
     }
-    // kits: always no-disc (no descuento en kits)
-    if(tipo === 'kit') m.classList.add('no-disc');
+    // kits: disc state follows cfgDisc toggle
+    if(tipo === 'kit'){
+      if(disc) { m.classList.remove('no-disc'); m.classList.add('disc'); }
+      else { m.classList.remove('disc'); m.classList.add('no-disc'); }
+    }
   });
   document.querySelectorAll('.col-disc').forEach(el => {
     el.style.display = disc ? '' : 'none';
@@ -1132,7 +1145,7 @@ function addItem(tipo){
         <div><span class="tipo-badge kit">🧰</span><textarea class="i-desc" rows="2" placeholder="Ej: Kit de Instalación Solar 10 kWh — Incluye panel bifacial, inversor híbrido, batería LiFePO₄ y estructura." style="width:100%;resize:vertical;min-height:36px;padding:0.35rem 0.5rem;border:1px solid var(--border);border-radius:5px;background:var(--dark);color:var(--white);font-size:0.82rem;font-family:'DM Sans',sans-serif;outline:none"></textarea></div>
         <div><span class="item-label">Cant.</span><input type="number" class="i-qty" value="1" min="1" step="1"></div>
         <div><span class="item-label">Precio kit</span><input type="number" class="i-price" value="0" min="0" step="0.01"></div>
-        <div class="col-disc kit-disc" ${document.getElementById('cfgDisc').checked?'':' style="display:none"'}></div>
+        <div class="col-disc kit-disc" ${document.getElementById('cfgDisc').checked?'':' style="display:none"'}><span style="display:block;height:32px"></span></div>
         <div class="item-total" style="color:var(--teal)">$0.00</div>
         <button class="btn-remove" onclick="this.closest('.item-row').remove();recalc()">×</button>
       </div>
@@ -1280,7 +1293,7 @@ function addComponent(kitId){
     <div><input type="number" class="kc-qty" value="1" min="1" step="1"></div>
     <div><select class="kc-moneda" title="Moneda del costo unitario" onchange="this.closest('.kit-component').querySelector('.kc-costo').className='kc-costo '+(this.value==='USD'?'kc-costo-usd':'kc-costo-mxn');recalc()"><option value="MXN">MXN</option><option value="USD">USD</option></select></div>
     <div><input type="number" class="kc-costo kc-costo-mxn" value="0" min="0" step="0.01"></div>
-    <div class="kc-iva-wrap"><label>c/IVA</label><input type="checkbox" class="kc-iva" title="Precio ya incluye IVA"></div>
+    <div class="kc-iva-wrap"><label>c/IVA</label><input type="checkbox" class="kc-iva" checked title="Precio ya incluye IVA (Syscom)"></div>
     <div class="comp-total">$0.00</div>
     <button class="btn-remove" onclick="this.closest('.kit-component').remove();recalc()" style="width:28px;height:28px;font-size:0.85rem">×</button>`;
   container.appendChild(comp);

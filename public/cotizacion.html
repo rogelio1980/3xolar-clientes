@@ -57,15 +57,14 @@ body{font-family:'DM Sans',sans-serif;background:#e8edf6;color:var(--text);font-
 /* Section heading */
 .sec-hdr{font-family:'Outfit',sans-serif;font-size:7.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--amber);border-bottom:1.5px solid var(--amber);padding-bottom:2px;margin-bottom:7px;display:inline-block;}
 /* Table */
-.partidas-wrap{margin-bottom:8px;}
+.partidas-wrap{margin-bottom:8px;width:100%;}
 .pt{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed;}
 .pt thead tr{background:var(--navy);}
 .pt thead th{font-family:'Outfit',sans-serif;font-weight:600;font-size:8.5px;letter-spacing:.4px;text-transform:uppercase;color:#fff;padding:5.5px 8px;text-align:left;}
-.pt col.c-desc{width:auto;}
-.pt col.c-qty{width:38px;}
-.pt col.c-pu{width:78px;}
-.pt col.c-disc{width:42px;}
-.pt col.c-tot{width:82px;}
+.pt col.c-qty{width:42px;}
+.pt col.c-pu{width:90px;}
+.pt col.c-disc{width:50px;}
+.pt col.c-tot{width:95px;}
 .pt col.c-desc{width:auto;}
 .pt col.c-qty{width:40px;}
 .pt col.c-pu{width:80px;}
@@ -181,8 +180,7 @@ body{font-family:'DM Sans',sans-serif;background:#e8edf6;color:var(--text);font-
     <div class="partidas-wrap">
       <span class="sec-hdr">Partidas y Precios</span>
       <table class="pt">
-        <colgroup><col class="c-desc"><col class="c-qty"><col class="c-pu"><col class="c-disc"><col class="c-tot"></colgroup>
-        <colgroup>
+                <colgroup>
           <col class="c-desc">
           <col class="c-qty">
           <col class="c-pu">

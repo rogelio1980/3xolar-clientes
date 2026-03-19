@@ -844,12 +844,15 @@ auth.onAuthStateChanged(async user => {
 });
 
 // ── Nav ───────────────────────────────────────────
-document.querySelectorAll('.nav-item').forEach(item => {
+document.querySelectorAll('.nav-item,.bnav-item').forEach(item => {
   item.addEventListener('click', () => {
-    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-    item.classList.add('active');
-    document.getElementById('panel-'+item.dataset.panel).classList.add('active');
+    const panel = item.dataset.panel;
+    if(!panel) return;
+    navTo(panel);
+    // Lazy-load panel data on first visit
+    if(panel==='comentarios' && typeof loadComentarios==='function') loadComentarios();
+    if(panel==='usuarios' && typeof loadUsuarios==='function') loadUsuarios();
+    if(panel==='facturacion' && typeof loadFacturacion==='function') loadFacturacion();
   });
 });
 
@@ -916,8 +919,12 @@ async function loadAll() {
   allQuotes = [];
   let totalComments = 0;
 
-  for (const cDoc of cSnap.docs) {
-    const pSnap = await cDoc.ref.collection('proposals').get().catch(()=>({docs:[]}));
+  // Parallel fetch: all clients' proposals + comments simultaneously
+  await Promise.all(cSnap.docs.map(async cDoc => {
+    const [pSnap, commSnap] = await Promise.all([
+      cDoc.ref.collection('proposals').get().catch(()=>({docs:[]})),
+      cDoc.ref.collection('comments').get().catch(()=>({size:0}))
+    ]);
     pSnap.docs.forEach(pDoc => {
       const d = pDoc.data();
       if (d._type === 'quote' || (d.folio && d.items && d.items.length > 0 && (!d.versions || d.versions.length === 0))) {
@@ -926,9 +933,8 @@ async function loadAll() {
         allProposals.push({id:pDoc.id, clientId:cDoc.id, ...d});
       }
     });
-    const commSnap = await cDoc.ref.collection('comments').get().catch(()=>({size:0}));
     totalComments += commSnap.size;
-  }
+  }));
   // Sort proposals by date client-side
   allProposals.sort((a,b) => {
     const ta = a.updatedAt?.toDate?.()?.getTime() || 0;

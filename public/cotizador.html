@@ -280,6 +280,116 @@ details.kit-panel>summary{cursor:pointer;font-family:'Outfit',sans-serif;font-si
   .item-row,.section{page-break-inside:avoid}
 }
 
+
+/* ═══ AI DESCRIPTION GENERATOR ═══ */
+let _aiLastResult = '';
+
+function buildContextForAI() {
+  if(!_descModalTarget) return '';
+  // Gather context from the row this field belongs to
+  const row = _descModalTarget.closest('.item-row') || _descModalTarget.closest('.kit-component');
+  if(!row) return _descModalTarget.value;
+
+  const lines = [];
+  const currentDesc = _descModalTarget.value.trim();
+  if(currentDesc) lines.push('Descripción actual: ' + currentDesc);
+
+  // If it's a kit component row
+  if(row.classList.contains('kit-component')) {
+    const qty  = row.querySelector('.kc-qty')?.value;
+    const cost = row.querySelector('.kc-costo')?.value;
+    const mon  = row.querySelector('.kc-moneda')?.value || 'MXN';
+    const sku  = row.nextElementSibling?.querySelector('.kc-sku')?.value;
+    const url  = row.nextElementSibling?.querySelector('.kc-url')?.value;
+    if(qty)  lines.push('Cantidad: ' + qty);
+    if(cost) lines.push('Costo unitario: ' + cost + ' ' + mon);
+    if(sku)  lines.push('SKU/Modelo: ' + sku);
+    if(url)  lines.push('URL proveedor: ' + url);
+  }
+
+  // If it's a kit item row, include all components
+  if(row.classList.contains('item-row')) {
+    const comps = row.querySelectorAll('.kc-desc');
+    if(comps.length) {
+      lines.push('\nComponentes del kit:');
+      comps.forEach((el, i) => {
+        const compRow = el.closest('.kit-component');
+        const sku = compRow?.nextElementSibling?.querySelector('.kc-sku')?.value;
+        const qty = compRow?.querySelector('.kc-qty')?.value || '1';
+        const mon = compRow?.querySelector('.kc-moneda')?.value || 'MXN';
+        const cost = compRow?.querySelector('.kc-costo')?.value;
+        let line = `  ${i+1}. ${el.value}`;
+        if(qty !== '1') line += ` (x${qty})`;
+        if(sku) line += ` [${sku}]`;
+        if(cost) line += ` — ${cost} ${mon}`;
+        lines.push(line);
+      });
+    }
+  }
+  return lines.join('\n');
+}
+
+async function generateAIDesc() {
+  const btn = document.getElementById('btnAiGen');
+  const resultBox = document.getElementById('aiResultBox');
+  const useBtn = document.getElementById('btnUseAI');
+  const prompt = document.getElementById('aiPromptInput').value.trim();
+  const ctx = buildContextForAI();
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Generando...';
+  resultBox.classList.remove('show');
+  useBtn.classList.remove('show');
+
+  const systemPrompt = `Eres un experto en redacción técnica y comercial para propuestas de venta en México. 
+Generas descripciones concisas, profesionales y claras para cotizaciones de equipos tecnológicos y solares.
+Responde SOLO con la descripción, sin explicaciones ni comillas. Máximo 2 oraciones.`;
+
+  const userMsg = ctx
+    ? `Contexto del producto:\n${ctx}\n\nInstrucción adicional: ${prompt || 'Genera una descripción profesional y clara para una cotización.'}`
+    : `Genera una descripción profesional para una cotización. Instrucción: ${prompt}`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMsg }]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content?.[0]?.text || '';
+    if(text) {
+      _aiLastResult = text.trim();
+      resultBox.textContent = _aiLastResult;
+      resultBox.classList.add('show');
+      useBtn.classList.add('show');
+    } else {
+      resultBox.textContent = 'No se pudo generar la descripción. Intenta de nuevo.';
+      resultBox.classList.add('show');
+    }
+  } catch(err) {
+    resultBox.textContent = 'Error al conectar con la IA: ' + err.message;
+    resultBox.classList.add('show');
+  }
+  btn.disabled = false;
+  btn.textContent = '✨ Generar';
+}
+
+function useAIResult() {
+  if(_descModalTarget && _aiLastResult) {
+    _descModalTarget.value = _aiLastResult;
+    _descModalTarget.dispatchEvent(new Event('input'));
+    document.getElementById('descModalArea').value = _aiLastResult;
+    document.getElementById('aiResultBox').classList.remove('show');
+    document.getElementById('btnUseAI').classList.remove('show');
+    _aiLastResult = '';
+  }
+}
+
 /* ═══ EXPAND TEXT MODAL ═══ */
 .expand-btn{background:none;border:none;cursor:pointer;color:var(--gray);font-size:0.85rem;padding:0 4px;opacity:0.6;transition:opacity .15s;flex-shrink:0;line-height:1}
 .expand-btn:hover{opacity:1;color:var(--amber)}
@@ -293,6 +403,17 @@ details.kit-panel>summary{cursor:pointer;font-family:'Outfit',sans-serif;font-si
 .desc-modal-btns button{padding:0.5rem 1.2rem;border-radius:8px;font-family:'Outfit',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer}
 .btn-modal-cancel{background:transparent;border:1px solid var(--border);color:var(--gray)}
 .btn-modal-ok{background:linear-gradient(135deg,var(--amber),var(--orange));border:none;color:#0B1A2E}
+.ai-section{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)}
+.ai-section-title{font-size:0.75rem;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.4rem}
+.ai-prompt-row{display:flex;gap:0.5rem;margin-bottom:0.5rem}
+.ai-prompt-input{flex:1;padding:0.45rem 0.65rem;border:1px solid var(--border);border-radius:8px;background:var(--dark);color:var(--white);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none}
+.ai-prompt-input:focus{border-color:var(--teal)}
+.btn-ai-gen{background:linear-gradient(135deg,#6C5CE7,#a29bfe);border:none;color:white;padding:0.45rem 1rem;border-radius:8px;font-family:'Outfit',sans-serif;font-weight:700;font-size:0.8rem;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:0.3rem}
+.btn-ai-gen:disabled{opacity:0.5;cursor:not-allowed}
+.ai-result-box{background:rgba(108,92,231,0.08);border:1px solid rgba(108,92,231,0.25);border-radius:8px;padding:0.75rem;font-size:0.88rem;line-height:1.6;color:var(--light);min-height:60px;white-space:pre-wrap;display:none}
+.ai-result-box.show{display:block}
+.btn-use-ai{background:rgba(46,204,113,0.15);border:1px solid rgba(46,204,113,0.3);color:var(--green);padding:0.35rem 0.8rem;border-radius:6px;font-family:'Outfit',sans-serif;font-weight:600;font-size:0.78rem;cursor:pointer;margin-top:0.5rem;display:none}
+.btn-use-ai.show{display:inline-block}
 </style>
 </head>
 <body>
@@ -582,6 +703,16 @@ details.kit-panel>summary{cursor:pointer;font-family:'Outfit',sans-serif;font-si
       <button class="btn-modal-cancel" onclick="closeDescModal()">Cancelar</button>
       <button class="btn-modal-ok" onclick="confirmDescModal()">✓ Aplicar</button>
     </div>
+    <!-- AI SECTION -->
+    <div class="ai-section">
+      <div class="ai-section-title">✨ Generar con IA</div>
+      <div class="ai-prompt-row">
+        <input class="ai-prompt-input" id="aiPromptInput" placeholder="Ej: descripción técnica para cliente empresarial, tono formal...">
+        <button class="btn-ai-gen" id="btnAiGen" onclick="generateAIDesc()">✨ Generar</button>
+      </div>
+      <div class="ai-result-box" id="aiResultBox"></div>
+      <button class="btn-use-ai" id="btnUseAI" onclick="useAIResult()">✓ Usar esta descripción</button>
+    </div>
   </div>
 </div>
 
@@ -724,6 +855,11 @@ function openDescModal(inputEl, title) {
   document.getElementById('descModalTitle').textContent = '✏️ ' + (title || 'Editar descripción');
   document.getElementById('descModalArea').value = inputEl.value;
   document.getElementById('descModalOverlay').classList.add('open');
+  // Reset AI section
+  document.getElementById('aiResultBox').classList.remove('show');
+  document.getElementById('btnUseAI').classList.remove('show');
+  document.getElementById('aiPromptInput').value = '';
+  _aiLastResult = '';
   setTimeout(() => document.getElementById('descModalArea').focus(), 50);
 }
 

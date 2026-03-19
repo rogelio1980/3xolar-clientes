@@ -75,6 +75,11 @@ service cloud.firestore {
       allow read, write: if isLoggedIn() && isAdmin();
     }
 
+    match /equipoTRN/{id} {
+      allow read: if isLoggedIn() && isAdmin();
+      allow write: if isLoggedIn() && isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

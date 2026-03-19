@@ -406,6 +406,7 @@ tr:hover td{background:rgba(245,166,35,.02)}
       <div class="nav-section">Sistema</div>
       <div class="nav-item" id="nav-comentarios" data-panel="comentarios"><span class="nav-icon">💬</span><span class="nav-label">Comentarios <span class="badge-unread" id="comentBadge" style="display:none">0</span></span></div>
       <div class="nav-item" data-panel="usuarios"><span class="nav-icon">🔑</span><span class="nav-label">Usuarios</span></div>
+      <div class="nav-item" data-panel="equipo"><span class="nav-icon">🧑‍💼</span><span class="nav-label">Equipo y Notificaciones</span></div>
     </nav>
     <div class="sidebar-collapse-btn" id="btnSidebarCollapse">
       <span>◀</span><span>Colapsar</span>
@@ -560,6 +561,50 @@ tr:hover td{background:rgba(245,166,35,.02)}
 
   
     <!-- PANEL: COMENTARIOS -->
+
+    <!-- ═══ EQUIPO Y NOTIFICACIONES ═══ -->
+    <div class="panel" id="panel-equipo">
+      <div class="panel-title">🧑‍💼 Equipo y Notificaciones</div>
+
+      <!-- Agregar miembro -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem">
+        <div class="section-label">Agregar miembro del equipo</div>
+        <div class="form-2" style="margin-top:1rem">
+          <div class="field"><label>Nombre completo *</label><input id="eqNombre" placeholder="Ej. José Luis Arellanes"></div>
+          <div class="field"><label>Email *</label><input id="eqEmail" type="email" placeholder="correo@empresa.com"></div>
+          <div class="field"><label>Rol</label>
+            <select id="eqRol" style="background:var(--navy);border:1px solid var(--border);border-radius:8px;color:var(--white);padding:.45rem .65rem;font-size:.85rem;width:100%;outline:none">
+              <option value="admin">Administrador</option>
+              <option value="vendedor">Vendedor / Técnico</option>
+            </select>
+          </div>
+          <div class="field"><label>WhatsApp <span style="color:var(--gray);font-weight:400">(con código país)</span></label><input id="eqWhatsapp" placeholder="+52 614 123 4567"></div>
+          <div class="field"><label>Telegram Chat ID <span style="color:var(--gray);font-weight:400">(numérico)</span></label><input id="eqTelegram" placeholder="Ej. 123456789"></div>
+          <div class="field" style="display:flex;align-items:center;gap:.5rem;padding-top:1.2rem">
+            <label style="margin:0;cursor:pointer;display:flex;align-items:center;gap:.5rem">
+              <input type="checkbox" id="eqActivo" checked style="width:16px;height:16px;accent-color:var(--green)">
+              Notificaciones activas
+            </label>
+          </div>
+        </div>
+        <div id="eqMsg" style="display:none;margin-top:.75rem;padding:.6rem 1rem;border-radius:8px;font-size:.85rem"></div>
+        <div style="margin-top:1rem;display:flex;gap:.75rem">
+          <button class="btn-primary-sm" onclick="saveEquipoMember()">+ Agregar miembro</button>
+        </div>
+      </div>
+
+      <!-- Lista de miembros -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+        <div style="padding:1rem 1.5rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <div class="section-label" style="margin:0">Miembros activos</div>
+          <span id="eqCount" style="font-size:.8rem;color:var(--gray)">Cargando...</span>
+        </div>
+        <div id="eqList" style="padding:1rem 1.5rem">
+          <div style="color:var(--gray);font-size:.9rem;text-align:center;padding:2rem">Cargando equipo...</div>
+        </div>
+      </div>
+    </div>
+
     <div class="panel" id="panel-comentarios">
       <div class="panel-title">💬 Comentarios del Portal</div>
       <div style="display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap">
@@ -815,6 +860,7 @@ function navTo(panel) {
     // Lazy-load panel data
     if(panel==='comentarios' && typeof loadComentarios==='function') loadComentarios();
     if(panel==='usuarios' && typeof loadUsuarios==='function' && !window._usuariosLoaded) { loadUsuarios(); window._usuariosLoaded=true; }
+    if(panel==='equipo' && typeof loadEquipo==='function') { loadEquipo(); }
   }
 }
 const ADMIN_EMAILS = ['rogelio@ittelecom.com.mx','arellanes@ittelecom.com.mx','rogelioguerra@gmail.com'];
@@ -1493,6 +1539,7 @@ async function applyRoleUI() {
   const navMap = {
     'nav-facturacion': ['superadmin','admin'],
     'nav-usuarios':    ['superadmin'],
+    'nav-equipo':      ['superadmin','admin'],
     'nav-comentarios': ['superadmin','admin','vendedor']
   };
   Object.entries(navMap).forEach(([id, roles]) => {
@@ -2374,6 +2421,154 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("/sw.js").then(r => console.log("SW registered")).catch(e => console.warn("SW error:",e));
   });
 }
+
+
+/* ═══════════════════════════════════════════
+   EQUIPO Y NOTIFICACIONES
+   Colección Firestore: equipoTRN/{uid}
+   ═══════════════════════════════════════════ */
+
+async function loadEquipo() {
+  const list = document.getElementById('eqList');
+  const count = document.getElementById('eqCount');
+  if(!list) return;
+  list.innerHTML = '<div style="color:var(--gray);text-align:center;padding:2rem">Cargando...</div>';
+  try {
+    const snap = await db.collection('equipoTRN').orderBy('nombre').get().catch(async () => {
+      // orderBy may need index — fallback without sort
+      return await db.collection('equipoTRN').get();
+    });
+    count.textContent = snap.size + ' miembros';
+    if(snap.empty) {
+      list.innerHTML = '<div style="color:var(--gray);text-align:center;padding:2rem">No hay miembros aún. Agrega el primero arriba.</div>';
+      return;
+    }
+    list.innerHTML = snap.docs.map(doc => {
+      const d = doc.data();
+      const activo = d.notificaciones?.activo !== false;
+      return `
+      <div style="display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:start;padding:1rem 0;border-bottom:1px solid var(--border)" id="eqRow-${doc.id}">
+        <div>
+          <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.3rem">
+            <span style="font-weight:700;font-size:.95rem">${d.nombre || '—'}</span>
+            <span style="font-size:.7rem;padding:.15rem .5rem;border-radius:20px;background:rgba(245,166,35,.15);color:var(--amber)">${d.rol || 'admin'}</span>
+            <span style="font-size:.7rem;padding:.15rem .5rem;border-radius:20px;background:${activo ? 'rgba(46,204,113,.15)' : 'rgba(136,146,176,.15)'};color:${activo ? 'var(--green)' : 'var(--gray)'}">
+              ${activo ? '🔔 Activo' : '🔕 Pausado'}
+            </span>
+          </div>
+          <div style="font-size:.82rem;color:var(--gray);display:flex;flex-wrap:wrap;gap:1rem">
+            <span>✉️ ${d.email || '—'}</span>
+            ${d.notificaciones?.whatsapp ? `<span>📱 ${d.notificaciones.whatsapp}</span>` : ''}
+            ${d.notificaciones?.telegram_chat_id ? `<span>✈️ Telegram: ${d.notificaciones.telegram_chat_id}</span>` : ''}
+          </div>
+        </div>
+        <div style="display:flex;gap:.4rem;flex-shrink:0">
+          <button class="btn-action" onclick="toggleEquipoActivo('${doc.id}', ${activo})" title="${activo ? 'Pausar notificaciones' : 'Activar notificaciones'}">
+            ${activo ? '🔕' : '🔔'}
+          </button>
+          <button class="btn-action blue" onclick="editEquipoMember('${doc.id}')" title="Editar">✏️</button>
+          <button class="btn-action red" onclick="deleteEquipoMember('${doc.id}', '${(d.nombre||'').replace(/'/g,'')}')" title="Eliminar">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(err) {
+    list.innerHTML = `<div style="color:var(--danger);padding:1rem">Error: ${err.message}</div>`;
+  }
+}
+
+async function saveEquipoMember() {
+  const nombre  = document.getElementById('eqNombre').value.trim();
+  const email   = document.getElementById('eqEmail').value.trim();
+  const rol     = document.getElementById('eqRol').value;
+  const wa      = document.getElementById('eqWhatsapp').value.trim();
+  const tg      = document.getElementById('eqTelegram').value.trim();
+  const activo  = document.getElementById('eqActivo').checked;
+  const msg     = document.getElementById('eqMsg');
+
+  if(!nombre || !email) {
+    msg.style.display = 'block';
+    msg.style.background = 'rgba(231,76,60,.12)';
+    msg.style.color = 'var(--danger)';
+    msg.textContent = 'Nombre y email son obligatorios.';
+    return;
+  }
+
+  try {
+    const payload = {
+      nombre, email, rol,
+      notificaciones: { whatsapp: wa, telegram_chat_id: tg, activo },
+      creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
+      actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    // Check if editing
+    const editId = document.getElementById('eqNombre').dataset.editId;
+    if(editId) {
+      delete payload.creadoEn;
+      await db.collection('equipoTRN').doc(editId).update(payload);
+      delete document.getElementById('eqNombre').dataset.editId;
+      document.querySelector('button[onclick="saveEquipoMember()"]').textContent = '+ Agregar miembro';
+    } else {
+      await db.collection('equipoTRN').add(payload);
+    }
+
+    // Clear form
+    ['eqNombre','eqEmail','eqWhatsapp','eqTelegram'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('eqActivo').checked = true;
+    document.getElementById('eqRol').value = 'admin';
+    msg.style.display = 'block';
+    msg.style.background = 'rgba(46,204,113,.12)';
+    msg.style.color = 'var(--green)';
+    msg.textContent = '✅ Miembro guardado correctamente.';
+    setTimeout(() => { msg.style.display = 'none'; }, 3000);
+    loadEquipo();
+  } catch(err) {
+    msg.style.display = 'block';
+    msg.style.background = 'rgba(231,76,60,.12)';
+    msg.style.color = 'var(--danger)';
+    msg.textContent = '❌ Error: ' + err.message;
+  }
+}
+
+async function toggleEquipoActivo(docId, currentActivo) {
+  try {
+    await db.collection('equipoTRN').doc(docId).update({
+      'notificaciones.activo': !currentActivo,
+      actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    loadEquipo();
+  } catch(err) {
+    showToast('Error: ' + err.message, true);
+  }
+}
+
+async function editEquipoMember(docId) {
+  const snap = await db.collection('equipoTRN').doc(docId).get();
+  if(!snap.exists) return;
+  const d = snap.data();
+  document.getElementById('eqNombre').value = d.nombre || '';
+  document.getElementById('eqNombre').dataset.editId = docId;
+  document.getElementById('eqEmail').value = d.email || '';
+  document.getElementById('eqRol').value = d.rol || 'admin';
+  document.getElementById('eqWhatsapp').value = d.notificaciones?.whatsapp || '';
+  document.getElementById('eqTelegram').value = d.notificaciones?.telegram_chat_id || '';
+  document.getElementById('eqActivo').checked = d.notificaciones?.activo !== false;
+  document.querySelector('button[onclick="saveEquipoMember()"]').textContent = '💾 Guardar cambios';
+  document.getElementById('eqNombre').focus();
+  document.getElementById('eqNombre').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function deleteEquipoMember(docId, nombre) {
+  if(!confirm(\`¿Eliminar a \${nombre} del equipo? Dejará de recibir notificaciones.\`)) return;
+  try {
+    await db.collection('equipoTRN').doc(docId).delete();
+    showToast('Miembro eliminado');
+    loadEquipo();
+  } catch(err) {
+    showToast('Error: ' + err.message, true);
+  }
+}
+
 </script>
 </body>
 </html>

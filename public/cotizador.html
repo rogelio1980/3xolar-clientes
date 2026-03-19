@@ -1382,6 +1382,10 @@ function addItem(tipo){
   }
 
   c.appendChild(row);
+  // Add expand buttons to description fields
+  row.querySelectorAll('.i-desc, .kc-desc').forEach(el => {
+    addExpandBtn(el, el.classList.contains('kc-desc') ? 'Componente del kit' : 'Descripción');
+  });
   // Bind real-time recalc to all inputs in the new component
   row.querySelectorAll('input,select,textarea').forEach(inp => {
     inp.addEventListener('input',  () => { if(!window.__batchLoading) recalc(); });
@@ -1450,6 +1454,7 @@ function addComponent(kitId){
   buildAC(comp.querySelector('.kc-desc'), cid);
   comp.querySelectorAll('input').forEach(inp => inp.addEventListener('input', recalc));
   enableCompDrag(comp, container);
+  addExpandBtn(comp.querySelector('.kc-desc'), 'Componente del kit');
   recalc();
 }
 
@@ -1556,6 +1561,12 @@ function loadKitTemplate(sel, kitId){
     }
   });
   recalc();
+  // Add expand buttons to all loaded description fields
+  setTimeout(() => {
+    document.querySelectorAll('.i-desc, .kc-desc').forEach(el => {
+      addExpandBtn(el, el.classList.contains('kc-desc') ? 'Componente del kit' : 'Descripción');
+    });
+  }, 300);
 }
 
 /* ═══ RECALC ═══ */

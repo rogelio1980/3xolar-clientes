@@ -133,7 +133,11 @@ details.kit-panel>summary{cursor:pointer;font-family:'Outfit',sans-serif;font-si
 .col-disc{transition:opacity .2s}
 
 .comp-header{display:grid;grid-template-columns:2fr 80px 65px 90px 80px 80px 30px;gap:0.4rem;padding:0.35rem 0.5rem;border-bottom:1px solid rgba(0,184,148,0.2);font-family:'Outfit',sans-serif;font-size:0.6rem;font-weight:700;color:var(--teal);text-transform:uppercase}
-.kit-component{display:grid;grid-template-columns:2fr 80px 65px 90px 80px 80px 30px;gap:0.35rem;padding:0.4rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.04);align-items:center}
+.kit-component{display:grid;grid-template-columns:18px 2fr 80px 65px 90px 80px 80px 30px;gap:0.35rem;padding:0.4rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.04);align-items:center}
+.drag-handle{cursor:grab;color:var(--gray);font-size:0.9rem;opacity:0.5;user-select:none;display:flex;align-items:center;justify-content:center}
+.drag-handle:hover{opacity:1;color:var(--amber)}
+.kit-component.dragging{opacity:0.4;border:1px dashed var(--amber)}
+.kit-component.drag-over{border-top:2px solid var(--teal)}
 .kit-component input,.kit-component select{padding:0.3rem 0.4rem;border:1px solid var(--border);border-radius:5px;background:var(--dark);color:var(--white);font-size:0.77rem;outline:none;width:100%}
 .kit-component input:focus{border-color:var(--teal)}
 .kit-component .comp-total{font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--gray);text-align:right}
@@ -275,6 +279,20 @@ details.kit-panel>summary{cursor:pointer;font-family:'Outfit',sans-serif;font-si
   @page{margin:18mm 15mm 15mm 15mm}
   .item-row,.section{page-break-inside:avoid}
 }
+
+/* ═══ EXPAND TEXT MODAL ═══ */
+.expand-btn{background:none;border:none;cursor:pointer;color:var(--gray);font-size:0.85rem;padding:0 4px;opacity:0.6;transition:opacity .15s;flex-shrink:0;line-height:1}
+.expand-btn:hover{opacity:1;color:var(--amber)}
+.desc-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9000;align-items:center;justify-content:center;padding:1rem}
+.desc-modal-overlay.open{display:flex}
+.desc-modal{background:var(--navy);border:1px solid var(--border);border-radius:16px;padding:1.5rem;width:100%;max-width:580px;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+.desc-modal h4{font-family:'Outfit',sans-serif;font-size:1rem;font-weight:700;color:var(--amber);margin-bottom:1rem}
+.desc-modal textarea{width:100%;min-height:140px;resize:vertical;background:var(--dark);border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:0.95rem;padding:0.75rem;outline:none;line-height:1.6}
+.desc-modal textarea:focus{border-color:var(--teal)}
+.desc-modal-btns{display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1rem}
+.desc-modal-btns button{padding:0.5rem 1.2rem;border-radius:8px;font-family:'Outfit',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer}
+.btn-modal-cancel{background:transparent;border:1px solid var(--border);color:var(--gray)}
+.btn-modal-ok{background:linear-gradient(135deg,var(--amber),var(--orange));border:none;color:#0B1A2E}
 </style>
 </head>
 <body>
@@ -554,6 +572,19 @@ details.kit-panel>summary{cursor:pointer;font-family:'Outfit',sans-serif;font-si
   </div>
 </div>
 
+
+<!-- EXPAND TEXT MODAL -->
+<div class="desc-modal-overlay" id="descModalOverlay">
+  <div class="desc-modal">
+    <h4 id="descModalTitle">✏️ Editar descripción</h4>
+    <textarea id="descModalArea" placeholder="Escribe la descripción completa aquí..."></textarea>
+    <div class="desc-modal-btns">
+      <button class="btn-modal-cancel" onclick="closeDescModal()">Cancelar</button>
+      <button class="btn-modal-ok" onclick="confirmDescModal()">✓ Aplicar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -684,6 +715,56 @@ const garTexts = {
 };
 
 /* ═══ AUTH GUARD ═══ */
+
+/* ═══ EXPAND TEXT MODAL ═══ */
+let _descModalTarget = null;
+
+function openDescModal(inputEl, title) {
+  _descModalTarget = inputEl;
+  document.getElementById('descModalTitle').textContent = '✏️ ' + (title || 'Editar descripción');
+  document.getElementById('descModalArea').value = inputEl.value;
+  document.getElementById('descModalOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('descModalArea').focus(), 50);
+}
+
+function closeDescModal() {
+  document.getElementById('descModalOverlay').classList.remove('open');
+  _descModalTarget = null;
+}
+
+function confirmDescModal() {
+  if(_descModalTarget) {
+    _descModalTarget.value = document.getElementById('descModalArea').value;
+    _descModalTarget.dispatchEvent(new Event('input'));
+    recalc();
+  }
+  closeDescModal();
+}
+
+// Close on overlay click
+document.getElementById('descModalOverlay').addEventListener('click', function(e) {
+  if(e.target === this) closeDescModal();
+});
+
+// Close on Escape
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeDescModal(); });
+
+// Helper: add expand button next to any input/textarea
+function addExpandBtn(inputEl, title) {
+  if(inputEl.dataset.expandAdded) return;
+  inputEl.dataset.expandAdded = '1';
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'expand-btn';
+  btn.title = 'Expandir para editar';
+  btn.textContent = '⛶';
+  btn.addEventListener('click', e => { e.stopPropagation(); openDescModal(inputEl, title); });
+  // Insert button after the input
+  if(inputEl.parentNode) inputEl.parentNode.style.display = 'flex';
+  if(inputEl.parentNode) inputEl.parentNode.style.alignItems = 'center';
+  inputEl.insertAdjacentElement('afterend', btn);
+}
+
 auth.onAuthStateChanged(user => {
   if(!user){ location.href='/'; return; }
   init(); // Security enforced by Firestore rules
@@ -920,22 +1001,29 @@ function fillItemRow(row, tipo, it){
           const setC=(sel,val)=>{const el=compRow.querySelector(sel);if(el&&val!=null)el.value=val;};
           setC('.kc-desc', comp.desc||'');
           setC('.kc-qty',  comp.qty||1);
-          setC('.kc-costo',comp.costoUnitario||0);
-          if(comp.incluyeIVA){ const iva=compRow.querySelector('.kc-iva'); if(iva) iva.checked=true; }
-          if(comp.moneda && comp.moneda !== 'MXN'){
-            const ms=compRow.querySelector('.kc-moneda'); if(ms) ms.value=comp.moneda;
-            const ce=compRow.querySelector('.kc-costo'); if(ce) ce.className='kc-costo kc-costo-'+comp.moneda.toLowerCase();
+          setC('.kc-costo', comp.costoUnitario||0);
+          // Restore IVA
+          if(comp.incluyeIVA !== undefined){
+            const iva = compRow.querySelector('.kc-iva');
+            if(iva) iva.checked = !!comp.incluyeIVA;
           }
-          if(comp.moneda && comp.moneda !== 'MXN'){
-            const ms=compRow.querySelector('.kc-moneda'); if(ms) ms.value=comp.moneda;
-            const ce=compRow.querySelector('.kc-costo'); if(ce) ce.className='kc-costo kc-costo-'+comp.moneda.toLowerCase();
+          // Restore moneda (always — MXN or USD)
+          const monSel = compRow.querySelector('.kc-moneda');
+          const costoEl = compRow.querySelector('.kc-costo');
+          const moneda = comp.moneda || 'MXN';
+          if(monSel) monSel.value = moneda;
+          if(costoEl) costoEl.className = 'kc-costo kc-costo-' + moneda.toLowerCase();
+          // Restore SKU and URL from comp-extra sibling
+          const compExtra = compRow.nextElementSibling;
+          if(compExtra && compExtra.classList.contains('comp-extra')){
+            const skuEl = compExtra.querySelector('.kc-sku');
+            const urlEl = compExtra.querySelector('.kc-url');
+            if(skuEl) skuEl.value = comp.sku || '';
+            if(urlEl) urlEl.value = comp.urlProveedor || '';
           }
-          if(comp.moneda && comp.moneda !== 'MXN'){
-            const monSel = compRow.querySelector('.kc-moneda');
-            if(monSel){ monSel.value = comp.moneda; }
-            const costoEl = compRow.querySelector('.kc-costo');
-            if(costoEl){ costoEl.className = 'kc-costo kc-costo-' + comp.moneda.toLowerCase(); }
-          }
+          // Enable drag on restored component
+          const kitContainer = compRow.closest('.kit-components');
+          if(kitContainer) enableCompDrag(compRow, kitContainer);
         }
       });
     }
@@ -1323,6 +1411,12 @@ function addItem(tipo){
   }
 
   c.appendChild(row);
+  // Add expand buttons to description fields
+  row.querySelectorAll('.i-desc').forEach(el => {
+    const labels = {producto:'Descripción del producto', mo:'Descripción mano de obra',
+                    viatico:'Descripción viático', kit:'Descripción del kit', texto:'Nota o título'};
+    addExpandBtn(el, labels[tipo] || 'Descripción');
+  });
   // Bind real-time recalc to all inputs in the new component
   row.querySelectorAll('input,select,textarea').forEach(inp => {
     inp.addEventListener('input',  () => { if(!window.__batchLoading) recalc(); });
@@ -1372,6 +1466,7 @@ function addComponent(kitId){
   comp.className = 'kit-component';
   comp.dataset.compId = cid;
   comp.innerHTML = `
+    <div class="drag-handle" draggable="true" title="Arrastrar para reordenar">⠿</div>
     <div class="ac-wrap"><input type="text" class="kc-desc" placeholder="Componente (marca/modelo)" data-ac="${cid}"><div class="ac-list" id="ac-${cid}"></div></div>
     <div><input type="number" class="kc-qty" value="1" min="1" step="1"></div>
     <div><select class="kc-moneda" title="Moneda del costo unitario" onchange="this.closest('.kit-component').querySelector('.kc-costo').className='kc-costo '+(this.value==='USD'?'kc-costo-usd':'kc-costo-mxn');recalc()"><option value="MXN">MXN</option><option value="USD">USD</option></select></div>
@@ -1388,8 +1483,36 @@ function addComponent(kitId){
     <div><label>URL Proveedor</label><div style="display:flex;gap:0.2rem"><input class="kc-url" style="flex:1"><button class="gar-btn" onclick="const u=this.previousElementSibling.value;if(u)window.open(u.startsWith('http')?u:'https://'+u,'_blank')" style="padding:0.2rem 0.4rem;font-size:0.7rem">🔗</button></div></div>`;
   container.appendChild(extra);
   buildAC(comp.querySelector('.kc-desc'), cid);
+  addExpandBtn(comp.querySelector('.kc-desc'), 'Componente del kit');
   comp.querySelectorAll('input').forEach(inp => inp.addEventListener('input', recalc));
+  enableCompDrag(comp, container);
   recalc();
+}
+
+function enableCompDrag(comp, container){
+  const handle = comp.querySelector('.drag-handle');
+  if(!handle) return;
+  handle.addEventListener('dragstart', e => {
+    comp.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', comp.dataset.compId);
+  });
+  handle.addEventListener('dragend', () => {
+    comp.classList.remove('dragging');
+    container.querySelectorAll('.kit-component').forEach(c => c.classList.remove('drag-over'));
+    recalc();
+  });
+  comp.addEventListener('dragover', e => {
+    e.preventDefault();
+    const dragging = container.querySelector('.dragging');
+    if(!dragging || dragging === comp) return;
+    comp.classList.add('drag-over');
+    // Insert dragging before comp (and its extra row)
+    const extra = dragging.nextElementSibling;
+    container.insertBefore(dragging, comp);
+    if(extra && extra.classList.contains('comp-extra')) container.insertBefore(extra, comp);
+  });
+  comp.addEventListener('dragleave', () => comp.classList.remove('drag-over'));
 }
 
 async function saveKitTemplate(kitId){
@@ -1731,11 +1854,13 @@ function getItems(){
           const tcSave = (monedaSave === 'USD' && tipoCambioDOF > 0) ? tipoCambioDOF : 1;
           const costoTotalConIVA = monedaSave === 'USD' ? costoMXN / tcSave : costoMXN;
           costTotal += costoTotalConIVA;
+          const cMonedaSave = c.querySelector('.kc-moneda')?.value || 'MXN';
           item.componentes.push({
             desc: c.querySelector('.kc-desc')?.value||'',
             sku: extra?.querySelector('.kc-sku')?.value||'',
             urlProveedor: extra?.querySelector('.kc-url')?.value||'',
             qty: cqty, costoUnitario: ccosto, incluyeIVA: inclIVA,
+            moneda: cMonedaSave,
             costoTotalConIVA
           });
         });

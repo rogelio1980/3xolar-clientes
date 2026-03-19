@@ -341,6 +341,31 @@ tr:hover td{background:rgba(245,166,35,.02)}
 .client-chip.linked{background:rgba(46,204,113,.1);color:var(--green);border-color:rgba(46,204,113,.2)}
 .btn-link-client{font-size:.68rem;color:var(--gray);background:none;border:1px dashed rgba(255,255,255,.15);border-radius:20px;padding:.15rem .55rem;cursor:pointer;transition:all var(--transition);font-family:'DM Sans',sans-serif}
 .btn-link-client:hover{color:var(--amber);border-color:rgba(245,166,35,.3)}
+
+/* ─── AI Proposal Modal ─── */
+.btn-action.purple{background:rgba(108,92,231,.15);color:#a29bfe;border-color:rgba(108,92,231,.3)}
+.btn-action.purple:hover{background:rgba(108,92,231,.28)}
+.ai-prop-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9100;align-items:center;justify-content:center;padding:1rem}
+.ai-prop-overlay.open{display:flex}
+.ai-prop-modal{background:var(--navy);border:1px solid var(--border);border-radius:18px;padding:1.75rem;width:100%;max-width:660px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.6)}
+.ai-prop-modal h3{font-family:'Outfit',sans-serif;font-size:1.1rem;font-weight:700;color:var(--amber);margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem}
+.ai-prop-section{margin-bottom:1.25rem}
+.ai-prop-section label{display:block;font-size:.8rem;color:var(--gray);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.45rem}
+.ai-prop-section textarea,.ai-prop-section input{width:100%;padding:.6rem .8rem;background:var(--dark);border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;resize:vertical}
+.ai-prop-section textarea:focus,.ai-prop-section input:focus{border-color:var(--teal)}
+.ai-prop-current{background:rgba(17,34,64,.6);border:1px solid rgba(245,166,35,.1);border-radius:8px;padding:.8rem 1rem;font-size:.85rem;color:var(--light);line-height:1.6;white-space:pre-wrap;max-height:160px;overflow-y:auto}
+.ai-prop-result{background:rgba(108,92,231,.08);border:1px solid rgba(108,92,231,.25);border-radius:8px;padding:.8rem 1rem;font-size:.85rem;color:var(--light);line-height:1.6;white-space:pre-wrap;display:none;max-height:220px;overflow-y:auto}
+.ai-prop-result.show{display:block}
+.ai-prop-actions{display:flex;justify-content:flex-end;gap:.65rem;margin-top:1.25rem;flex-wrap:wrap}
+.ai-prop-actions button{padding:.5rem 1.1rem;border-radius:8px;font-family:'Outfit',sans-serif;font-weight:700;font-size:.82rem;cursor:pointer}
+.btn-ai-run{background:linear-gradient(135deg,#6C5CE7,#a29bfe);border:none;color:#fff}
+.btn-ai-run:disabled{opacity:.5;cursor:not-allowed}
+.btn-ai-apply{background:linear-gradient(135deg,var(--green),var(--teal));border:none;color:#0B1A2E;display:none}
+.btn-ai-apply.show{display:block}
+.btn-ai-cancel{background:transparent;border:1px solid var(--border);color:var(--gray)}
+.ai-prop-chips{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.6rem}
+.ai-chip{padding:.3rem .75rem;border-radius:20px;background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.2);color:var(--amber);font-size:.75rem;font-family:'Outfit',sans-serif;font-weight:600;cursor:pointer;transition:all .15s}
+.ai-chip:hover{background:rgba(245,166,35,.2)}
 </style>
 </head>
 <body>
@@ -475,10 +500,7 @@ tr:hover td{background:rgba(245,166,35,.02)}
         </select>
       </div>
       <div id="proposalsContainer"></div>
-      <div class="pending-dev" style="margin-top:1.5rem">
-        <strong>🤖 Modificación con IA — en desarrollo</strong>
-        Próxima función: seleccionar una propuesta y regenerarla o ajustarla con contexto mediante IA.
-      </div>
+
     </div>
 
     <!-- ═══ COTIZACIONES ═══ -->
@@ -798,6 +820,52 @@ tr:hover td{background:rgba(245,166,35,.02)}
     <div class="modal-actions">
       <button class="btn-cancel" onclick="document.getElementById('editProposalModal').classList.remove('show')">Cancelar</button>
       <button class="btn-primary-sm" id="btnSaveProposal">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ AI PROPOSAL MODAL ═══ -->
+<div class="ai-prop-overlay" id="aiPropOverlay">
+  <div class="ai-prop-modal">
+    <h3>🤖 Modificar propuesta con IA</h3>
+    <div id="aiPropName" style="font-size:.85rem;color:var(--gray);margin-bottom:1rem;padding:.4rem .8rem;background:rgba(245,166,35,.08);border-radius:8px;border:1px solid rgba(245,166,35,.1)"></div>
+
+    <!-- Quick prompts -->
+    <div class="ai-prop-section">
+      <label>Sugerencias rápidas</label>
+      <div class="ai-prop-chips">
+        <span class="ai-chip" onclick="setAIChip('Mejora el título para que sea más profesional y comercial')">✨ Mejorar título</span>
+        <span class="ai-chip" onclick="setAIChip('Amplía la descripción explicando el alcance, beneficios y diferenciadores del proyecto')">📝 Ampliar descripción</span>
+        <span class="ai-chip" onclick="setAIChip('Traduce toda la propuesta al inglés manteniendo el tono técnico-comercial')">🌐 Traducir a inglés</span>
+        <span class="ai-chip" onclick="setAIChip('Ajusta el tono para que sea más formal y dirigido a nivel directivo')">👔 Tono ejecutivo</span>
+        <span class="ai-chip" onclick="setAIChip('Agrega una sección de próximos pasos y tiempos de implementación')">📅 Agregar timeline</span>
+        <span class="ai-chip" onclick="setAIChip('Crea un resumen ejecutivo de máximo 3 líneas')">📌 Resumen ejecutivo</span>
+      </div>
+    </div>
+
+    <!-- Custom prompt -->
+    <div class="ai-prop-section">
+      <label>Instrucción personalizada *</label>
+      <textarea id="aiPropPrompt" rows="3" placeholder="Ej: Cambia el enfoque a un cliente del sector salud, enfatizando la continuidad operativa y la protección de equipo médico..."></textarea>
+    </div>
+
+    <!-- Context -->
+    <div class="ai-prop-section">
+      <label>Datos actuales de la propuesta</label>
+      <div class="ai-prop-current" id="aiPropCurrent"></div>
+    </div>
+
+    <!-- Result -->
+    <div class="ai-prop-section" id="aiPropResultSection" style="display:none">
+      <label>Resultado generado por IA</label>
+      <div class="ai-prop-result" id="aiPropResult"></div>
+    </div>
+
+    <div class="ai-prop-actions">
+      <button class="btn-ai-cancel" onclick="closeAIPropModal()">Cancelar</button>
+      <button class="btn-ai-apply show" id="btnAiApply" onclick="applyAIProposal()" style="display:none">✅ Aplicar cambios</button>
+      <button class="btn-ai-run" id="btnAiRun" onclick="runAIProposal()">🤖 Generar con IA</button>
     </div>
   </div>
 </div>
@@ -1141,6 +1209,7 @@ function renderProposalsTable() {
           <button class="btn-action" onclick="cycleStatus('${p.clientId}','${p.id}','${st}')">Estado</button>
           <button class="btn-action blue" onclick="addVersion('${p.clientId}','${p.id}',${versions.length})">+ Versión</button>
           <button class="btn-action" onclick="openEditProposal('${p.clientId}','${p.id}')">✏️ Editar</button>
+          <button class="btn-action purple" onclick="openAIProposal('${p.clientId}','${p.id}','${titleEsc}')" title="Modificar con IA">🤖 IA</button>
           <button class="btn-action danger" onclick="askDeleteProposal('${p.clientId}','${p.id}','${titleEsc}')">🗑</button>
         </div>
       </div>
@@ -2568,6 +2637,185 @@ async function deleteEquipoMember(docId, nombre) {
     showToast('Error: ' + err.message, true);
   }
 }
+
+
+/* ═══════════════════════════════════════
+   AI PROPOSAL EDITOR
+   ═══════════════════════════════════════ */
+let _aiPropCtx = null; // { clientId, propId, data }
+let _aiPropResult = null;
+
+function openAIProposal(clientId, propId, title) {
+  const prop = allProposals.find(p => p.id === propId && p.clientId === clientId);
+  if (!prop) return showToast('Propuesta no encontrada', true);
+
+  _aiPropCtx = { clientId, propId, data: prop };
+  _aiPropResult = null;
+
+  // Show proposal name
+  document.getElementById('aiPropName').textContent = '📋 ' + (prop.title || 'Sin título');
+
+  // Build context string for display and AI
+  const ctx = buildProposalContext(prop);
+  document.getElementById('aiPropCurrent').textContent = ctx;
+
+  // Reset UI
+  document.getElementById('aiPropPrompt').value = '';
+  document.getElementById('aiPropResult').classList.remove('show');
+  document.getElementById('aiPropResultSection').style.display = 'none';
+  document.getElementById('btnAiApply').style.display = 'none';
+  document.getElementById('btnAiRun').disabled = false;
+  document.getElementById('btnAiRun').textContent = '🤖 Generar con IA';
+
+  document.getElementById('aiPropOverlay').classList.add('open');
+}
+
+function buildProposalContext(prop) {
+  const lines = [];
+  lines.push('Título: ' + (prop.title || '—'));
+  lines.push('Estado: ' + (prop.status || '—'));
+  if (prop.description) lines.push('Descripción: ' + prop.description);
+  if (prop.scope) lines.push('Alcance: ' + prop.scope);
+  if (prop.notes) lines.push('Notas: ' + prop.notes);
+  if (prop.tags?.length) lines.push('Etiquetas: ' + prop.tags.join(', '));
+  if (prop.versions?.length) {
+    lines.push('\nVersiones:');
+    prop.versions.forEach((v, i) => {
+      lines.push('  v' + (i+1) + ': ' + (v.label || '') + ' — ' + (v.changelog || 'Sin descripción'));
+    });
+  }
+  const cl = allClients[prop.clientId];
+  if (cl) lines.push('\nCliente: ' + (cl.name || cl.empresa?.nombre || cl.company || ''));
+  return lines.join('\n');
+}
+
+function setAIChip(text) {
+  document.getElementById('aiPropPrompt').value = text;
+  document.getElementById('aiPropPrompt').focus();
+}
+
+function closeAIPropModal() {
+  document.getElementById('aiPropOverlay').classList.remove('open');
+  _aiPropCtx = null;
+  _aiPropResult = null;
+}
+
+async function runAIProposal() {
+  const prompt = document.getElementById('aiPropPrompt').value.trim();
+  if (!prompt) { showToast('Escribe una instrucción primero', true); return; }
+
+  const btn = document.getElementById('btnAiRun');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generando...';
+  document.getElementById('aiPropResultSection').style.display = 'none';
+
+  const ctx = buildProposalContext(_aiPropCtx.data);
+  const cl = allClients[_aiPropCtx.data.clientId];
+  const clientInfo = cl ? ('Cliente: ' + (cl.name || cl.empresa?.nombre || cl.company || '') + ', Empresa: ' + (cl.empresa?.nombre || cl.company || '')) : '';
+
+  const systemPrompt = `Eres un experto en redacción de propuestas comerciales y técnicas para TRN (Telecomunicaciones y Redes del Norte), empresa especializada en soluciones de energía solar, telecomunicaciones y tecnología en México.
+Tu tarea es modificar o mejorar propuestas de venta según las instrucciones del usuario.
+Responde SIEMPRE en formato JSON con exactamente estas claves (incluye solo las que modifiques):
+{
+  "title": "Nuevo título si aplica",
+  "description": "Nueva descripción si aplica",
+  "scope": "Nuevo alcance si aplica",
+  "notes": "Nuevas notas si aplica",
+  "tags": ["tag1", "tag2"],
+  "changelog": "Descripción del cambio para el historial de versiones"
+}
+No incluyas explicaciones fuera del JSON. Solo el JSON.`;
+
+  const userMsg = `Propuesta actual:\n${ctx}\n\n${clientInfo}\n\nInstrucción del usuario: ${prompt}`;
+
+  try {
+    const resp = await fetch('https://morning-lab-b6d7trn-claude-proxy.rogelioguerra.workers.dev', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMsg }],
+        max_tokens: 1000
+      })
+    });
+    const data = await resp.json();
+    const raw = data.content?.[0]?.text || '';
+
+    // Parse JSON from response
+    let parsed;
+    try {
+      const jsonStr = raw.replace(/```json|```/g, '').trim();
+      parsed = JSON.parse(jsonStr);
+    } catch(e) {
+      document.getElementById('aiPropResult').textContent = raw;
+      document.getElementById('aiPropResult').classList.add('show');
+      document.getElementById('aiPropResultSection').style.display = 'block';
+      showToast('⚠️ Respuesta no es JSON válido — muestra texto plano', true);
+      btn.disabled = false;
+      btn.textContent = '🔄 Reintentar';
+      return;
+    }
+
+    _aiPropResult = parsed;
+
+    // Display result nicely
+    const display = Object.entries(parsed)
+      .filter(([k]) => k !== 'changelog')
+      .map(([k, v]) => `${k.toUpperCase()}: ${Array.isArray(v) ? v.join(', ') : v}`)
+      .join('\n\n');
+    document.getElementById('aiPropResult').textContent = display + (parsed.changelog ? '\n\n📝 CHANGELOG: ' + parsed.changelog : '');
+    document.getElementById('aiPropResult').classList.add('show');
+    document.getElementById('aiPropResultSection').style.display = 'block';
+    document.getElementById('btnAiApply').style.display = 'block';
+
+  } catch(err) {
+    showToast('Error al conectar con IA: ' + err.message, true);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🔄 Regenerar';
+}
+
+async function applyAIProposal() {
+  if (!_aiPropResult || !_aiPropCtx) return;
+  const { clientId, propId, data } = _aiPropCtx;
+
+  const updatePayload = {
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  // Apply only the fields returned by AI
+  if (_aiPropResult.title)       updatePayload.title = _aiPropResult.title;
+  if (_aiPropResult.description) updatePayload.description = _aiPropResult.description;
+  if (_aiPropResult.scope)       updatePayload.scope = _aiPropResult.scope;
+  if (_aiPropResult.notes)       updatePayload.notes = _aiPropResult.notes;
+  if (_aiPropResult.tags)        updatePayload.tags = _aiPropResult.tags;
+
+  // Add changelog as a new version entry if present
+  if (_aiPropResult.changelog) {
+    const versions = data.versions || [];
+    versions.push({
+      label: 'IA-' + new Date().toLocaleDateString('es-MX', {day:'2-digit',month:'2-digit'}),
+      changelog: '🤖 ' + _aiPropResult.changelog,
+      date: new Date().toISOString().split('T')[0],
+      url: versions.length ? versions[versions.length-1].url : ''
+    });
+    updatePayload.versions = versions;
+  }
+
+  try {
+    await db.collection('clients').doc(clientId).collection('proposals').doc(propId).update(updatePayload);
+    showToast('✅ Propuesta actualizada con IA');
+    closeAIPropModal();
+    await loadAll();
+  } catch(err) {
+    showToast('Error al guardar: ' + err.message, true);
+  }
+}
+
+// Close on overlay click / ESC
+document.getElementById('aiPropOverlay').addEventListener('click', function(e){ if(e.target===this) closeAIPropModal(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape' && document.getElementById('aiPropOverlay').classList.contains('open')) closeAIPropModal(); });
 
 </script>
 </body>

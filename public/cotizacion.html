@@ -78,13 +78,16 @@ body{font-family:'DM Sans',sans-serif;background:#e8edf6;color:var(--text);font-
 .pt tr.pt-sec td{background:rgba(27,58,92,.07);color:var(--mid);font-family:'Outfit',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:.3px;text-transform:uppercase;padding:4px 8px;border-top:1px solid rgba(27,58,92,.14);border-bottom:1px solid rgba(27,58,92,.14);}
 .pt tr.pt-nota td{font-size:9px;color:var(--muted);font-style:italic;padding:3.5px 8px;}
 .tipo-sub{font-size:8.5px;color:var(--muted);font-style:italic;margin-top:1px;}
+.pt td.desc-mo{max-height:120px;overflow:hidden;position:relative;}
+.pt td.desc-mo::after{content:'';position:absolute;bottom:0;left:0;right:0;height:20px;background:linear-gradient(transparent,#fff);}
+@media print{.pt td.desc-mo{max-height:none;overflow:visible;}.pt td.desc-mo::after{display:none;}}
 .desc-long{display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden;line-height:1.55;}
 .desc-mo{font-size:9px;color:var(--text);}
 .desc-long{display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden;line-height:1.55;}
 .desc-mo{font-size:9px;color:var(--text);}
 /* Totals */
 .totals-wrap{display:flex;justify-content:flex-end;margin-bottom:15px;}
-.totals-box{min-width:230px;border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.totals-box{min-width:270px;border:1px solid var(--border);border-radius:6px;overflow:hidden;}
 .tot-row{display:flex;justify-content:space-between;align-items:center;padding:5.5px 13px;font-size:10.5px;}
 .tot-row+.tot-row{border-top:1px solid var(--border);}
 .tot-row label{color:var(--muted);font-weight:500;}
@@ -207,8 +210,8 @@ body{font-family:'DM Sans',sans-serif;background:#e8edf6;color:var(--text);font-
         <div class="tot-row"><label>Subtotal</label><span id="valSubtotal">—</span></div>
         <div class="tot-row"><label>IVA</label><span id="valIva">—</span></div>
         <div class="tot-row tot-final"><label>TOTAL</label><span id="valTotal">—</span></div>
-        <div class="tot-row" id="rowLetras" style="border-top:none;padding-top:0">
-          <span id="valLetras" style="font-size:0.72rem;color:#666;font-style:italic;text-align:right;width:100%;display:block;padding-top:0.3rem;line-height:1.5"></span>
+        <div class="tot-row" id="rowLetras" style="background:#f9f8f5;border-top:1px dashed var(--border);padding:6px 13px">
+          <span id="valLetras" style="font-size:0.7rem;color:#555;font-style:italic;width:100%;display:block;line-height:1.5;text-align:right"></span>
         </div>
       </div>
     </div>

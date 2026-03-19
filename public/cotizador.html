@@ -1617,6 +1617,15 @@ function recalc(){
   document.getElementById('subtotalVal').textContent = sym + fmt(subtotal);
   document.getElementById('ivaVal').textContent = sym + fmt(iva);
   document.getElementById('totalVal').textContent = sym + fmt(grand);
+  // Importe en letras automático
+  let letrasEl = document.getElementById('importeLetras');
+  if(!letrasEl){
+    letrasEl = document.createElement('div');
+    letrasEl.id = 'importeLetras';
+    letrasEl.style.cssText = 'font-size:.75rem;color:var(--gray);text-align:right;margin-top:.4rem;font-style:italic;line-height:1.4;padding:0.3rem 0;';
+    document.querySelector('.total-row.grand')?.after(letrasEl);
+  }
+  letrasEl.textContent = grand > 0 ? 'Son: ' + numeroALetras(grand, monedaVal) : '';
 
   // Show MXN equivalent note when in USD mode
   let convEl = document.getElementById('mxnEquiv');
@@ -1915,6 +1924,7 @@ function doPrint(){
     totHtml += `<div class="row"><span>IVA (${ivaRate}%)</span><span class="v">${sym}${fmt(iva)}</span></div>`;
   }
   totHtml += `<div class="row grand"><span>TOTAL ${moneda}</span><span class="v">${sym}${fmt(total)}</span></div>`;
+  if(total > 0) totHtml += `<div class="row" style="border:none;padding-top:.2rem"><span></span><span class="v" style="font-size:.7rem;color:#999;font-style:italic">Son: ${numeroALetras(total, moneda)}</span></div>`;
   document.getElementById('pTotals').innerHTML = totHtml;
 
   document.getElementById('pGarantia').innerHTML = `<h4>Garantía — ${document.getElementById('garantiaTipo').options[document.getElementById('garantiaTipo').selectedIndex].text}</h4><p>${document.getElementById('garantiaDesc').value}</p>`;
@@ -2074,6 +2084,44 @@ document.getElementById('globalMarginPct')?.addEventListener('input', function()
     resultEl.style.color = 'var(--amber)';
   }
 });
+
+/* ═══ NÚMERO A LETRAS ═══ */
+function numeroALetras(num, moneda) {
+  const u = ['','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve',
+             'diez','once','doce','trece','catorce','quince','dieciséis','diecisiete',
+             'dieciocho','diecinueve','veinte'];
+  const d = ['','','veinti','treinta','cuarenta','cincuenta','sesenta','setenta','ochenta','noventa'];
+  const c = ['','cien','doscientos','trescientos','cuatrocientos','quinientos',
+             'seiscientos','setecientos','ochocientos','novecientos'];
+  function decenas(n) {
+    if(n<=20) return u[n];
+    const di=Math.floor(n/10), ui=n%10;
+    if(di===2 && ui>0) return 'veinti'+u[ui];
+    return d[di]+(ui?' y '+u[ui]:'');
+  }
+  function centenas(n) {
+    if(n===100) return 'cien';
+    const ci=Math.floor(n/100), resto=n%100;
+    return (ci>0?c[ci]:'')+(resto?' '+decenas(resto):decenas(resto||0));
+  }
+  function miles(n) {
+    if(n===0) return 'cero';
+    let r='';
+    if(n>=1000000){ const m=Math.floor(n/1000000); r+=(m===1?'un millón':centenas(m)+' millones')+' '; n%=1000000; }
+    if(n>=1000){ const k=Math.floor(n/1000); r+=(k===1?'mil':centenas(k)+' mil')+' '; n%=1000; }
+    if(n>0) r+=centenas(n);
+    return r.trim();
+  }
+  const abs = Math.abs(num);
+  const entero = Math.floor(abs);
+  const centavos = Math.round((abs - entero)*100);
+  const esUSD = (moneda||'MXN').toUpperCase() === 'USD';
+  const monNombre = esUSD ? 'dólares' : 'pesos';
+  const cent = centavos > 0 ? centavos+'/100 ' : '00/100 ';
+  let letra = miles(entero) + ' ' + cent + (esUSD ? 'USD' : 'M.N.');
+  return letra.charAt(0).toUpperCase() + letra.slice(1);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 
 </script>

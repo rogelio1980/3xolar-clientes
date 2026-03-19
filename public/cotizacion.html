@@ -187,6 +187,9 @@ body{font-family:'DM Sans',sans-serif;background:#e8edf6;color:var(--text);font-
         <div class="tot-row"><label>Subtotal</label><span id="valSubtotal">—</span></div>
         <div class="tot-row"><label>IVA</label><span id="valIva">—</span></div>
         <div class="tot-row tot-final"><label>TOTAL</label><span id="valTotal">—</span></div>
+        <div class="tot-row" id="rowLetras" style="border-top:none;padding-top:0">
+          <span id="valLetras" style="font-size:0.72rem;color:#666;font-style:italic;text-align:right;width:100%;display:block;padding-top:0.3rem;line-height:1.5"></span>
+        </div>
       </div>
     </div>
     <!-- Garantia -->
@@ -328,6 +331,9 @@ function render(prop,q,client){
   set('valSubtotal',sym+fmt(subtotal));
   set('valIva',sym+fmt(iva)+' ('+ivaRate+'%)');
   set('valTotal',sym+fmt(total)+' '+(q.moneda||'MXN'));
+  // Importe en letras
+  const letrasStr = typeof numeroALetras==='function' && total>0 ? 'Son: '+numeroALetras(total, q.moneda||'MXN') : '';
+  set('valLetras', letrasStr);
 
   // Garantia
   const gar=q.garantiaDesc||q.garantia||'';
@@ -401,6 +407,43 @@ function renderPartidas(rows,sym,cfg){
     body.appendChild(tr);
   });
 }
+
+/* ═══ NÚMERO A LETRAS ═══ */
+function numeroALetras(num, moneda) {
+  const u = ['','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve',
+             'diez','once','doce','trece','catorce','quince','dieciséis','diecisiete',
+             'dieciocho','diecinueve','veinte'];
+  const d = ['','','veinti','treinta','cuarenta','cincuenta','sesenta','setenta','ochenta','noventa'];
+  const c2 = ['','cien','doscientos','trescientos','cuatrocientos','quinientos',
+             'seiscientos','setecientos','ochocientos','novecientos'];
+  function decenas(n) {
+    if(n<=20) return u[n];
+    const di=Math.floor(n/10), ui=n%10;
+    if(di===2 && ui>0) return 'veinti'+u[ui];
+    return d[di]+(ui?' y '+u[ui]:'');
+  }
+  function centenas(n) {
+    if(n===100) return 'cien';
+    const ci=Math.floor(n/100), resto=n%100;
+    return (ci>0?c2[ci]:'')+(resto?' '+decenas(resto):decenas(resto||0));
+  }
+  function miles(n) {
+    if(n===0) return 'cero';
+    let r='';
+    if(n>=1000000){ const m=Math.floor(n/1000000); r+=(m===1?'un millón':centenas(m)+' millones')+' '; n%=1000000; }
+    if(n>=1000){ const k=Math.floor(n/1000); r+=(k===1?'mil':centenas(k)+' mil')+' '; n%=1000; }
+    if(n>0) r+=centenas(n);
+    return r.trim();
+  }
+  const abs = Math.abs(num);
+  const entero = Math.floor(abs);
+  const centavos = Math.round((abs - entero)*100);
+  const esUSD = (moneda||'MXN').toUpperCase() === 'USD';
+  const cent = centavos > 0 ? centavos+'/100 ' : '00/100 ';
+  let letra = miles(entero) + ' ' + cent + (esUSD ? 'USD' : 'M.N.');
+  return letra.charAt(0).toUpperCase() + letra.slice(1);
+}
+
 </script>
 </body>
 </html>

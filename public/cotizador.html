@@ -924,38 +924,25 @@ function fillItemRow(row, tipo, it){
           const setC=(sel,val)=>{const el=compRow.querySelector(sel);if(el&&val!=null)el.value=val;};
           setC('.kc-desc', comp.desc||'');
           setC('.kc-qty',  comp.qty||1);
-          setC('.kc-costo',comp.costoUnitario||0);
-          if(comp.incluyeIVA){ const iva=compRow.querySelector('.kc-iva'); if(iva) iva.checked=true; }
-          if(comp.moneda && comp.moneda !== 'MXN'){
-            const ms=compRow.querySelector('.kc-moneda'); if(ms) ms.value=comp.moneda;
-            const ce=compRow.querySelector('.kc-costo'); if(ce) ce.className='kc-costo kc-costo-'+comp.moneda.toLowerCase();
+          setC('.kc-costo', comp.costoUnitario||0);
+          // Restore IVA
+          if(comp.incluyeIVA !== undefined){
+            const iva = compRow.querySelector('.kc-iva');
+            if(iva) iva.checked = !!comp.incluyeIVA;
           }
-          if(comp.moneda && comp.moneda !== 'MXN'){
-            const ms=compRow.querySelector('.kc-moneda'); if(ms) ms.value=comp.moneda;
-            const ce=compRow.querySelector('.kc-costo'); if(ce) ce.className='kc-costo kc-costo-'+comp.moneda.toLowerCase();
-          }
-          if(comp.moneda && comp.moneda !== 'MXN'){
-            const monSel = compRow.querySelector('.kc-moneda');
-            if(monSel){ monSel.value = comp.moneda; }
-            const costoEl = compRow.querySelector('.kc-costo');
-            if(costoEl){ costoEl.className = 'kc-costo kc-costo-' + comp.moneda.toLowerCase(); }
-          }
-          // Restore SKU, URL and moneda from comp-extra / moneda selector
+          // Restore moneda (always — MXN or USD)
+          const monSel = compRow.querySelector('.kc-moneda');
+          const costoEl = compRow.querySelector('.kc-costo');
+          const moneda = comp.moneda || 'MXN';
+          if(monSel) monSel.value = moneda;
+          if(costoEl) costoEl.className = 'kc-costo kc-costo-' + moneda.toLowerCase();
+          // Restore SKU and URL from comp-extra sibling
           const compExtra = compRow.nextElementSibling;
           if(compExtra && compExtra.classList.contains('comp-extra')){
             const skuEl = compExtra.querySelector('.kc-sku');
             const urlEl = compExtra.querySelector('.kc-url');
-            if(skuEl && comp.sku) skuEl.value = comp.sku;
-            if(urlEl && comp.urlProveedor) urlEl.value = comp.urlProveedor;
-          }
-          // Restore moneda (always, not just non-MXN)
-          if(comp.moneda){
-            const monSel = compRow.querySelector('.kc-moneda');
-            if(monSel){
-              monSel.value = comp.moneda;
-              const costoEl = compRow.querySelector('.kc-costo');
-              if(costoEl) costoEl.className = 'kc-costo kc-costo-' + comp.moneda.toLowerCase();
-            }
+            if(skuEl) skuEl.value = comp.sku || '';
+            if(urlEl) urlEl.value = comp.urlProveedor || '';
           }
           // Enable drag on restored component
           const kitContainer = compRow.closest('.kit-components');

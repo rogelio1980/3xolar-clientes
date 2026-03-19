@@ -78,6 +78,10 @@ body{font-family:'DM Sans',sans-serif;background:#e8edf6;color:var(--text);font-
 .pt tr.pt-sec td{background:rgba(27,58,92,.07);color:var(--mid);font-family:'Outfit',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:.3px;text-transform:uppercase;padding:4px 8px;border-top:1px solid rgba(27,58,92,.14);border-bottom:1px solid rgba(27,58,92,.14);}
 .pt tr.pt-nota td{font-size:9px;color:var(--muted);font-style:italic;padding:3.5px 8px;}
 .tipo-sub{font-size:8.5px;color:var(--muted);font-style:italic;margin-top:1px;}
+.desc-long{display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden;line-height:1.55;}
+.desc-mo{font-size:9px;color:var(--text);}
+.desc-long{display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden;line-height:1.55;}
+.desc-mo{font-size:9px;color:var(--text);}
 /* Totals */
 .totals-wrap{display:flex;justify-content:flex-end;margin-bottom:15px;}
 .totals-box{min-width:230px;border:1px solid var(--border);border-radius:6px;overflow:hidden;}
@@ -191,7 +195,7 @@ body{font-family:'DM Sans',sans-serif;background:#e8edf6;color:var(--text);font-
           <th>Descripción</th>
           <th class="tr" style="width:46px">Cant.</th>
           <th class="tr" style="width:82px">P. Unitario</th>
-          <th class="tr" style="width:50px">Desc.%</th>
+          <th class="tr" id="thDisc" style="width:50px">Desc.%</th>
           <th class="tr" style="width:84px">Total</th>
         </tr></thead>
         <tbody id="ptBody"></tbody>
@@ -384,6 +388,13 @@ function renderPartidas(rows,sym,cfg){
   const body=$('ptBody');
   body.innerHTML='';
   const showDisc=cfg.showDisc!==false;
+  // Hide desc% column if not needed
+  const thDisc = document.getElementById('thDisc');
+  const colDisc = document.querySelector('.pt col.c-disc');
+  if(!showDisc){
+    if(thDisc) thDisc.style.display='none';
+    if(colDisc) colDisc.style.width='0';
+  }
   rows.forEach(p=>{
     const tr=document.createElement('tr');
     const desc=p.desc||p.descripcion||'';
@@ -405,7 +416,9 @@ function renderPartidas(rows,sym,cfg){
     // Sublabels para MO y viático
     let subLabel='';
     if(tipo==='mo'&&p.moFields){
-      subLabel='<div class="tipo-sub">'+(p.moFields.tecnicos||1)+' técnico(s) × '+(p.moFields.dias||1)+' día(s)</div>';
+      const mof = p.moFields||{};
+      const tarifa = mof.tarifaDia ? ' · US$'+fmt(mof.tarifaDia||0)+'/día' : '';
+      subLabel='<div class="tipo-sub">'+(mof.tecnicos||1)+' técnico(s) × '+(mof.dias||1)+' día(s)'+tarifa+'</div>';
     } else if(tipo==='viatico'&&p.viaFields){
       subLabel='<div class="tipo-sub">'+esc(p.viaFields.concepto||'Viático')+'</div>';
     }
@@ -415,7 +428,10 @@ function renderPartidas(rows,sym,cfg){
     const disc=tipo==='producto'?((p.disc||p.descuento||0)>0?(p.disc||p.descuento)+'%':'—'):'—';
     const tot=sym+fmt(p.total||0);
 
-    tr.innerHTML='<td>'+esc(desc).replace(/\n/g,'<br><span style="font-size:8.5px;color:var(--muted)">').replace(/<br>/,'<br>')+( desc.includes('\n') ? '</span>' : '')+subLabel+'</td>'
+    const descHtml = tipo==='mo'
+      ? '<div class="desc-mo desc-long">'+esc(desc)+'</div>'
+      : esc(desc).replace(/\n/g,'<br><span class="tipo-sub">').replace(/(<br>)(?!.*<br>)/,'$1') + (desc.includes('\n')?'</span>':'');
+    tr.innerHTML='<td>'+descHtml+subLabel+'</td>'
       +'<td class="tr">'+qty+'</td>'
       +'<td class="tr">'+pu+'</td>'
       +(showDisc?'<td class="tr">'+disc+'</td>':'')

@@ -1244,7 +1244,7 @@ function renderProposalsTable() {
         <div class="ver-info"><strong>${changelog||'Sin descripción'}</strong><span>${v.date||''}</span></div>
         <div class="ver-actions">
           ${cleanUrl?`<a class="btn-action blue" href="${cleanUrl}" target="_blank">👁 Ver</a>`:'<span style="color:var(--gray);font-size:.7rem">Sin URL</span>'}
-          <button class="btn-action green" onclick="if(cleanUrl)openProposalEditor('${p.clientId}','${p.id}',${i},cleanUrl)" title="Editar contenido">✏️ Editar</button>
+          ${cleanUrl?`<button class="btn-action green" onclick="openProposalEditor('${p.clientId}','${p.id}',${i},'${cleanUrl}')">✏️ Editar</button>`:''}
           <button class="btn-action" onclick="editVersionUrl('${p.clientId}','${p.id}',${i},'${cleanUrl.replace(/'/g,"\\'")}')">✏️ URL</button>
           <button class="btn-action danger" onclick="deleteVersion('${p.clientId}','${p.id}',${i})">🗑</button>
         </div>
@@ -2713,7 +2713,7 @@ async function editEquipoMember(docId) {
 }
 
 async function deleteEquipoMember(docId, nombre) {
-  if(!confirm(\`¿Eliminar a \${nombre} del equipo? Dejará de recibir notificaciones.\`)) return;
+  if(!confirm('¿Eliminar a '+nombre+' del equipo? Dejará de recibir notificaciones.')) return;
   try {
     await db.collection('equipoTRN').doc(docId).delete();
     showToast('Miembro eliminado');

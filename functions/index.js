@@ -79,7 +79,7 @@ exports.claudeProxy = functions.https.onRequest(async (req, res) => {
     res.status(401).json({error: "Token inválido"}); return;
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = functions.config().anthropic?.api_key || process.env.ANTHROPIC_API_KEY;
   if (!apiKey) { res.status(500).json({error: "API key no configurada"}); return; }
 
   const { messages, system, max_tokens } = req.body;

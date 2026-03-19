@@ -3142,6 +3142,168 @@ async function duplicateVersion() {
   } catch(e) { showToast('Error: '+e.message, true); }
 }
 
+
+
+/* ═══════════════════════════════════════════
+   AI PROPOSAL GENERATOR
+   ═══════════════════════════════════════════ */
+let _aiPropClientId = null;
+let _aiPropId = null;
+
+function openAIProposal(clientId, propId, title) {
+  _aiPropClientId = clientId;
+  _aiPropId = propId;
+
+  // Show AI modal
+  const modal = document.getElementById('aiProposalModal');
+  if (!modal) { buildAIProposalModal(); }
+  document.getElementById('aiProposalModal').style.display = 'flex';
+  document.getElementById('aiPropTitle').textContent = title || 'Propuesta';
+  document.getElementById('aiPropPrompt').value = '';
+  document.getElementById('aiPropResult').style.display = 'none';
+  document.getElementById('aiPropResult').textContent = '';
+  document.getElementById('aiPropGenBtn').disabled = false;
+  document.getElementById('aiPropGenBtn').textContent = '✨ Generar con IA';
+}
+
+function buildAIProposalModal() {
+  const modal = document.createElement('div');
+  modal.id = 'aiProposalModal';
+  modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem';
+  modal.innerHTML = `
+    <div style="background:var(--navy);border:1px solid var(--border);border-radius:16px;padding:1.75rem;width:100%;max-width:600px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+        <div>
+          <div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:1.1rem">🤖 Generar propuesta con IA</div>
+          <div id="aiPropTitle" style="font-size:.8rem;color:var(--gray);margin-top:.2rem"></div>
+        </div>
+        <button onclick="document.getElementById('aiProposalModal').style.display='none'" 
+          style="background:none;border:none;color:var(--gray);font-size:1.2rem;cursor:pointer;padding:.3rem">✕</button>
+      </div>
+      <div style="margin-bottom:1rem">
+        <label style="display:block;font-size:.75rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">
+          ¿Qué quieres que genere o modifique?
+        </label>
+        <textarea id="aiPropPrompt" rows="4" placeholder="Ej: Genera una propuesta para un sistema solar de 5kW para una empresa de telecomunicaciones en Chihuahua. Incluye paneles bifaciales, inversor híbrido y batería LiFePO4. Tono técnico profesional."
+          style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:8px;color:var(--white);padding:.65rem .75rem;font-family:'DM Sans',sans-serif;font-size:.88rem;resize:vertical;outline:none"></textarea>
+      </div>
+      <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
+        <button onclick="setAITemplate('resumen')" style="font-size:.72rem;padding:.3rem .7rem;border-radius:6px;background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.3);color:var(--amber);cursor:pointer">📋 Resumen ejecutivo</button>
+        <button onclick="setAITemplate('tecnica')" style="font-size:.72rem;padding:.3rem .7rem;border-radius:6px;background:rgba(0,184,148,.1);border:1px solid rgba(0,184,148,.3);color:var(--teal);cursor:pointer">⚙️ Descripción técnica</button>
+        <button onclick="setAITemplate('beneficios')" style="font-size:.72rem;padding:.3rem .7rem;border-radius:6px;background:rgba(108,92,231,.1);border:1px solid rgba(108,92,231,.3);color:#a29bfe;cursor:pointer">✅ Beneficios del sistema</button>
+        <button onclick="setAITemplate('cronograma')" style="font-size:.72rem;padding:.3rem .7rem;border-radius:6px;background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.3);color:var(--green);cursor:pointer">📅 Cronograma de instalación</button>
+      </div>
+      <button id="aiPropGenBtn" onclick="generateAIProposal()"
+        style="width:100%;padding:.7rem;background:linear-gradient(135deg,#6C5CE7,#a29bfe);border:none;border-radius:8px;color:white;font-family:'Outfit',sans-serif;font-weight:700;font-size:.9rem;cursor:pointer;margin-bottom:1rem">
+        ✨ Generar con IA
+      </button>
+      <div id="aiPropResult" style="display:none;background:rgba(108,92,231,.08);border:1px solid rgba(108,92,231,.25);border-radius:8px;padding:1rem;font-size:.88rem;line-height:1.7;color:var(--light);max-height:250px;overflow-y:auto;white-space:pre-wrap;margin-bottom:.75rem"></div>
+      <div id="aiPropActions" style="display:none;gap:.5rem;flex-wrap:wrap">
+        <button onclick="copyAIResult()" style="padding:.4rem .9rem;border-radius:7px;background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.3);color:var(--amber);font-family:'Outfit',sans-serif;font-weight:600;font-size:.8rem;cursor:pointer">📋 Copiar</button>
+        <button onclick="applyAIToVersion()" style="padding:.4rem .9rem;border-radius:7px;background:rgba(46,204,113,.15);border:1px solid rgba(46,204,113,.3);color:var(--green);font-family:'Outfit',sans-serif;font-weight:600;font-size:.8rem;cursor:pointer">✅ Guardar como nota interna</button>
+        <button onclick="openEditorWithAI()" style="padding:.4rem .9rem;border-radius:7px;background:linear-gradient(135deg,var(--amber),var(--orange));border:none;color:#0B1A2E;font-family:'Outfit',sans-serif;font-weight:700;font-size:.8rem;cursor:pointer">✏️ Abrir editor con este texto</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function setAITemplate(type) {
+  const templates = {
+    resumen: 'Escribe un resumen ejecutivo profesional de 2 párrafos para esta propuesta. Destaca el problema del cliente, la solución propuesta y los beneficios principales. Tono formal.',
+    tecnica: 'Redacta una descripción técnica detallada del sistema propuesto. Incluye especificaciones, capacidades, componentes principales y criterios de diseño. Tono técnico-ingenieril.',
+    beneficios: 'Lista los principales beneficios del sistema propuesto para el cliente. Incluye aspectos económicos, operativos, de mantenimiento y estratégicos. Formato de bullets.',
+    cronograma: 'Crea un cronograma de instalación estimado en fases. Incluye visita técnica, procura de materiales, instalación, pruebas y puesta en marcha. Formato tabular.'
+  };
+  document.getElementById('aiPropPrompt').value = templates[type] || '';
+}
+
+window._aiPropLastResult = '';
+
+async function generateAIProposal() {
+  const btn = document.getElementById('aiPropGenBtn');
+  const result = document.getElementById('aiPropResult');
+  const actions = document.getElementById('aiPropActions');
+  const prompt = document.getElementById('aiPropPrompt').value.trim();
+  if (!prompt) { showToast('Escribe un prompt primero', true); return; }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Generando...';
+  result.style.display = 'none';
+  actions.style.display = 'none';
+
+  // Get proposal context from Firestore
+  let context = '';
+  try {
+    const snap = await db.collection('clients').doc(_aiPropClientId).collection('proposals').doc(_aiPropId).get();
+    if (snap.exists) {
+      const d = snap.data();
+      const vers = (d.versions || []).map((v,i) => `v${i+1}: ${v.changelog||'sin descripción'}`).join(', ');
+      context = `Propuesta: "${d.title || 'Sin título'}"\nCliente: ${allClients[_aiPropClientId]?.name || _aiPropClientId}\nVersiones: ${vers}\nNotas: ${d.notasInternas||'ninguna'}`;
+    }
+  } catch(e) {}
+
+  const systemPrompt = 'Eres un experto en redacción técnica y comercial para propuestas de energía solar y telecomunicaciones en México. Trabajas para TRN (Telecomunicaciones y Redes del Norte) en Chihuahua. Generas contenido profesional, claro y persuasivo para propuestas técnico-comerciales.';
+  const userMsg = (context ? `Contexto de la propuesta:\n${context}\n\n` : '') + `Solicitud: ${prompt}`;
+
+  try {
+    const resp = await fetch('https://morning-lab-b6d7trn-claude-proxy.rogelioguerra.workers.dev', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system: systemPrompt, messages: [{ role: 'user', content: userMsg }], max_tokens: 800 })
+    });
+    const data = await resp.json();
+    const text = data.content && data.content[0] && data.content[0].text;
+    if (text) {
+      window._aiPropLastResult = text.trim();
+      result.textContent = window._aiPropLastResult;
+      result.style.display = 'block';
+      actions.style.display = 'flex';
+    } else {
+      result.textContent = 'Error: ' + JSON.stringify(data).slice(0,120);
+      result.style.display = 'block';
+    }
+  } catch(e) {
+    result.textContent = 'Error: ' + e.message;
+    result.style.display = 'block';
+  }
+  btn.disabled = false;
+  btn.textContent = '✨ Generar con IA';
+}
+
+function copyAIResult() {
+  navigator.clipboard.writeText(window._aiPropLastResult || '').then(() => showToast('Copiado al clipboard ✅'));
+}
+
+async function applyAIToVersion() {
+  if (!_aiPropClientId || !_aiPropId || !window._aiPropLastResult) return;
+  try {
+    const snap = await db.collection('clients').doc(_aiPropClientId).collection('proposals').doc(_aiPropId).get();
+    const current = snap.data()?.notasInternas || '';
+    const newNotes = (current ? current + '\n\n---\n' : '') + '🤖 IA — ' + new Date().toLocaleString('es-MX') + ':\n' + window._aiPropLastResult;
+    await db.collection('clients').doc(_aiPropClientId).collection('proposals').doc(_aiPropId).update({
+      notasInternas: newNotes, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showToast('✅ Guardado en notas internas');
+    document.getElementById('aiProposalModal').style.display = 'none';
+    loadAll();
+  } catch(e) { showToast('Error: '+e.message, true); }
+}
+
+function openEditorWithAI() {
+  document.getElementById('aiProposalModal').style.display = 'none';
+  // Open editor and pre-fill notes with AI result
+  openProposalEditor(_aiPropClientId, _aiPropId, 
+    (allProposals.find(p=>p.id===_aiPropId)?.versions?.length||1)-1,
+    '/coeur-mexicana/solar-poste-v3');
+  setTimeout(() => {
+    if (document.getElementById('edNotes')) {
+      const curr = document.getElementById('edNotes').value;
+      document.getElementById('edNotes').value = (curr?curr+'\n\n':'') + '🤖 ' + window._aiPropLastResult;
+    }
+  }, 500);
+}
+
 </script>
 </body>
 </html>

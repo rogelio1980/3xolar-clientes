@@ -58,12 +58,22 @@ body{font-family:'DM Sans',sans-serif;background:#e8edf6;color:var(--text);font-
 .sec-hdr{font-family:'Outfit',sans-serif;font-size:7.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--amber);border-bottom:1.5px solid var(--amber);padding-bottom:2px;margin-bottom:7px;display:inline-block;}
 /* Table */
 .partidas-wrap{margin-bottom:8px;}
-.pt{width:100%;border-collapse:collapse;font-size:10px;}
+.pt{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed;}
 .pt thead tr{background:var(--navy);}
 .pt thead th{font-family:'Outfit',sans-serif;font-weight:600;font-size:8.5px;letter-spacing:.4px;text-transform:uppercase;color:#fff;padding:5.5px 8px;text-align:left;}
+.pt col.c-desc{width:auto;}
+.pt col.c-qty{width:38px;}
+.pt col.c-pu{width:78px;}
+.pt col.c-disc{width:42px;}
+.pt col.c-tot{width:82px;}
+.pt col.c-desc{width:auto;}
+.pt col.c-qty{width:40px;}
+.pt col.c-pu{width:80px;}
+.pt col.c-disc{width:45px;}
+.pt col.c-tot{width:85px;}
 .pt thead th.tr{text-align:right;}
 .pt tbody tr:nth-child(even){background:var(--row-alt);}
-.pt td{padding:5px 8px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:top;}
+.pt td{padding:5px 8px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:top;word-break:break-word;max-width:0;}
 .pt td.tr{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
 .pt td.bold{font-weight:700;color:var(--navy);}
 .pt tr.pt-sec td{background:rgba(27,58,92,.07);color:var(--mid);font-family:'Outfit',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:.3px;text-transform:uppercase;padding:4px 8px;border-top:1px solid rgba(27,58,92,.14);border-bottom:1px solid rgba(27,58,92,.14);}
@@ -171,6 +181,14 @@ body{font-family:'DM Sans',sans-serif;background:#e8edf6;color:var(--text);font-
     <div class="partidas-wrap">
       <span class="sec-hdr">Partidas y Precios</span>
       <table class="pt">
+        <colgroup><col class="c-desc"><col class="c-qty"><col class="c-pu"><col class="c-disc"><col class="c-tot"></colgroup>
+        <colgroup>
+          <col class="c-desc">
+          <col class="c-qty">
+          <col class="c-pu">
+          <col class="c-disc" id="colDisc">
+          <col class="c-tot">
+        </colgroup>
         <thead><tr>
           <th>Descripción</th>
           <th class="tr" style="width:46px">Cant.</th>
@@ -399,7 +417,7 @@ function renderPartidas(rows,sym,cfg){
     const disc=tipo==='producto'?((p.disc||p.descuento||0)>0?(p.disc||p.descuento)+'%':'—'):'—';
     const tot=sym+fmt(p.total||0);
 
-    tr.innerHTML='<td>'+esc(desc)+subLabel+'</td>'
+    tr.innerHTML='<td>'+esc(desc).replace(/\n/g,'<br><span style="font-size:8.5px;color:var(--muted)">').replace(/<br>/,'<br>')+( desc.includes('\n') ? '</span>' : '')+subLabel+'</td>'
       +'<td class="tr">'+qty+'</td>'
       +'<td class="tr">'+pu+'</td>'
       +(showDisc?'<td class="tr">'+disc+'</td>':'')

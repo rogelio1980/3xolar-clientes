@@ -432,7 +432,12 @@ function numeroALetras(num, moneda) {
     if(n===0) return 'cero';
     let r='';
     if(n>=1000000){ const m=Math.floor(n/1000000); r+=(m===1?'un millón':centenas(m)+' millones')+' '; n%=1000000; }
-    if(n>=1000){ const k=Math.floor(n/1000); r+=(k===1?'mil':centenas(k)+' mil')+' '; n%=1000; }
+    if(n>=1000){
+      const k=Math.floor(n/1000);
+      let kStr=k===1?'mil':(centenas(k)+' mil');
+      kStr=kStr.replace(/\buno\b/,'un');
+      r+=kStr+' '; n%=1000;
+    }
     if(n>0) r+=centenas(n);
     return r.trim();
   }

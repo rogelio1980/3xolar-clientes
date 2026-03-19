@@ -560,7 +560,7 @@ tr:hover td{background:rgba(245,166,35,.02)}
 
   
     <!-- PANEL: COMENTARIOS -->
-    <div class="panel" id="panel-comentarios" style="display:none">
+    <div class="panel" id="panel-comentarios">
       <div class="panel-title">💬 Comentarios del Portal</div>
       <div style="display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap">
         <input id="filterComentClient" type="text" placeholder="🔍 Filtrar por cliente o folio..." 
@@ -801,11 +801,17 @@ function fmtMoney(n, cur='MXN') {
 function navTo(panel) {
   const item = document.querySelector(`[data-panel="${panel}"]`);
   if (item) {
-    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-item,.bnav-item').forEach(n=>n.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>{
+      p.classList.remove('active');
+      p.style.display=''; // clear any inline display override
+    });
     item.classList.add('active');
     const p = document.getElementById('panel-'+panel);
-    if (p) p.classList.add('active');
+    if (p) {
+      p.classList.add('active');
+      p.style.display='block'; // ensure visible even if inline style was set
+    }
   }
 }
 const ADMIN_EMAILS = ['rogelio@ittelecom.com.mx','arellanes@ittelecom.com.mx','rogelioguerra@gmail.com'];

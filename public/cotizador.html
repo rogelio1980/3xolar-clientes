@@ -278,6 +278,13 @@ details.kit-panel>summary{cursor:pointer;font-family:'Outfit',sans-serif;font-si
 </style>
 </head>
 <body>
+<div id="loadingOverlay" style="position:fixed;inset:0;z-index:9999;background:var(--dark,#0d1b2a);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;font-family:'Outfit',sans-serif;">
+  <img src="/img/logo-trn.png" style="height:48px;opacity:0.9" onerror="this.style.display='none'">
+  <div style="display:flex;align-items:center;gap:.75rem;color:#8892B0;font-size:.9rem;font-weight:600">
+    <div style="width:20px;height:20px;border:2px solid rgba(245,166,35,.3);border-top-color:#F5A623;border-radius:50%;animation:spin .7s linear infinite"></div>
+    Cargando cotización...
+  </div>
+</div>
 
 <!-- ═══ TOPBAR ═══ -->
 <div class="topbar">
@@ -700,6 +707,9 @@ async function init(){
   applyCfg();
   setupCfgListeners();
   setupGarantia();
+  // Hide loading overlay
+  const overlay = document.getElementById('loadingOverlay');
+  if(overlay) overlay.style.display = 'none';
   document.getElementById('ivaSelect').addEventListener('change', recalc);
 
   let lastMoneda = 'MXN'; // track previous currency to know direction

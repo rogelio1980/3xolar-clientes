@@ -366,6 +366,33 @@ tr:hover td{background:rgba(245,166,35,.02)}
 .ai-prop-chips{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.6rem}
 .ai-chip{padding:.3rem .75rem;border-radius:20px;background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.2);color:var(--amber);font-size:.75rem;font-family:'Outfit',sans-serif;font-weight:600;cursor:pointer;transition:all .15s}
 .ai-chip:hover{background:rgba(245,166,35,.2)}
+
+/* ═══ PROPOSAL EDITOR DRAWER ═══ */
+.prop-editor-overlay{display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)}
+.prop-editor-overlay.open{display:flex;align-items:stretch}
+.prop-editor-drawer{display:flex;flex-direction:column;width:100%;max-width:1100px;margin-left:auto;background:var(--dark);border-left:1px solid var(--border);overflow:hidden}
+.prop-editor-topbar{display:flex;align-items:center;gap:.75rem;padding:.75rem 1.25rem;background:var(--navy);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+.prop-editor-topbar .ed-title{font-family:'Outfit',sans-serif;font-weight:700;font-size:.95rem;color:var(--light);flex:1;min-width:120px}
+.prop-editor-topbar .ed-badge{font-size:.7rem;padding:.2rem .55rem;border-radius:12px;font-weight:600}
+.ed-btn{padding:.38rem .85rem;border-radius:7px;font-family:'Outfit',sans-serif;font-weight:600;font-size:.78rem;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--gray);transition:all .15s;white-space:nowrap}
+.ed-btn:hover{border-color:var(--amber);color:var(--amber)}
+.ed-btn.primary{background:linear-gradient(135deg,var(--amber),var(--orange));border:none;color:#0B1A2E}
+.ed-btn.green{background:rgba(46,204,113,.15);border-color:rgba(46,204,113,.3);color:var(--green)}
+.ed-btn.purple{background:rgba(108,92,231,.15);border-color:rgba(108,92,231,.3);color:#a29bfe}
+.ed-btn.danger{background:rgba(231,76,60,.1);border-color:rgba(231,76,60,.3);color:var(--danger)}
+.prop-editor-body{display:flex;flex:1;overflow:hidden}
+.prop-editor-sidebar{width:280px;flex-shrink:0;background:var(--navy);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.prop-editor-iframe-wrap{flex:1;overflow:auto;background:#f5f5f5;position:relative}
+.prop-editor-iframe-wrap iframe{width:100%;min-height:100%;border:none;display:block}
+.ed-sidebar-section{padding:1rem 1.25rem;border-bottom:1px solid var(--border)}
+.ed-sidebar-section label{display:block;font-size:.72rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem}
+.ed-sidebar-section select,.ed-sidebar-section textarea,.ed-sidebar-section input{width:100%;background:var(--dark);border:1px solid var(--border);border-radius:7px;color:var(--white);padding:.5rem .65rem;font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none}
+.ed-sidebar-section textarea{resize:vertical;min-height:80px}
+.ed-sidebar-section select:focus,.ed-sidebar-section textarea:focus,.ed-sidebar-section input:focus{border-color:var(--teal)}
+.ed-sidebar-section .ed-btn{width:100%;justify-content:center;display:flex;margin-top:.5rem}
+.ed-editing-tip{font-size:.72rem;color:var(--gray);line-height:1.5;padding:.75rem 1.25rem;background:rgba(245,166,35,.06);border-bottom:1px solid var(--border)}
+.ed-editing-tip strong{color:var(--amber)}
+.ed-save-status{font-size:.72rem;color:var(--gray);padding:.4rem 1rem;text-align:center}
 </style>
 </head>
 <body>
@@ -870,6 +897,63 @@ tr:hover td{background:rgba(245,166,35,.02)}
   </div>
 </div>
 
+
+<!-- PROPOSAL EDITOR DRAWER -->
+<div class="prop-editor-overlay" id="propEditorOverlay">
+  <div class="prop-editor-drawer" id="propEditorDrawer">
+    <div class="prop-editor-topbar">
+      <div class="ed-title" id="edTitle">Editor de propuesta</div>
+      <span class="ed-badge badge-review" id="edStatusBadge">—</span>
+      <button class="ed-btn green" onclick="saveProposalEdits()">💾 Guardar cambios</button>
+      <button class="ed-btn purple" onclick="duplicateVersion()">⊕ Duplicar versión</button>
+      <button class="ed-btn" onclick="previewProposal()">👁 Previsualizar</button>
+      <button class="ed-btn danger" onclick="closeProposalEditor()">✕ Cerrar</button>
+    </div>
+    <div class="prop-editor-body">
+      <!-- Sidebar -->
+      <div class="prop-editor-sidebar">
+        <div class="ed-editing-tip">
+          <strong>💡 Modo edición activo</strong><br>
+          Haz clic en cualquier texto de la propuesta para editarlo directamente.
+        </div>
+        <div class="ed-sidebar-section">
+          <label>Estado de la propuesta</label>
+          <select id="edStatus" onchange="updateEdStatusBadge()">
+            <option value="draft">Borrador</option>
+            <option value="review">En Revisión</option>
+            <option value="approved">Aprobada ✅</option>
+            <option value="rejected">Rechazada</option>
+            <option value="ejecucion">En Ejecución</option>
+          </select>
+          <button class="ed-btn primary" onclick="saveStatusOnly()">Aplicar estado</button>
+        </div>
+        <div class="ed-sidebar-section">
+          <label>Título de la propuesta</label>
+          <input type="text" id="edProposalTitle" placeholder="Título...">
+        </div>
+        <div class="ed-sidebar-section">
+          <label>Descripción de la versión</label>
+          <textarea id="edVersionDesc" placeholder="Describe los cambios de esta versión..."></textarea>
+        </div>
+        <div class="ed-sidebar-section">
+          <label>📝 Notas internas (solo TRN)</label>
+          <textarea id="edNotes" placeholder="Notas del equipo, pendientes, decisiones técnicas..."></textarea>
+          <button class="ed-btn" onclick="saveNotesOnly()" style="margin-top:.5rem">Guardar notas</button>
+        </div>
+        <div class="ed-sidebar-section">
+          <label>Duplicar versión como</label>
+          <input type="text" id="edDupLabel" placeholder="Ej: v4 — Ajuste de precio">
+          <button class="ed-btn purple" onclick="duplicateVersion()">⊕ Crear copia</button>
+        </div>
+        <div class="ed-save-status" id="edSaveStatus">Sin cambios pendientes</div>
+      </div>
+      <!-- Iframe -->
+      <div class="prop-editor-iframe-wrap">
+        <iframe id="propEditorIframe" src="about:blank"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -1160,6 +1244,7 @@ function renderProposalsTable() {
         <div class="ver-info"><strong>${changelog||'Sin descripción'}</strong><span>${v.date||''}</span></div>
         <div class="ver-actions">
           ${cleanUrl?`<a class="btn-action blue" href="${cleanUrl}" target="_blank">👁 Ver</a>`:'<span style="color:var(--gray);font-size:.7rem">Sin URL</span>'}
+          <button class="btn-action green" onclick="if(cleanUrl)openProposalEditor('${p.clientId}','${p.id}',${i},cleanUrl)" title="Editar contenido">✏️ Editar</button>
           <button class="btn-action" onclick="editVersionUrl('${p.clientId}','${p.id}',${i},'${cleanUrl.replace(/'/g,"\\'")}')">✏️ URL</button>
           <button class="btn-action danger" onclick="deleteVersion('${p.clientId}','${p.id}',${i})">🗑</button>
         </div>
@@ -2816,6 +2901,246 @@ async function applyAIProposal() {
 // Close on overlay click / ESC
 document.getElementById('aiPropOverlay').addEventListener('click', function(e){ if(e.target===this) closeAIPropModal(); });
 document.addEventListener('keydown', e => { if(e.key==='Escape' && document.getElementById('aiPropOverlay').classList.contains('open')) closeAIPropModal(); });
+
+
+
+/* ═══════════════════════════════════════════
+   PROPOSAL EDITOR
+   ═══════════════════════════════════════════ */
+let _edClientId = null;
+let _edPropId = null;
+let _edVerIdx = null;
+let _edVerUrl = null;
+let _edProp = null;
+let _edIframeDirty = false;
+
+const statusMapEd = {draft:'Borrador',review:'En Revisión',approved:'Aprobada ✅',rejected:'Rechazada',ejecucion:'En Ejecución'};
+const badgeMapEd = {draft:'badge-draft',review:'badge-review',approved:'badge-aprobada',rejected:'badge-draft',ejecucion:'badge-ejecucion'};
+
+async function openProposalEditor(clientId, propId, verIdx, verUrl) {
+  _edClientId = clientId;
+  _edPropId   = propId;
+  _edVerIdx   = verIdx;
+  _edVerUrl   = verUrl;
+  _edIframeDirty = false;
+
+  // Load proposal data from Firestore
+  const snap = await db.collection('clients').doc(clientId).collection('proposals').doc(propId).get();
+  if (!snap.exists) { showToast('Propuesta no encontrada', true); return; }
+  _edProp = { id: snap.id, ...snap.data() };
+
+  const ver = (_edProp.versions || [])[verIdx] || {};
+  const st  = _edProp.status || 'draft';
+
+  // Fill sidebar
+  document.getElementById('edTitle').textContent = (_edProp.title || 'Sin título') + ' — ' + (ver.label || 'v'+(verIdx+1));
+  document.getElementById('edProposalTitle').value = _edProp.title || '';
+  document.getElementById('edVersionDesc').value   = ver.changelog || '';
+  document.getElementById('edNotes').value          = _edProp.notasInternas || '';
+  document.getElementById('edDupLabel').value       = '';
+  document.getElementById('edStatus').value         = st;
+  document.getElementById('edSaveStatus').textContent = 'Sin cambios pendientes';
+  updateEdStatusBadge();
+
+  // Load proposal URL in iframe with edit mode
+  const cleanUrl = verUrl ? (verUrl.startsWith('/') ? verUrl : '/'+verUrl) : null;
+  const iframe = document.getElementById('propEditorIframe');
+  if (cleanUrl) {
+    iframe.src = cleanUrl;
+    iframe.onload = () => activateEditMode(iframe);
+  } else {
+    iframe.src = 'about:blank';
+    iframe.contentDocument.body.innerHTML = '<div style="padding:2rem;font-family:sans-serif;color:#666">Esta versión no tiene URL configurada.<br>Usa el botón ✏️ URL para asignarle una.</div>';
+  }
+
+  document.getElementById('propEditorOverlay').classList.add('open');
+}
+
+function activateEditMode(iframe) {
+  try {
+    const doc = iframe.contentDocument;
+    if (!doc) return;
+
+    // Make all text elements editable
+    const editableSelectors = [
+      'h1','h2','h3','h4','h5','p','li','td','th',
+      '.section-label','.version-title','.version-sub',
+      '.need-card p','.need-card ul','.need-card h4',
+      '.cf p','.spec-val','.spec-label',
+      '.metric-val','.metric-lbl','.metric-sub',
+      '.chart-card h3','.guarantee-item p','.guarantee-item h4'
+    ];
+
+    editableSelectors.forEach(sel => {
+      doc.querySelectorAll(sel).forEach(el => {
+        el.contentEditable = 'true';
+        el.style.outline = 'none';
+        el.style.borderRadius = '3px';
+        el.style.transition = 'background .15s';
+        el.addEventListener('focus', () => {
+          el.style.background = 'rgba(245,166,35,.12)';
+          el.style.boxShadow = '0 0 0 2px rgba(245,166,35,.3)';
+          document.getElementById('edSaveStatus').textContent = '● Cambios sin guardar';
+          document.getElementById('edSaveStatus').style.color = 'var(--amber)';
+          _edIframeDirty = true;
+        });
+        el.addEventListener('blur', () => {
+          el.style.background = '';
+          el.style.boxShadow = '';
+        });
+      });
+    });
+
+    // Add edit mode indicator
+    const bar = doc.createElement('div');
+    bar.id = 'edit-mode-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(245,166,35,.95);color:#0B1A2E;font-family:sans-serif;font-size:.78rem;font-weight:700;padding:.35rem 1rem;text-align:center;letter-spacing:.05em';
+    bar.textContent = '✏️ MODO EDICIÓN ACTIVO — Haz clic en cualquier texto para editarlo';
+    doc.body.prepend(bar);
+    doc.body.style.paddingTop = '32px';
+  } catch(e) {
+    console.warn('editMode error:', e);
+  }
+}
+
+function updateEdStatusBadge() {
+  const st = document.getElementById('edStatus').value;
+  const badge = document.getElementById('edStatusBadge');
+  badge.textContent = statusMapEd[st] || st;
+  badge.className = 'ed-badge ' + (badgeMapEd[st] || 'badge-draft');
+}
+
+function closeProposalEditor() {
+  if (_edIframeDirty) {
+    if (!confirm('Tienes cambios sin guardar. ¿Cerrar de todas formas?')) return;
+  }
+  document.getElementById('propEditorOverlay').classList.remove('open');
+  document.getElementById('propEditorIframe').src = 'about:blank';
+  _edClientId = _edPropId = _edVerIdx = _edVerUrl = _edProp = null;
+  _edIframeDirty = false;
+}
+
+function previewProposal() {
+  if (_edVerUrl) {
+    const url = _edVerUrl.startsWith('/') ? _edVerUrl : '/'+_edVerUrl;
+    window.open(url, '_blank');
+  } else {
+    showToast('Esta versión no tiene URL asignada', true);
+  }
+}
+
+async function saveStatusOnly() {
+  if (!_edClientId || !_edPropId) return;
+  const st = document.getElementById('edStatus').value;
+  try {
+    await db.collection('clients').doc(_edClientId).collection('proposals').doc(_edPropId).update({
+      status: st, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    updateEdStatusBadge();
+    showToast('Estado actualizado: ' + (statusMapEd[st]||st));
+    _edProp.status = st;
+    loadAll();
+  } catch(e) { showToast('Error: '+e.message, true); }
+}
+
+async function saveNotesOnly() {
+  if (!_edClientId || !_edPropId) return;
+  const notes = document.getElementById('edNotes').value;
+  try {
+    await db.collection('clients').doc(_edClientId).collection('proposals').doc(_edPropId).update({
+      notasInternas: notes, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showToast('Notas guardadas ✅');
+  } catch(e) { showToast('Error: '+e.message, true); }
+}
+
+async function saveProposalEdits() {
+  if (!_edClientId || !_edPropId) return;
+  const btn = document.querySelector('.ed-btn.green');
+  btn.textContent = '⏳ Guardando...';
+  btn.disabled = true;
+
+  try {
+    const title   = document.getElementById('edProposalTitle').value.trim();
+    const notes   = document.getElementById('edNotes').value;
+    const st      = document.getElementById('edStatus').value;
+    const verDesc = document.getElementById('edVersionDesc').value;
+
+    // Update Firestore proposal metadata
+    const updateData = {
+      title: title || _edProp.title,
+      status: st,
+      notasInternas: notes,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    // Update version changelog if changed
+    if (_edProp.versions && _edProp.versions[_edVerIdx] !== undefined) {
+      const versions = [...(_edProp.versions || [])];
+      versions[_edVerIdx] = { ...versions[_edVerIdx], changelog: verDesc };
+      updateData.versions = versions;
+    }
+
+    await db.collection('clients').doc(_edClientId).collection('proposals').doc(_edPropId).update(updateData);
+
+    // If iframe has edits, save modified HTML to Firestore as htmlContent
+    if (_edIframeDirty) {
+      try {
+        const iframe = document.getElementById('propEditorIframe');
+        const doc = iframe.contentDocument;
+        // Remove edit mode bar before saving
+        const bar = doc.getElementById('edit-mode-bar');
+        if (bar) bar.remove();
+        // Remove contenteditable attributes
+        doc.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+        const htmlContent = '<!DOCTYPE html>' + doc.documentElement.outerHTML;
+        const verIdx = _edVerIdx;
+        const versions = [...(_edProp.versions || [])];
+        versions[verIdx] = { ...(versions[verIdx]||{}), htmlContent, savedAt: new Date().toISOString() };
+        await db.collection('clients').doc(_edClientId).collection('proposals').doc(_edPropId).update({ versions });
+        // Restore edit mode
+        activateEditMode(iframe);
+      } catch(htmlErr) {
+        console.warn('HTML save error:', htmlErr);
+      }
+    }
+
+    _edIframeDirty = false;
+    document.getElementById('edSaveStatus').textContent = '✅ Guardado ' + new Date().toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit'});
+    document.getElementById('edSaveStatus').style.color = 'var(--green)';
+    showToast('Propuesta guardada ✅');
+    loadAll();
+  } catch(e) {
+    showToast('Error al guardar: '+e.message, true);
+  }
+  btn.textContent = '💾 Guardar cambios';
+  btn.disabled = false;
+}
+
+async function duplicateVersion() {
+  if (!_edClientId || !_edPropId) return;
+  const label = document.getElementById('edDupLabel').value.trim() || ('v'+((_edProp.versions||[]).length+1));
+  const ver = (_edProp.versions||[])[_edVerIdx] || {};
+
+  const newVer = {
+    label,
+    url: ver.url || '',
+    changelog: label + ' — copia de ' + (ver.label||'v'+(Number(_edVerIdx)+1)),
+    date: new Date().toISOString().slice(0,10),
+    copiedFrom: _edVerIdx
+  };
+
+  try {
+    const versions = [...(_edProp.versions||[]), newVer];
+    await db.collection('clients').doc(_edClientId).collection('proposals').doc(_edPropId).update({
+      versions, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    _edProp.versions = versions;
+    showToast('✅ Versión duplicada como: ' + label);
+    document.getElementById('edDupLabel').value = '';
+    loadAll();
+  } catch(e) { showToast('Error: '+e.message, true); }
+}
 
 </script>
 </body>

@@ -425,7 +425,8 @@ function numeroALetras(num, moneda) {
   function centenas(n) {
     if(n===100) return 'cien';
     const ci=Math.floor(n/100), resto=n%100;
-    return (ci>0?c2[ci]:'')+(resto?' '+decenas(resto):decenas(resto||0));
+    const centStr = ci===1 && resto>0 ? 'ciento' : (ci>0?c2[ci]:'');
+    return centStr+(resto?' '+decenas(resto):'');
   }
   function miles(n) {
     if(n===0) return 'cero';

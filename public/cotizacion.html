@@ -80,10 +80,10 @@ body{font-family:'DM Sans',sans-serif;background:#e8edf6;color:var(--text);font-
 .tipo-sub{font-size:8.5px;color:var(--muted);font-style:italic;margin-top:1px;}
 .pt td.desc-mo{max-height:120px;overflow:hidden;position:relative;}
 .pt td.desc-mo::after{content:'';position:absolute;bottom:0;left:0;right:0;height:20px;background:linear-gradient(transparent,#fff);}
-@media print{.pt td.desc-mo{max-height:none;overflow:visible;}.pt td.desc-mo::after{display:none;}}
-.desc-long{display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden;line-height:1.55;}
+@media print{.pt td.desc-mo{max-height:none;overflow:visible;}.pt td.desc-mo::after{display:none;}.desc-long{-webkit-line-clamp:unset;max-height:none;overflow:visible;}}
+.desc-long{line-height:1.55;max-height:none;overflow:visible;}
 .desc-mo{font-size:9px;color:var(--text);}
-.desc-long{display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden;line-height:1.55;}
+.desc-long{line-height:1.55;max-height:none;overflow:visible;}
 .desc-mo{font-size:9px;color:var(--text);}
 /* Totals */
 .totals-wrap{display:flex;justify-content:flex-end;margin-bottom:15px;}
@@ -303,6 +303,7 @@ function render(prop,q,client){
   const pill=$('statusPill');
   pill.textContent=stMap[st]||st;
   pill.className='status-pill '+(stCss[st]||'s-review');
+  pill.style.display='none'; // No mostrar estado en PDF cliente
 
   // Cliente — usa empresa de Firestore o fallback de la cotización
   const cNombre=emp.nombre||client.nombre||q.empresa||prop.clienteNombre||'—';
@@ -402,6 +403,9 @@ function renderPartidas(rows,sym,cfg){
     const tr=document.createElement('tr');
     const desc=p.desc||p.descripcion||'';
     const tipo=p.tipo||'producto';
+
+    // Skip completely blank items (no description, no price, no total)
+    if(!desc.trim() && !p.total && !(p.price||p.precioUnitario) && tipo==='producto') return;
 
     // Encabezado de sección
     if(p.esEncabezado||(tipo==='texto'&&/^[—–-]/.test(desc))){

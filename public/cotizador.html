@@ -2029,71 +2029,20 @@ async function saveQuote(){
 
 /* ═══ PRINT ═══ */
 function doPrint(){
-  const folio = document.getElementById('folio').value;
-  const fecha = document.getElementById('fechaCot').value;
-  const vigencia = document.getElementById('vigencia').value;
-  const sym = SYM();
-  const moneda = document.getElementById('moneda').value;
-
-  document.getElementById('pFolio').textContent = folio;
-  document.getElementById('pFecha').textContent = 'Fecha: ' + fecha;
-  document.getElementById('pVigencia').textContent = 'Vigencia: ' + vigencia + ' días';
-
-  document.getElementById('pMeta').innerHTML = `
-    <div><strong>Cliente:</strong> ${document.getElementById('contacto').value}</div>
-    <div><strong>Empresa:</strong> ${document.getElementById('empresa').value}</div>
-    <div><strong>Proyecto:</strong> ${document.getElementById('titulo').value}</div>
-    <div><strong>Lugar de entrega:</strong> ${document.getElementById('lugar').value}</div>
-    <div><strong>Tiempo de entrega:</strong> ${(document.getElementById('tiempoNum').value||'')+ ' ' +(document.getElementById('tiempoUnidad').value||'')}</div>
-    <div><strong>Moneda:</strong> ${moneda}</div>`;
-
-  const items = getItems();
-  const showDisc = document.getElementById('cfgDisc').checked;
-  const showSub = document.getElementById('cfgSubtotals').checked;
-  let thtml = '<thead><tr><th>Descripción</th><th>Cant.</th><th>P. Unitario</th>';
-  if(showDisc) thtml += '<th>Desc.%</th>';
-  thtml += '<th>Subtotal</th></tr></thead><tbody>';
-  items.forEach(it => {
-    if(it.tipo === 'texto'){
-      const cs = showDisc ? 5 : 4;
-      thtml += `<tr><td colspan="${cs}" style="font-style:italic;color:#888">${it.desc}</td></tr>`;
-    } else if(it.tipo === 'kit'){
-      const descHtml = (it.desc||'').replace(/\n/g,'<br>');
-      thtml += `<tr><td>🧰 ${descHtml}</td><td class="num">${it.qty||1}</td><td class="num">${sym}${fmt(it.price||0)}</td>`;
-      if(showDisc) thtml += `<td class="num">—</td>`;
-      thtml += `<td class="num">${sym}${fmt(it.total||0)}</td></tr>`;
-    } else {
-      thtml += `<tr><td>${it.desc}</td><td class="num">${it.qty||''}</td><td class="num">${sym}${fmt(it.price||0)}</td>`;
-      if(showDisc) thtml += `<td class="num">${it.disc||0}%</td>`;
-      thtml += `<td class="num">${sym}${fmt(it.total||0)}</td></tr>`;
-    }
-  });
-  thtml += '</tbody>';
-  document.getElementById('pTable').innerHTML = thtml;
-
-  const ivaRate = parseFloat(document.getElementById('ivaSelect').value)||0;
-  let subtotal = 0; items.forEach(it => subtotal += it.total||0);
-  const iva = subtotal * ivaRate / 100;
-  const total = subtotal + iva;
-  let totHtml = '';
-  if(showSub){
-    totHtml += `<div class="row"><span>Subtotal</span><span class="v">${sym}${fmt(subtotal)}</span></div>`;
-    totHtml += `<div class="row"><span>IVA (${ivaRate}%)</span><span class="v">${sym}${fmt(iva)}</span></div>`;
+  // Guardar primero si hay cambios pendientes, luego abrir vista PDF limpia
+  const quoteId = new URLSearchParams(location.search).get('edit');
+  const clientId = new URLSearchParams(location.search).get('client');
+  if(quoteId && clientId){
+    // Abrir la vista limpia de cotizacion en nueva ventana y hacer print
+    const pdfUrl = '/cotizacion?id=' + quoteId + '&client=' + clientId + '&print=1';
+    const win = window.open(pdfUrl, '_blank');
+    // El print se dispara automáticamente en cotizacion.html cuando recibe ?print=1
+    return;
   }
-  totHtml += `<div class="row grand"><span>TOTAL ${moneda}</span><span class="v">${sym}${fmt(total)}</span></div>`;
-  if(total > 0) totHtml += `<div class="row" style="border:none;padding-top:.2rem"><span></span><span class="v" style="font-size:.7rem;color:#999;font-style:italic">Son: ${numeroALetras(total, moneda)}</span></div>`;
-  document.getElementById('pTotals').innerHTML = totHtml;
-
-  document.getElementById('pGarantia').innerHTML = `<h4>Garantía — ${document.getElementById('garantiaTipo').options[document.getElementById('garantiaTipo').selectedIndex].text}</h4><p>${document.getElementById('garantiaDesc').value}</p>`;
-
-  let condHtml = `<h4>Condiciones</h4><p><strong>Forma de pago:</strong> ${document.getElementById('formaPago').value}</p><p><strong>Incluye instalación:</strong> ${document.getElementById('instalacion').value}</p>`;
-  const notas = document.getElementById('notas').value.trim();
-  if(notas) condHtml += `<p><strong>Notas:</strong> ${notas}</p>`;
-  document.getElementById('pCond').innerHTML = condHtml;
-  document.getElementById('pClientName').textContent = document.getElementById('empresa').value || document.getElementById('contacto').value;
-
+  // Fallback: print directo si no hay ID (cotización nueva no guardada)
   window.print();
 }
+
 
 /* ═══ LOGOUT ═══ */
 document.getElementById('btnLogout').addEventListener('click', () => auth.signOut().then(()=>location.href='/'));

@@ -358,6 +358,10 @@ function render(prop,q,client){
   // Importe en letras
   const letrasStr = typeof numeroALetras==='function' && total>0 ? 'Son: '+numeroALetras(total, q.moneda||'MXN') : '';
   set('valLetras', letrasStr);
+  // Auto-print si viene con ?print=1
+  if(new URLSearchParams(location.search).get('print')==='1'){
+    setTimeout(()=>{ window.print(); }, 800);
+  }
 
   // Garantia
   const gar=q.garantiaDesc||q.garantia||'';

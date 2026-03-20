@@ -1629,9 +1629,12 @@ function recalc(){
       const envioLbl = row.querySelector('.c-envio-label');
       if(envioLbl) envioLbl.textContent = 'Costo de envío ' + (isUSD ? 'USD' : 'MXN');
       const costoMXN = cMoneda === 'USD' ? costoRaw * (tipoCambioDOF || 17.15) : costoRaw;
-      const envio = parseFloat(row.querySelector('.c-envio')?.value) || 0;
+      const envioRaw2 = parseFloat(row.querySelector('.c-envio')?.value) || 0;
+      // Envío: se asume en la misma moneda que la cotización (USD o MXN)
+      const envioMXN2 = isUSD ? envioRaw2 * tc : envioRaw2;
+      const envio = envioRaw2; // keep alias for legacy
       const inclIVA = row.querySelector(`input[name="iva-${row.dataset.id}"]:checked`)?.value === '1';
-      const costoBase = costoMXN + envio;
+      const costoBase = costoMXN + envioMXN2;
       const costoConIVA = inclIVA ? costoBase : costoBase * 1.16;
       const totalCostoItem = costToDisplay(costoConIVA * qty);
       // Update precio sugerido display

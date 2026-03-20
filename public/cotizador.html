@@ -921,6 +921,15 @@ function fillItemRow(row, tipo, it){
       setQ('.c-url',   it.costoInterno.urlProveedor||'');
       setQ('.c-costo', it.costoInterno.costoUnitario||0);
       setQ('.c-envio', it.costoInterno.costoEnvio||0);
+      // Restore moneda selector
+      if(it.costoInterno.moneda){
+        const monSel = row.querySelector('.c-moneda');
+        if(monSel){ monSel.value = it.costoInterno.moneda; recalcProductoCosto(monSel); }
+      }
+      // Restore markup %
+      if(it.costoInterno.markup){
+        setQ('.c-markup', it.costoInterno.markup);
+      }
       if(it.costoInterno.incluyeIVA){
         const radioSi=row.querySelector(`input[name="iva-${row.dataset.id}"][value="1"]`);
         if(radioSi) radioSi.checked=true;
@@ -1223,29 +1232,34 @@ function addItem(tipo){
           <div class="field"><label>Número de parte</label><input class="c-part"></div>
           <div class="field"><label>URL Proveedor</label><div style="display:flex;gap:0.3rem"><input class="c-url" style="flex:1"><button class="gar-btn" onclick="const u=this.previousElementSibling.value;if(u)window.open(u.startsWith('http')?u:'https://'+u,'_blank')" style="padding:0.3rem 0.5rem">🔗</button></div></div>
           <div class="field">
-            <label class="c-costo-label">Costo unitario ${document.getElementById('moneda').value==='USD'?'USD':'MXN'}</label>
+            <label class="c-costo-label">Costo unitario</label>
             <div style="display:flex;gap:0.3rem;align-items:center">
-              <select class="c-moneda" style="background:var(--navy);border:1px solid var(--border);border-radius:5px;color:var(--white);padding:0.3rem 0.4rem;font-size:0.78rem;outline:none" onchange="recalcProductoCosto(this)">
-                <option value="MXN" ${document.getElementById('moneda').value!=='USD'?'selected':''}>MXN</option>
-                <option value="USD" ${document.getElementById('moneda').value==='USD'?'selected':''}>USD</option>
+              <select class="c-moneda" style="background:var(--navy);border:1px solid var(--border);border-radius:5px;color:var(--white);padding:0.3rem 0.4rem;font-size:0.78rem;outline:none;flex-shrink:0" onchange="recalcProductoCosto(this)">
+                <option value="MXN" \${document.getElementById('moneda').value!=='USD'?'selected':''}>MXN</option>
+                <option value="USD" \${document.getElementById('moneda').value==='USD'?'selected':''}>USD</option>
               </select>
               <input type="number" class="c-costo" value="0" min="0" step="0.01" style="flex:1">
             </div>
           </div>
-          <div class="field"><label>Costo de envío MXN</label><input type="number" class="c-envio" value="0" min="0" step="0.01"></div>
+          <div class="field">
+            <label class="c-envio-label">Costo de envío \${document.getElementById('moneda').value==='USD'?'USD':'MXN'}</label>
+            <input type="number" class="c-envio" value="0" min="0" step="0.01">
+          </div>
           <div class="field">
             <label>¿Incluye IVA?</label>
             <div style="display:flex;gap:0.75rem;padding-top:0.2rem">
-              <label class="chk-row"><input type="radio" name="iva-${id}" value="1"> Sí</label>
-              <label class="chk-row"><input type="radio" name="iva-${id}" value="0" checked> No</label>
+              <label class="chk-row"><input type="radio" name="iva-\${id}" value="1"> Sí</label>
+              <label class="chk-row"><input type="radio" name="iva-\${id}" value="0" checked> No</label>
             </div>
           </div>
-          <div class="field" style="grid-column:1/-1;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap">
-            <span style="font-size:0.75rem;color:var(--gray)">Markup sobre costo:</span>
-            <input type="number" class="c-markup" value="30" min="0" max="1000" step="1" style="width:60px;text-align:center">
-            <span style="font-size:0.75rem;color:var(--gray)">%</span>
-            <button type="button" class="c-apply-markup" style="padding:0.25rem 0.7rem;border-radius:6px;background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.3);color:var(--amber);font-size:0.75rem;font-weight:600;cursor:pointer" onclick="applyProductoMarkup(this)">Aplicar →</button>
-            <span class="c-precio-sug" style="font-size:0.78rem;color:var(--teal);font-family:'JetBrains Mono',monospace"></span>
+          <div class="field" style="grid-column:1/-1">
+            <label style="margin-bottom:0.35rem;display:block">Markup sobre costo → Precio de venta</label>
+            <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:nowrap">
+              <input type="number" class="c-markup" value="30" min="0" max="1000" step="1" style="width:58px;text-align:center;flex-shrink:0">
+              <span style="font-size:0.78rem;color:var(--gray);flex-shrink:0">%</span>
+              <button type="button" class="c-apply-markup" style="padding:0.28rem 0.75rem;border-radius:6px;background:linear-gradient(135deg,rgba(245,166,35,.2),rgba(255,107,53,.2));border:1px solid rgba(245,166,35,.4);color:var(--amber);font-size:0.78rem;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap" onclick="applyProductoMarkup(this)">✓ Aplicar precio</button>
+              <span class="c-precio-sug" style="font-size:0.82rem;color:var(--teal);font-family:'JetBrains Mono',monospace;font-weight:600"></span>
+            </div>
           </div>
         </div>
         <div class="cost-result">
@@ -1611,6 +1625,9 @@ function recalc(){
       // Cost calc — costo puede estar en MXN o USD según selector c-moneda
       const costoRaw = parseFloat(row.querySelector('.c-costo')?.value) || 0;
       const cMoneda = row.querySelector('.c-moneda')?.value || 'MXN';
+      // Update envio label dynamically
+      const envioLbl = row.querySelector('.c-envio-label');
+      if(envioLbl) envioLbl.textContent = 'Costo de envío ' + (isUSD ? 'USD' : 'MXN');
       const costoMXN = cMoneda === 'USD' ? costoRaw * (tipoCambioDOF || 17.15) : costoRaw;
       const envio = parseFloat(row.querySelector('.c-envio')?.value) || 0;
       const inclIVA = row.querySelector(`input[name="iva-${row.dataset.id}"]:checked`)?.value === '1';
@@ -1814,6 +1831,8 @@ function getItems(){
         numParte: row.querySelector('.c-part')?.value||'',
         urlProveedor: row.querySelector('.c-url')?.value||'',
         costoUnitario: costo,
+        moneda: row.querySelector('.c-moneda')?.value||'MXN',
+        markup: parseFloat(row.querySelector('.c-markup')?.value)||30,
         costoEnvio: envio, incluyeIVA: inclIVA,
         costoConIVA: costoConIVA * qty,
         utilidad: item.total - costoConIVA * qty,
@@ -2362,12 +2381,16 @@ function applyProductoMarkup(btn) {
   const row = btn.closest('.item-row');
   const costoRaw = parseFloat(row.querySelector('.c-costo')?.value) || 0;
   const cMoneda = row.querySelector('.c-moneda')?.value || 'MXN';
-  const costoMXN = cMoneda === 'USD' ? costoRaw * (tipoCambioDOF || 17.15) : costoRaw;
-  const inclIVA = row.querySelector(`input[name="iva-${row.dataset.id}"]:checked`)?.value === '1';
-  const envio = parseFloat(row.querySelector('.c-envio')?.value) || 0;
-  const costoConIVA = (costoMXN + envio) * (inclIVA ? 1 : 1.16);
   const isUSD = document.getElementById('moneda').value === 'USD';
-  const tc = isUSD ? (tipoCambioDOF || 17.15) : 1;
+  const tc = tipoCambioDOF || 17.15;
+  // Convert component cost to MXN first
+  const costoMXN = cMoneda === 'USD' ? costoRaw * tc : costoRaw;
+  const inclIVA = row.querySelector(`input[name="iva-${row.dataset.id}"]:checked`)?.value === '1';
+  // Envio: also detect its currency (assume same as cotización moneda for envio)
+  const envioRaw = parseFloat(row.querySelector('.c-envio')?.value) || 0;
+  const envioMXN = isUSD ? envioRaw * tc : envioRaw;
+  const costoConIVA = (costoMXN + envioMXN) * (inclIVA ? 1 : 1.16);
+  // Convert to display currency
   const costoDisplay = isUSD ? costoConIVA / tc : costoConIVA;
   const markupPct = parseFloat(row.querySelector('.c-markup')?.value) || 0;
   const precio = costoDisplay * (1 + markupPct / 100);
@@ -2378,8 +2401,8 @@ function applyProductoMarkup(btn) {
 }
 
 function recalcProductoCosto(sel) {
-  // When moneda selector changes on cost field, update label
   const row = sel.closest('.item-row');
+  // Update costo label
   const lbl = row.querySelector('.c-costo-label');
   if (lbl) lbl.textContent = 'Costo unitario ' + sel.value;
   recalc();

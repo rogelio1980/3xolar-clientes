@@ -4027,10 +4027,7 @@ function sendViaMailto() {
   const params = new URLSearchParams();
   if (cc) params.set('cc', cc);
   params.set('subject', subject);
-  params.set('body', plain + '
-
----
-Para ver la versión completa con diseño, abra el enlace incluido en este correo.');
+  params.set('body', plain + '\n\n---\nPara ver la versión completa con diseño, abra el enlace incluido en este correo.');
 
   const mailto = `mailto:${to}?${params.toString()}`;
   window.location.href = mailto;

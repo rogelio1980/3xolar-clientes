@@ -954,6 +954,57 @@ tr:hover td{background:rgba(245,166,35,.02)}
     </div>
   </div>
 </div>
+
+<!-- EMAIL MODAL -->
+<div id="emailModal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem;overflow-y:auto">
+  <div style="background:var(--navy);border:1px solid var(--border);border-radius:16px;width:100%;max-width:680px;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.5);display:flex;flex-direction:column;max-height:90vh">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);flex-shrink:0">
+      <div>
+        <div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:1rem">✉️ Enviar por correo electrónico</div>
+        <div id="emailModalSubtitle" style="font-size:.78rem;color:var(--gray);margin-top:.15rem"></div>
+      </div>
+      <button onclick="document.getElementById('emailModal').style.display='none'" style="background:none;border:none;color:var(--gray);font-size:1.1rem;cursor:pointer">✕</button>
+    </div>
+    <!-- Para / CC -->
+    <div style="padding:1rem 1.5rem;border-bottom:1px solid var(--border);flex-shrink:0;display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+      <div>
+        <label style="display:block;font-size:.72rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.3rem">Para</label>
+        <input id="emailTo" type="email" placeholder="cliente@empresa.com" style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:7px;color:var(--white);padding:.45rem .65rem;font-size:.85rem;outline:none;box-sizing:border-box">
+      </div>
+      <div>
+        <label style="display:block;font-size:.72rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.3rem">CC (opcional)</label>
+        <input id="emailCc" type="email" placeholder="copia@empresa.com" style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:7px;color:var(--white);padding:.45rem .65rem;font-size:.85rem;outline:none;box-sizing:border-box">
+      </div>
+      <div style="grid-column:1/-1">
+        <label style="display:block;font-size:.72rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.3rem">Asunto</label>
+        <input id="emailSubject" type="text" style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:7px;color:var(--white);padding:.45rem .65rem;font-size:.85rem;outline:none;box-sizing:border-box">
+      </div>
+    </div>
+    <!-- Preview HTML -->
+    <div style="flex:1;overflow:auto;padding:1rem 1.5rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
+        <label style="font-size:.72rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.08em">Vista previa del correo</label>
+        <div style="display:flex;gap:.4rem">
+          <button onclick="toggleEmailPreview()" id="emailPreviewToggle" style="padding:.25rem .6rem;border-radius:6px;background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.25);color:var(--amber);font-size:.72rem;font-weight:600;cursor:pointer">👁 HTML</button>
+          <button onclick="copyEmailHtml()" style="padding:.25rem .6rem;border-radius:6px;background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.25);color:var(--green);font-size:.72rem;font-weight:600;cursor:pointer">📋 Copiar HTML</button>
+        </div>
+      </div>
+      <div id="emailPreviewWrap" style="background:#fff;border-radius:8px;overflow:hidden;max-height:320px;overflow-y:auto">
+        <iframe id="emailPreviewIframe" style="width:100%;border:none;min-height:300px" srcdoc=""></iframe>
+      </div>
+      <div id="emailHtmlWrap" style="display:none">
+        <textarea id="emailHtmlCode" readonly style="width:100%;height:200px;background:var(--dark);border:1px solid var(--border);border-radius:8px;color:#a8b2c1;font-family:'JetBrains Mono',monospace;font-size:.72rem;padding:.75rem;resize:vertical;outline:none;box-sizing:border-box"></textarea>
+      </div>
+    </div>
+    <!-- Actions -->
+    <div style="padding:1rem 1.5rem;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:.6rem;flex-wrap:wrap">
+      <button onclick="sendViaMailto()" style="flex:1;padding:.65rem 1rem;background:linear-gradient(135deg,var(--amber),var(--orange));border:none;border-radius:8px;color:#0B1A2E;font-family:'Outfit',sans-serif;font-weight:700;font-size:.88rem;cursor:pointer;min-width:160px">📨 Abrir en correo</button>
+      <button onclick="copyEmailHtml()" style="padding:.65rem 1rem;border-radius:8px;background:rgba(46,204,113,.12);border:1px solid rgba(46,204,113,.3);color:var(--green);font-family:'Outfit',sans-serif;font-weight:600;font-size:.85rem;cursor:pointer">📋 Copiar HTML</button>
+      <button onclick="document.getElementById('emailModal').style.display='none'" style="padding:.65rem 1rem;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--gray);font-family:'Outfit',sans-serif;font-weight:600;font-size:.85rem;cursor:pointer">Cancelar</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -1294,6 +1345,7 @@ function renderProposalsTable() {
           <button class="btn-action" onclick="cycleStatus('${p.clientId}','${p.id}','${st}')">Estado</button>
           <button class="btn-action blue" onclick="addVersion('${p.clientId}','${p.id}',${versions.length})">+ Versión</button>
           <button class="btn-action" onclick="openEditProposal('${p.clientId}','${p.id}')">✏️ Editar</button>
+          <button class="btn-action" onclick="openEmailModal('propuesta','${p.clientId}','${p.id}',null,'${titleEsc}')" title="Enviar por correo">✉️ Enviar</button>
           <button class="btn-action purple" onclick="openAIProposal('${p.clientId}','${p.id}','${titleEsc}')" title="Modificar con IA">🤖 IA</button>
           <button class="btn-action danger" onclick="askDeleteProposal('${p.clientId}','${p.id}','${titleEsc}')">🗑</button>
         </div>
@@ -1426,6 +1478,7 @@ function renderQuotesTable() {
             <div class="dropdown-menu" id="${ddId}">
               <div class="dd-item" onclick="cycleStatus('${q.clientId}','${q.id}','${st}')">⟳ Cambiar estado</div>
               <div class="dd-item" onclick="duplicateQuote('${q.clientId}','${q.id}')">📋 Duplicar</div>
+              <div class="dd-item" onclick="openEmailModal('cotizacion','${q.clientId}','${q.id}','${q.folio||q.id}','${(q.titulo||q.title||'Cotización').replace(/'/g,\"\\\\'\")}')" >✉️ Enviar por correo</div>
               ${!isInvoiced?`<div class="dd-item" onclick="openInvoiceModal('${q.clientId}','${q.id}')">📄 Marcar como facturada</div>`:''}
               <div class="dd-sep"></div>
               <div class="dd-item danger" onclick="askDeleteQuote('${q.clientId}','${q.id}','${(q.folio||q.id).replace(/'/g,"\'")} · ${clientName} · ${total_v?fmtMoney(total_v,cur):''}')">🗑 Eliminar</div>
@@ -3701,6 +3754,288 @@ function openEditorWithAI() {
       document.getElementById('edNotes').value = (curr?curr+'\n\n':'') + '🤖 ' + window._aiPropLastResult;
     }
   }, 500);
+}
+
+
+
+/* ═══════════════════════════════════════════
+   EMAIL MODAL
+   ═══════════════════════════════════════════ */
+let _emailHtmlContent = '';
+let _emailPlainContent = '';
+
+async function openEmailModal(tipo, clientId, docId, folio, titulo) {
+  const modal = document.getElementById('emailModal');
+  modal.style.display = 'flex';
+
+  const cl = allClients[clientId];
+  const clientName = cl ? (cl.name||cl.empresa?.nombre||cl.company||clientId) : clientId;
+  const clientEmail = cl?.email || cl?.correo || '';
+
+  document.getElementById('emailTo').value = clientEmail;
+  document.getElementById('emailCc').value = 'rogelio@ittelecom.com.mx';
+  document.getElementById('emailModalSubtitle').textContent = clientName + (folio ? ' · ' + folio : '');
+
+  // Build email based on type
+  if (tipo === 'cotizacion') {
+    await buildCotizacionEmail(clientId, docId, folio, titulo, clientName);
+  } else {
+    await buildPropuestaEmail(clientId, docId, titulo, clientName);
+  }
+}
+
+async function buildCotizacionEmail(clientId, quoteId, folio, titulo, clientName) {
+  // Load quote data
+  let q = {};
+  try {
+    const snap = await db.collection('clients').doc(clientId).collection('quotes').doc(quoteId).get();
+    if (snap.exists) q = snap.data();
+  } catch(e) {}
+
+  const folioStr = folio || q.folio || quoteId;
+  const sym = (q.moneda||'MXN') === 'USD' ? 'US$' : '$';
+  const fmtN = n => Number(n||0).toLocaleString('es-MX', {minimumFractionDigits:2,maximumFractionDigits:2});
+  const items = q.items || q.partidas || [];
+  let subtotal = items.reduce((s,i) => s+(i.total||0), 0);
+  const ivaRate = parseFloat(q.iva||q.ivaRate||16);
+  const iva = subtotal * ivaRate/100;
+  const total = subtotal + iva;
+
+  document.getElementById('emailSubject').value = `Cotización ${folioStr} — ${titulo||q.titulo||'Propuesta técnica'} | TRN`;
+
+  // Build items rows HTML
+  let rowsHtml = '';
+  items.slice(0,8).forEach(it => {
+    if (!it.desc && !it.total) return;
+    const desc = (it.desc||'').length > 80 ? (it.desc||'').slice(0,80)+'…' : (it.desc||'');
+    rowsHtml += `<tr>
+      <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;color:#333;font-size:12px">${desc}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;text-align:center;color:#555;font-size:12px">${it.qty||it.cantidad||1}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;text-align:right;color:#333;font-size:12px;font-family:monospace">${sym}${fmtN(it.total)}</td>
+    </tr>`;
+  });
+  if (items.length > 8) {
+    rowsHtml += `<tr><td colspan="3" style="padding:6px 10px;color:#999;font-size:11px;font-style:italic">... y ${items.length-8} partidas más</td></tr>`;
+  }
+
+  const pdfUrl = `https://xolar-clientes.web.app/cotizacion?id=${quoteId}&client=${clientId}`;
+
+  _emailHtmlContent = buildEmailTemplate({
+    clientName,
+    folio: folioStr,
+    titulo: titulo || q.titulo || 'Cotización',
+    tipo: 'cotización',
+    lugar: q.lugar || '',
+    entrega: q.tiempoEntrega || '',
+    vigencia: q.vigencia || '30',
+    tableHtml: `<table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:#0B1A2E">
+        <th style="padding:8px 10px;text-align:left;color:#F5A623;font-size:11px;font-family:'Outfit',sans-serif">DESCRIPCIÓN</th>
+        <th style="padding:8px 10px;text-align:center;color:#F5A623;font-size:11px;font-family:'Outfit',sans-serif">CANT.</th>
+        <th style="padding:8px 10px;text-align:right;color:#F5A623;font-size:11px;font-family:'Outfit',sans-serif">TOTAL</th>
+      </tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>`,
+    totalsHtml: `
+      <div style="display:flex;justify-content:flex-end;margin-top:12px">
+        <table style="min-width:220px;font-size:12px">
+          <tr><td style="padding:3px 8px;color:#666">Subtotal</td><td style="padding:3px 8px;text-align:right;font-family:monospace">${sym}${fmtN(subtotal)}</td></tr>
+          <tr><td style="padding:3px 8px;color:#666">IVA ${ivaRate}%</td><td style="padding:3px 8px;text-align:right;font-family:monospace">${sym}${fmtN(iva)}</td></tr>
+          <tr style="border-top:2px solid #F5A623">
+            <td style="padding:6px 8px;font-weight:800;font-size:14px;font-family:'Outfit',sans-serif">TOTAL</td>
+            <td style="padding:6px 8px;text-align:right;font-weight:800;font-size:14px;color:#F5A623;font-family:monospace">${sym}${fmtN(total)} ${q.moneda||'MXN'}</td>
+          </tr>
+        </table>
+      </div>`,
+    pdfUrl,
+    pdfLabel: 'Ver cotización en portal'
+  });
+
+  updateEmailPreview();
+}
+
+async function buildPropuestaEmail(clientId, propId, titulo, clientName) {
+  let p = {};
+  try {
+    const snap = await db.collection('clients').doc(clientId).collection('proposals').doc(propId).get();
+    if (snap.exists) p = snap.data();
+  } catch(e) {}
+
+  const versions = p.versions || [];
+  const latestVer = versions[versions.length-1] || {};
+  const verUrl = latestVer.url ? ('https://xolar-clientes.web.app' + (latestVer.url.startsWith('/')?latestVer.url:'/'+latestVer.url)) : '';
+
+  document.getElementById('emailSubject').value = `Propuesta técnica — ${titulo||p.title||'Proyecto'} | TRN`;
+
+  let versionsHtml = versions.slice(-3).map((v,i) => `
+    <tr>
+      <td style="padding:6px 10px;font-size:12px;color:#333">${v.label||('v'+(i+1))}</td>
+      <td style="padding:6px 10px;font-size:12px;color:#555">${(v.changelog||'Sin descripción').slice(0,80)}</td>
+      <td style="padding:6px 10px;font-size:11px;color:#999">${v.date||''}</td>
+    </tr>`).join('');
+
+  _emailHtmlContent = buildEmailTemplate({
+    clientName,
+    folio: '',
+    titulo: titulo || p.title || 'Propuesta',
+    tipo: 'propuesta técnica',
+    lugar: '',
+    entrega: '',
+    vigencia: '',
+    tableHtml: versions.length ? `<table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:#0B1A2E">
+        <th style="padding:8px 10px;text-align:left;color:#F5A623;font-size:11px">VERSIÓN</th>
+        <th style="padding:8px 10px;text-align:left;color:#F5A623;font-size:11px">DESCRIPCIÓN</th>
+        <th style="padding:8px 10px;text-align:left;color:#F5A623;font-size:11px">FECHA</th>
+      </tr></thead>
+      <tbody>${versionsHtml}</tbody>
+    </table>` : '',
+    totalsHtml: '',
+    pdfUrl: verUrl,
+    pdfLabel: 'Ver propuesta completa'
+  });
+
+  updateEmailPreview();
+}
+
+function buildEmailTemplate({clientName, folio, titulo, tipo, lugar, entrega, vigencia, tableHtml, totalsHtml, pdfUrl, pdfLabel}) {
+  const folioLine = folio ? `<div style="font-size:13px;color:#F5A623;font-weight:700;margin-bottom:4px">${folio}</div>` : '';
+  const metaLines = [
+    lugar ? `<span style="margin-right:16px">📍 ${lugar}</span>` : '',
+    entrega ? `<span style="margin-right:16px">🚚 Entrega: ${entrega}</span>` : '',
+    vigencia ? `<span>📅 Vigencia: ${vigencia} días</span>` : '',
+  ].filter(Boolean).join('');
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&family=DM+Sans:wght@400;500&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',Arial,sans-serif; background:#f4f4f4; color:#1a1a1a; }
+</style></head>
+<body>
+<div style="max-width:620px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.1)">
+
+  <!-- Header -->
+  <div style="background:linear-gradient(135deg,#0B1A2E 0%,#1B3A5C 100%);padding:28px 32px 24px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-family:'Outfit',sans-serif;font-weight:900;font-size:28px;color:#F5A623;letter-spacing:-1px">TRN</div>
+        <div style="font-size:10px;color:#8892B0;letter-spacing:2px;text-transform:uppercase;margin-top:2px">Telecomunicaciones y Redes del Norte</div>
+      </div>
+      <div style="text-align:right">
+        ${folioLine}
+        <div style="font-size:11px;color:#8892B0">${new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'})}</div>
+      </div>
+    </div>
+    <div style="margin-top:20px">
+      <div style="font-size:11px;color:#F5A623;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px">${tipo.toUpperCase()}</div>
+      <div style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;color:#fff;line-height:1.2">${titulo}</div>
+    </div>
+  </div>
+
+  <!-- Greeting -->
+  <div style="padding:24px 32px 16px;background:#fff">
+    <p style="font-size:14px;line-height:1.7;color:#444">
+      Estimado/a <strong>${clientName}</strong>,
+    </p>
+    <p style="font-size:14px;line-height:1.7;color:#444;margin-top:10px">
+      Nos complace adjuntar la ${tipo} correspondiente a su proyecto. A continuación encontrará un resumen de la información más relevante:
+    </p>
+    ${metaLines ? `<div style="margin-top:12px;font-size:12px;color:#666">${metaLines}</div>` : ''}
+  </div>
+
+  <!-- Table -->
+  ${tableHtml ? `<div style="padding:0 32px 8px">${tableHtml}</div>` : ''}
+
+  <!-- Totals -->
+  ${totalsHtml ? `<div style="padding:0 32px 16px">${totalsHtml}</div>` : ''}
+
+  <!-- PDF button -->
+  ${pdfUrl ? `
+  <div style="padding:16px 32px 24px;text-align:center">
+    <a href="${pdfUrl}" style="display:inline-block;background:linear-gradient(135deg,#F5A623,#FF6B35);color:#0B1A2E;text-decoration:none;padding:12px 28px;border-radius:50px;font-family:'Outfit',sans-serif;font-weight:800;font-size:14px;letter-spacing:.3px">
+      📄 ${pdfLabel}
+    </a>
+    <div style="margin-top:8px;font-size:11px;color:#999">O copia este enlace: <span style="color:#F5A623">${pdfUrl}</span></div>
+  </div>` : ''}
+
+  <!-- Divider -->
+  <div style="height:4px;background:linear-gradient(90deg,#0B1A2E 0%,#F5A623 55%,#FF6B35 100%)"></div>
+
+  <!-- Footer -->
+  <div style="padding:20px 32px;background:#f9f9f9">
+    <p style="font-size:13px;line-height:1.6;color:#555">
+      Para cualquier duda o aclaración, estamos a sus órdenes. Quedo pendiente de sus comentarios.
+    </p>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #e8e8e8">
+      <div style="font-family:'Outfit',sans-serif;font-weight:700;font-size:14px;color:#0B1A2E">TRN — Telecomunicaciones y Redes del Norte</div>
+      <div style="font-size:12px;color:#888;margin-top:4px">San Martín 502, Centro · Chihuahua, Chih. C.P. 31000</div>
+      <div style="font-size:12px;color:#888">contacto@trnorte.com · RFC: TRN161229RR9</div>
+    </div>
+  </div>
+
+</div>
+</body></html>`;
+}
+
+function updateEmailPreview() {
+  const iframe = document.getElementById('emailPreviewIframe');
+  iframe.srcdoc = _emailHtmlContent;
+  document.getElementById('emailHtmlCode').value = _emailHtmlContent;
+}
+
+function toggleEmailPreview() {
+  const previewWrap = document.getElementById('emailPreviewWrap');
+  const htmlWrap = document.getElementById('emailHtmlWrap');
+  const btn = document.getElementById('emailPreviewToggle');
+  if (htmlWrap.style.display === 'none') {
+    htmlWrap.style.display = 'block';
+    previewWrap.style.display = 'none';
+    btn.textContent = '👁 Preview';
+  } else {
+    htmlWrap.style.display = 'none';
+    previewWrap.style.display = 'block';
+    btn.textContent = '👁 HTML';
+  }
+}
+
+function copyEmailHtml() {
+  navigator.clipboard.writeText(_emailHtmlContent)
+    .then(() => showToast('✅ HTML copiado — pégalo en Gmail o Outlook'))
+    .catch(() => {
+      const ta = document.getElementById('emailHtmlCode');
+      ta.select();
+      document.execCommand('copy');
+      showToast('✅ HTML copiado');
+    });
+}
+
+function sendViaMailto() {
+  const to = document.getElementById('emailTo').value.trim();
+  const cc = document.getElementById('emailCc').value.trim();
+  const subject = document.getElementById('emailSubject').value.trim();
+
+  // Plain text version for mailto body
+  const plain = _emailHtmlContent
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s{2,}/g, '
+')
+    .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ')
+    .trim()
+    .slice(0, 1900); // mailto has URL length limits
+
+  const params = new URLSearchParams();
+  if (cc) params.set('cc', cc);
+  params.set('subject', subject);
+  params.set('body', plain + '
+
+---
+Para ver la versión completa con diseño, abra el enlace incluido en este correo.');
+
+  const mailto = `mailto:${to}?${params.toString()}`;
+  window.location.href = mailto;
+  showToast('📨 Abriendo aplicación de correo…');
 }
 
 </script>

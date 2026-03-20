@@ -1234,11 +1234,11 @@ function addItem(tipo){
           <div class="field">
             <label class="c-costo-label">Costo unitario</label>
             <div style="display:flex;gap:0.3rem;align-items:center">
-              <select class="c-moneda" style="background:var(--navy);border:1px solid var(--border);border-radius:5px;color:var(--white);padding:0.3rem 0.4rem;font-size:0.78rem;outline:none;flex-shrink:0" onchange="recalcProductoCosto(this)">
+              <select class="c-moneda" style="background:var(--navy);border:1px solid var(--border);border-radius:5px;color:var(--white);padding:0.3rem 0.4rem;font-size:0.78rem;outline:none;width:62px;flex-shrink:0" onchange="recalcProductoCosto(this)">
                 <option value="MXN" \${document.getElementById('moneda').value!=='USD'?'selected':''}>MXN</option>
                 <option value="USD" \${document.getElementById('moneda').value==='USD'?'selected':''}>USD</option>
               </select>
-              <input type="number" class="c-costo" value="0" min="0" step="0.01" style="flex:1">
+              <input type="number" class="c-costo" value="0" min="0" step="0.01" style="flex:1;min-width:80px">
             </div>
           </div>
           <div class="field">

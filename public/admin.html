@@ -2961,16 +2961,16 @@ function activateEditMode(iframe) {
     const doc = iframe.contentDocument;
     if (!doc) return;
 
-    // Make all text elements editable
+    // ── 1. Make text elements editable ──────────────────────────────
     const editableSelectors = [
       'h1','h2','h3','h4','h5','p','li','td','th',
       '.section-label','.version-title','.version-sub',
       '.need-card p','.need-card ul','.need-card h4',
       '.cf p','.spec-val','.spec-label',
       '.metric-val','.metric-lbl','.metric-sub',
-      '.chart-card h3','.guarantee-item p','.guarantee-item h4'
+      '.chart-card h3','.guarantee-item p','.guarantee-item h4',
+      '.logo','.badge-final','.footer-text'
     ];
-
     editableSelectors.forEach(sel => {
       doc.querySelectorAll(sel).forEach(el => {
         el.contentEditable = 'true';
@@ -2991,17 +2991,290 @@ function activateEditMode(iframe) {
       });
     });
 
-    // Add edit mode indicator
+    // ── 2. Media overlay — clic para reemplazar imágenes, SVG y logo ──
+    injectMediaEditStyle(doc);
+    injectMediaOverlays(doc, iframe);
+
+    // ── 3. Edit mode bar ─────────────────────────────────────────────
     const bar = doc.createElement('div');
     bar.id = 'edit-mode-bar';
-    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(245,166,35,.95);color:#0B1A2E;font-family:sans-serif;font-size:.78rem;font-weight:700;padding:.35rem 1rem;text-align:center;letter-spacing:.05em';
-    bar.textContent = '✏️ MODO EDICIÓN ACTIVO — Haz clic en cualquier texto para editarlo';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(245,166,35,.95);color:#0B1A2E;font-family:sans-serif;font-size:.78rem;font-weight:700;padding:.35rem 1rem;text-align:center;letter-spacing:.05em;display:flex;align-items:center;justify-content:center;gap:1rem';
+    bar.innerHTML = '✏️ <span>MODO EDICIÓN ACTIVO</span> <span style="font-weight:400;opacity:.7">· Texto: clic directo · Imágenes/Logo: botón 🖼 · SVG/Gráficas: botón 📐</span>';
     doc.body.prepend(bar);
     doc.body.style.paddingTop = '32px';
   } catch(e) {
     console.warn('editMode error:', e);
   }
 }
+
+function injectMediaEditStyle(doc) {
+  if (doc.getElementById('media-edit-style')) return;
+  const style = doc.createElement('style');
+  style.id = 'media-edit-style';
+  style.textContent = `
+    .med-wrap { position:relative; display:inline-block; }
+    .med-wrap-block { position:relative; display:block; }
+    .med-btn {
+      position:absolute; top:4px; right:4px; z-index:9000;
+      background:rgba(11,26,46,.88); border:1.5px solid rgba(245,166,35,.7);
+      border-radius:7px; color:#F5A623; font-size:.72rem; font-weight:700;
+      padding:.25rem .5rem; cursor:pointer; white-space:nowrap;
+      backdrop-filter:blur(4px); transition:all .15s; line-height:1.3;
+    }
+    .med-btn:hover { background:rgba(245,166,35,.25); color:#fff; }
+    .med-wrap:hover .med-btn, .med-wrap-block:hover .med-btn { opacity:1; }
+  `;
+  doc.head.appendChild(style);
+}
+
+function injectMediaOverlays(doc, iframe) {
+  // ── Images ──
+  doc.querySelectorAll('img').forEach((img, i) => {
+    if (img.closest('.med-wrap')) return;
+    const wrap = doc.createElement('span');
+    wrap.className = 'med-wrap';
+    wrap.style.cssText = img.style.cssText || '';
+    img.parentNode.insertBefore(wrap, img);
+    wrap.appendChild(img);
+    const btn = makeMediaBtn(doc, '🖼 Cambiar imagen', () => openMediaPicker(img, 'img', iframe));
+    wrap.appendChild(btn);
+  });
+
+  // ── SVGs (diagrams, charts containers) ──
+  doc.querySelectorAll('svg:not(.med-handled)').forEach((svg, i) => {
+    if (svg.closest('button') || svg.closest('.med-wrap') || svg.closest('.med-wrap-block')) return;
+    svg.classList.add('med-handled');
+    const wrap = doc.createElement('div');
+    wrap.className = 'med-wrap-block';
+    svg.parentNode.insertBefore(wrap, svg);
+    wrap.appendChild(svg);
+    const btn = makeMediaBtn(doc, '📐 Editar SVG', () => openSVGEditor(svg, iframe));
+    btn.style.top = '8px';
+    btn.style.right = '8px';
+    wrap.appendChild(btn);
+  });
+
+  // ── Logo (header text) ──
+  const logo = doc.querySelector('.logo');
+  if (logo && !logo.querySelector('.med-btn')) {
+    logo.style.position = 'relative';
+    const btn = makeMediaBtn(doc, '🏷 Cambiar logo', () => openLogoPicker(logo, iframe));
+    btn.style.top = '0';
+    btn.style.right = '-8px';
+    btn.style.position = 'relative';
+    btn.style.display = 'inline-flex';
+    btn.style.verticalAlign = 'middle';
+    btn.style.marginLeft = '8px';
+    logo.appendChild(btn);
+  }
+
+  // ── Chart canvases ──
+  doc.querySelectorAll('canvas').forEach(canvas => {
+    if (canvas.closest('.med-wrap-block')) return;
+    const wrap = doc.createElement('div');
+    wrap.className = 'med-wrap-block';
+    canvas.parentNode.insertBefore(wrap, canvas);
+    wrap.appendChild(canvas);
+    const btn = makeMediaBtn(doc, '📊 Editar gráfica', () => openChartEditor(canvas, iframe));
+    btn.style.top = '8px';
+    btn.style.right = '8px';
+    wrap.appendChild(btn);
+  });
+}
+
+function makeMediaBtn(doc, label, clickFn) {
+  const btn = doc.createElement('button');
+  btn.className = 'med-btn';
+  btn.textContent = label;
+  btn.onclick = (e) => { e.stopPropagation(); e.preventDefault(); clickFn(); };
+  return btn;
+}
+
+// ── Media picker modal (runs in the admin frame, not the iframe) ──
+let _medTarget = null;
+let _medType = null;
+let _medIframe = null;
+
+function openMediaPicker(imgEl, type, iframe) {
+  _medTarget = imgEl;
+  _medType = type;
+  _medIframe = iframe;
+  showMediaModal('🖼 Reemplazar imagen', [
+    { label: '📁 Subir imagen desde tu equipo', action: () => triggerMediaUpload('image/*') },
+    { label: '🔗 Pegar URL de imagen', action: () => promptMediaURL() },
+  ]);
+}
+
+function openLogoPicker(logoEl, iframe) {
+  _medTarget = logoEl;
+  _medType = 'logo';
+  _medIframe = iframe;
+  showMediaModal('🏷 Cambiar logo de la propuesta', [
+    { label: '🔷 Logo TRN oficial (SVG sin fondo)', action: () => applyTRNLogo() },
+    { label: '📁 Subir logo personalizado', action: () => triggerMediaUpload('image/*,image/svg+xml') },
+    { label: '✏️ Editar texto del logo', action: () => editLogoText() },
+  ]);
+}
+
+function openSVGEditor(svgEl, iframe) {
+  _medTarget = svgEl;
+  _medType = 'svg';
+  _medIframe = iframe;
+  showMediaModal('📐 Opciones del diagrama SVG', [
+    { label: '📁 Reemplazar con imagen', action: () => triggerMediaUpload('image/*,image/svg+xml') },
+    { label: '✏️ Editar código SVG', action: () => editSVGCode(svgEl) },
+  ]);
+}
+
+function openChartEditor(canvasEl, iframe) {
+  _medTarget = canvasEl;
+  _medType = 'chart';
+  _medIframe = iframe;
+  showMediaModal('📊 Opciones de la gráfica', [
+    { label: '📁 Reemplazar con imagen estática', action: () => triggerMediaUpload('image/*') },
+    { label: '💾 Exportar como imagen PNG', action: () => exportChartPNG(canvasEl) },
+  ]);
+}
+
+function showMediaModal(title, options) {
+  let modal = document.getElementById('mediaPickerModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'mediaPickerModal';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem';
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+  modal.innerHTML = `
+    <div style="background:var(--navy);border:1px solid var(--border);border-radius:14px;padding:1.5rem;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.1rem">
+        <div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:1rem">${title}</div>
+        <button onclick="document.getElementById('mediaPickerModal').style.display='none'" style="background:none;border:none;color:var(--gray);font-size:1.1rem;cursor:pointer">✕</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.55rem">
+        ${options.map(o => `
+          <button onclick="(${o.action.toString()})();document.getElementById('mediaPickerModal').style.display='none';"
+            style="padding:.65rem 1rem;border-radius:8px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);color:var(--light);font-family:'DM Sans',sans-serif;font-size:.88rem;cursor:pointer;text-align:left;transition:all .15s;font-weight:500"
+            onmouseover="this.style.background='rgba(245,166,35,.18)'" onmouseout="this.style.background='rgba(245,166,35,.08)'">
+            ${o.label}
+          </button>`).join('')}
+      </div>
+      <input type="file" id="mediaFileInput" style="display:none" onchange="handleMediaFile(this)">
+    </div>`;
+}
+
+function triggerMediaUpload(accept) {
+  const inp = document.getElementById('mediaFileInput');
+  if (inp) { inp.accept = accept; inp.click(); }
+}
+
+function handleMediaFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    applyMediaToTarget(dataUrl);
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function applyMediaToTarget(src) {
+  if (!_medTarget || !_medIframe) return;
+  const doc = _medIframe.contentDocument;
+  _edIframeDirty = true;
+
+  if (_medType === 'img') {
+    _medTarget.src = src;
+    _medTarget.style.maxWidth = '100%';
+  } else if (_medType === 'logo') {
+    // Replace entire logo div with img
+    const img = doc.createElement('img');
+    img.src = src;
+    img.style.cssText = 'height:40px;width:auto;object-fit:contain;';
+    img.className = 'logo-img-replaced';
+    _medTarget.innerHTML = '';
+    _medTarget.appendChild(img);
+    // Re-attach edit btn
+    const btn = makeMediaBtn(doc, '🏷 Cambiar logo', () => openLogoPicker(_medTarget, _medIframe));
+    btn.style.cssText += 'position:absolute;top:4px;right:4px';
+    _medTarget.style.position = 'relative';
+    _medTarget.appendChild(btn);
+  } else if (_medType === 'svg' || _medType === 'chart') {
+    // Replace SVG/canvas with img
+    const img = doc.createElement('img');
+    img.src = src;
+    img.style.cssText = 'width:100%;height:auto;border-radius:8px;';
+    _medTarget.parentNode.insertBefore(img, _medTarget);
+    _medTarget.style.display = 'none';
+  }
+  document.getElementById('edSaveStatus').textContent = '● Cambios sin guardar';
+  document.getElementById('edSaveStatus').style.color = 'var(--amber)';
+  showToast('✅ Elemento actualizado');
+}
+
+function applyTRNLogo() {
+  // Official TRN SVG logo — 3 chevrons + wordmark
+  const trnSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 36" height="36" style="display:block">
+    <g>
+      <polygon points="0,4 7,0 19,18 7,36 0,32 10,18" fill="#FF6B35"/>
+      <polygon points="8,4 15,0 27,18 15,36 8,32 18,18" fill="white"/>
+      <polygon points="16,4 23,0 35,18 23,36 16,32 22,18" fill="white" transform="scale(0.85,1) translate(3,0)"/>
+    </g>
+    <text x="38" y="24" font-family="Outfit,sans-serif" font-weight="800" font-size="20" fill="white" letter-spacing="-0.5">TRN</text>
+    <text x="38" y="33" font-family="DM Sans,sans-serif" font-weight="400" font-size="5.5" fill="#8892B0" letter-spacing="2">TELECOMUNICACIONES Y REDES DEL NORTE</text>
+  </svg>`;
+  if (!_medTarget || !_medIframe) return;
+  const doc = _medIframe.contentDocument;
+  _medTarget.innerHTML = trnSVG;
+  _edIframeDirty = true;
+  const btn = makeMediaBtn(doc, '🏷 Cambiar logo', () => openLogoPicker(_medTarget, _medIframe));
+  btn.style.cssText += 'position:absolute;top:4px;right:4px';
+  _medTarget.style.position = 'relative';
+  _medTarget.appendChild(btn);
+  showToast('✅ Logo TRN oficial aplicado');
+}
+
+function promptMediaURL() {
+  const url = prompt('Pega la URL de la imagen:');
+  if (url) applyMediaToTarget(url);
+}
+
+function editLogoText() {
+  if (!_medTarget) return;
+  _medTarget.contentEditable = 'true';
+  _medTarget.focus();
+  _edIframeDirty = true;
+}
+
+function editSVGCode(svgEl) {
+  const currentCode = svgEl.outerHTML;
+  const newCode = prompt('Editar código SVG (avanzado):', currentCode.slice(0, 300));
+  if (newCode && _medIframe) {
+    const doc = _medIframe.contentDocument;
+    const tmp = doc.createElement('div');
+    tmp.innerHTML = newCode;
+    const newSVG = tmp.querySelector('svg');
+    if (newSVG) {
+      svgEl.parentNode.replaceChild(newSVG, svgEl);
+      _edIframeDirty = true;
+      showToast('✅ SVG actualizado');
+    }
+  }
+}
+
+function exportChartPNG(canvas) {
+  try {
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'grafica-propuesta.png';
+    a.click();
+    showToast('✅ Gráfica exportada como PNG');
+  } catch(e) { showToast('Error al exportar: ' + e.message, true); }
+}
+
 
 function updateEdStatusBadge() {
   const st = document.getElementById('edStatus').value;

@@ -1478,7 +1478,7 @@ function renderQuotesTable() {
             <div class="dropdown-menu" id="${ddId}">
               <div class="dd-item" onclick="cycleStatus('${q.clientId}','${q.id}','${st}')">⟳ Cambiar estado</div>
               <div class="dd-item" onclick="duplicateQuote('${q.clientId}','${q.id}')">📋 Duplicar</div>
-              <div class="dd-item" onclick="openEmailModal('cotizacion','${q.clientId}','${q.id}','${q.folio||q.id}','${(q.titulo||q.title||'Cotización').replace(/'/g,\"\\\\'\")}')" >✉️ Enviar por correo</div>
+              <div class="dd-item" onclick="openEmailModal('cotizacion','${q.clientId}','${q.id}','${q.folio||q.id}','${(q.titulo||q.title||'').replace(/['"]/g,'')}')" >✉️ Enviar por correo</div>
               ${!isInvoiced?`<div class="dd-item" onclick="openInvoiceModal('${q.clientId}','${q.id}')">📄 Marcar como facturada</div>`:''}
               <div class="dd-sep"></div>
               <div class="dd-item danger" onclick="askDeleteQuote('${q.clientId}','${q.id}','${(q.folio||q.id).replace(/'/g,"\'")} · ${clientName} · ${total_v?fmtMoney(total_v,cur):''}')">🗑 Eliminar</div>
@@ -4019,8 +4019,7 @@ function sendViaMailto() {
   const plain = _emailHtmlContent
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
     .replace(/<[^>]+>/g, ' ')
-    .replace(/\s{2,}/g, '
-')
+    .replace(/\s{2,}/g, ' ')
     .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ')
     .trim()
     .slice(0, 1900); // mailto has URL length limits

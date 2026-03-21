@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TRN — Migración a Modelo v2</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--dark:#0B1A2E;--navy:#112240;--mid:#1B3A5C;--amber:#F5A623;--orange:#FF6B35;--green:#2ECC71;--teal:#00B894;--white:#F8FAFE;--gray:#8892B0;--light:#CCD6F6;--danger:#e74c3c;--card:rgba(17,34,64,0.9);--border:rgba(245,166,35,0.15)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--white);min-height:100vh;padding:2rem}
+.container{max-width:900px;margin:0 auto}
+h1{font-family:'Outfit',sans-serif;font-weight:800;color:var(--amber);margin-bottom:0.5rem}
+.subtitle{color:var(--gray);margin-bottom:2rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin-bottom:1.5rem}
+.card h2{font-family:'Outfit',sans-serif;font-size:1.1rem;font-weight:700;color:var(--light);margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem}
+.log{background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:1rem;font-family:'JetBrains Mono',monospace;font-size:0.8rem;max-height:300px;overflow-y:auto;margin-bottom:1rem}
+.log-line{padding:0.25rem 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+.log-line.success{color:var(--green)}
+.log-line.warn{color:var(--amber)}
+.log-line.error{color:var(--danger)}
+.log-line.info{color:var(--teal)}
+.btn{padding:0.75rem 1.5rem;border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-weight:700;font-size:0.9rem;cursor:pointer;display:inline-flex;align-items:center;gap:0.5rem;transition:all 0.2s}
+.btn-primary{background:linear-gradient(135deg,var(--amber),var(--orange));color:#0B1A2E}
+.btn-primary:hover{opacity:0.9}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed}
+.btn-outline{background:transparent;border:1px solid var(--amber);color:var(--amber)}
+.btn-outline:hover{background:rgba(245,166,35,0.1)}
+.btn-danger{background:rgba(231,76,60,0.15);border:1px solid rgba(231,76,60,0.3);color:var(--danger)}
+.btn-danger:hover{background:rgba(231,76,60,0.25)}
+.actions{display:flex;gap:1rem;flex-wrap:wrap}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1rem}
+.stat{background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:1rem;text-align:center}
+.stat-num{font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:700;color:var(--amber)}
+.stat-label{font-size:0.75rem;color:var(--gray);margin-top:0.25rem}
+.progress{height:8px;background:var(--dark);border-radius:4px;overflow:hidden;margin-bottom:0.5rem}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--amber),var(--orange));transition:width 0.3s}
+.model-compare{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.model-box{background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:1rem}
+.model-box h3{font-size:0.85rem;font-weight:600;margin-bottom:0.5rem}
+.model-box.old h3{color:var(--danger)}
+.model-box.new h3{color:var(--green)}
+.model-box pre{font-size:0.7rem;color:var(--gray);white-space:pre-wrap}
+.login-box{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+.login-box input{padding:0.6rem 1rem;border:1px solid var(--border);border-radius:8px;background:var(--dark);color:var(--white);font-size:0.9rem;width:250px}
+.login-box input:focus{outline:none;border-color:var(--amber)}
+#userInfo{font-size:0.85rem;color:var(--gray)}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🔄 Migración de Datos v2</h1>
+  <p class="subtitle">Nuevo modelo: propuestas y cotizaciones vinculadas a múltiples clientes</p>
+
+  <!-- Auth -->
+  <div class="card" id="authCard">
+    <h2>🔑 Autenticación Admin</h2>
+    <div class="login-box">
+      <input type="email" id="email" placeholder="Email admin" value="rogelio@ittelecom.com.mx">
+      <input type="password" id="password" placeholder="Contraseña">
+      <button class="btn btn-primary" id="btnLogin">Iniciar sesión</button>
+    </div>
+    <p id="userInfo" style="margin-top:1rem"></p>
+  </div>
+
+  <!-- Model comparison -->
+  <div class="card">
+    <h2>📊 Comparación de Modelos</h2>
+    <div class="model-compare">
+      <div class="model-box old">
+        <h3>❌ Modelo Actual (v1)</h3>
+        <pre>clients/{uid}/proposals/{id}
+  ├── title, description, status
+  ├── versions: [{path: "..."}]
+  └── (cotizaciones mezcladas)
+
+Problema: Propuestas DUPLICADAS
+por cada cliente que las ve</pre>
+      </div>
+      <div class="model-box new">
+        <h3>✅ Modelo Nuevo (v2)</h3>
+        <pre>proposals/{id}
+  ├── clientIds: ["uid1", "uid2"]  
+  ├── companyId, title, status
+  └── versions/{n}: {path, title}
+
+quotes/{id}
+  ├── proposalId → propuesta
+  ├── proposalVersion → versión
+  └── clientIds: ["uid1", "uid2"]</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="card hidden" id="statsCard">
+    <h2>📈 Datos a Migrar</h2>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-num" id="statClients">-</div><div class="stat-label">Clientes</div></div>
+      <div class="stat"><div class="stat-num" id="statProposals">-</div><div class="stat-label">Propuestas (v1)</div></div>
+      <div class="stat"><div class="stat-num" id="statQuotes">-</div><div class="stat-label">Cotizaciones (v1)</div></div>
+      <div class="stat"><div class="stat-num" id="statNewProposals">-</div><div class="stat-label">Propuestas (v2)</div></div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-outline" id="btnAnalyze">🔍 Analizar datos</button>
+      <button class="btn btn-primary" id="btnMigrate" disabled>⚡ Ejecutar migración</button>
+      <button class="btn btn-danger" id="btnRollback" disabled>🔙 Rollback (borrar v2)</button>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="card hidden" id="progressCard">
+    <h2>⏳ Progreso</h2>
+    <div class="progress"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+    <p id="progressText" style="font-size:0.85rem;color:var(--gray)">Esperando...</p>
+  </div>
+
+  <!-- Log -->
+  <div class="card hidden" id="logCard">
+    <h2>📝 Log de Operaciones</h2>
+    <div class="log" id="logContainer"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+firebase.initializeApp(FIREBASE_CONFIG);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// DOM
+const logContainer = document.getElementById('logContainer');
+const progressBar = document.getElementById('progressBar');
+const progressText = document.getElementById('progressText');
+
+function log(msg, type = '') {
+  const line = document.createElement('div');
+  line.className = 'log-line ' + type;
+  line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  logContainer.appendChild(line);
+  logContainer.scrollTop = logContainer.scrollHeight;
+}
+
+function setProgress(pct, text) {
+  progressBar.style.width = pct + '%';
+  progressText.textContent = text;
+}
+
+// Auth
+document.getElementById('btnLogin').onclick = async () => {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  try {
+    await auth.signInWithEmailAndPassword(email, password);
+    document.getElementById('userInfo').textContent = '✅ Conectado como: ' + email;
+    document.getElementById('statsCard').classList.remove('hidden');
+    document.getElementById('logCard').classList.remove('hidden');
+    log('Sesión iniciada como ' + email, 'success');
+  } catch(e) {
+    document.getElementById('userInfo').textContent = '❌ Error: ' + e.message;
+    log('Error de login: ' + e.message, 'error');
+  }
+};
+
+// Check if already logged in
+auth.onAuthStateChanged(user => {
+  if (user) {
+    document.getElementById('userInfo').textContent = '✅ Conectado como: ' + user.email;
+    document.getElementById('statsCard').classList.remove('hidden');
+    document.getElementById('logCard').classList.remove('hidden');
+    log('Sesión activa: ' + user.email, 'info');
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// ANALYZE
+// ═══════════════════════════════════════════════════════════════════
+let analysisData = { clients: [], proposals: [], quotes: [], companies: {} };
+
+document.getElementById('btnAnalyze').onclick = async () => {
+  log('Iniciando análisis...', 'info');
+  document.getElementById('progressCard').classList.remove('hidden');
+  setProgress(10, 'Obteniendo clientes...');
+
+  try {
+    // Get all clients
+    const clientsSnap = await db.collection('clients').get();
+    analysisData.clients = clientsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    document.getElementById('statClients').textContent = analysisData.clients.length;
+    log(`Encontrados ${analysisData.clients.length} clientes`, 'success');
+    setProgress(30, 'Obteniendo propuestas...');
+
+    // Get all proposals from all clients
+    analysisData.proposals = [];
+    analysisData.quotes = [];
+    let i = 0;
+    for (const client of analysisData.clients) {
+      const pSnap = await db.collection('clients').doc(client.id).collection('proposals').get();
+      for (const pDoc of pSnap.docs) {
+        const pData = pDoc.data();
+        // Separate quotes from proposals
+        if (pData.folio && pData.items && Array.isArray(pData.items)) {
+          analysisData.quotes.push({ id: pDoc.id, clientId: client.id, ...pData });
+        } else {
+          analysisData.proposals.push({ id: pDoc.id, clientId: client.id, ...pData });
+        }
+      }
+      i++;
+      setProgress(30 + (50 * i / analysisData.clients.length), `Procesando cliente ${i}/${analysisData.clients.length}...`);
+    }
+
+    document.getElementById('statProposals').textContent = analysisData.proposals.length;
+    document.getElementById('statQuotes').textContent = analysisData.quotes.length;
+    log(`Encontradas ${analysisData.proposals.length} propuestas (v1)`, 'success');
+    log(`Encontradas ${analysisData.quotes.length} cotizaciones (v1)`, 'success');
+
+    // Count new model
+    setProgress(90, 'Verificando modelo v2...');
+    const newProposalsSnap = await db.collection('proposals').get();
+    document.getElementById('statNewProposals').textContent = newProposalsSnap.size;
+    log(`Propuestas en modelo v2: ${newProposalsSnap.size}`, 'info');
+
+    // Group by company/path to detect duplicates
+    const pathGroups = {};
+    analysisData.proposals.forEach(p => {
+      const versions = p.versions || [];
+      const path = versions[0]?.path || p.path || 'unknown';
+      if (!pathGroups[path]) pathGroups[path] = [];
+      pathGroups[path].push(p);
+    });
+
+    const duplicates = Object.entries(pathGroups).filter(([_, arr]) => arr.length > 1);
+    if (duplicates.length > 0) {
+      log(`⚠️ Detectadas ${duplicates.length} propuestas duplicadas (mismo path en múltiples clientes)`, 'warn');
+      duplicates.forEach(([path, arr]) => {
+        log(`  → "${path}" aparece en ${arr.length} clientes`, 'warn');
+      });
+    }
+
+    setProgress(100, 'Análisis completado');
+    document.getElementById('btnMigrate').disabled = false;
+    document.getElementById('btnRollback').disabled = false;
+    log('✅ Análisis completado. Listo para migrar.', 'success');
+
+  } catch(e) {
+    log('Error en análisis: ' + e.message, 'error');
+    setProgress(0, 'Error');
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// MIGRATE
+// ═══════════════════════════════════════════════════════════════════
+document.getElementById('btnMigrate').onclick = async () => {
+  if (!confirm('¿Ejecutar migración? Esto creará los datos en el nuevo modelo.')) return;
+
+  log('═══════════════════════════════════════════', 'info');
+  log('Iniciando migración a modelo v2...', 'info');
+  setProgress(0, 'Iniciando migración...');
+
+  try {
+    const batch = db.batch();
+    let batchCount = 0;
+    const BATCH_LIMIT = 400; // Firestore limit is 500
+
+    // Group proposals by path (to consolidate duplicates)
+    const pathGroups = {};
+    analysisData.proposals.forEach(p => {
+      const versions = p.versions || [];
+      const key = versions[0]?.path || p.path || `unknown-${p.id}`;
+      if (!pathGroups[key]) {
+        pathGroups[key] = { 
+          clientIds: [], 
+          proposal: p,
+          allVersions: []
+        };
+      }
+      pathGroups[key].clientIds.push(p.clientId);
+      // Merge versions if different
+      if (versions.length > pathGroups[key].allVersions.length) {
+        pathGroups[key].allVersions = versions;
+        pathGroups[key].proposal = p;
+      }
+    });
+
+    const totalGroups = Object.keys(pathGroups).length;
+    log(`Consolidando ${analysisData.proposals.length} propuestas en ${totalGroups} únicas...`, 'info');
+
+    // Create proposals in new model
+    let i = 0;
+    const proposalIdMap = {}; // old path -> new proposal ID
+
+    for (const [path, group] of Object.entries(pathGroups)) {
+      const p = group.proposal;
+      const uniqueClientIds = [...new Set(group.clientIds)];
+      
+      // Determine company from path
+      const pathParts = (path || '').split('/').filter(Boolean);
+      const companyId = pathParts[0] || 'unknown';
+
+      // Create new proposal document
+      const newProposalRef = db.collection('proposals').doc();
+      const newProposalData = {
+        title: p.title || 'Sin título',
+        description: p.description || '',
+        status: p.status || 'draft',
+        clientIds: uniqueClientIds,
+        companyId: companyId,
+        currentVersion: group.allVersions.length || 0,
+        tags: p.tags || [],
+        createdAt: p.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        migratedFrom: 'v1',
+        originalPath: path
+      };
+
+      batch.set(newProposalRef, newProposalData);
+      batchCount++;
+      proposalIdMap[path] = newProposalRef.id;
+
+      // Create versions as subcollection
+      for (let v = 0; v < group.allVersions.length; v++) {
+        const version = group.allVersions[v];
+        const versionRef = newProposalRef.collection('versions').doc(String(v + 1));
+        batch.set(versionRef, {
+          versionNum: v + 1,
+          path: version.path || '',
+          title: version.title || `Versión ${v + 1}`,
+          notes: version.notes || '',
+          createdAt: version.createdAt || firebase.firestore.FieldValue.serverTimestamp()
+        });
+        batchCount++;
+      }
+
+      // Commit batch if near limit
+      if (batchCount >= BATCH_LIMIT) {
+        await batch.commit();
+        log(`Batch commit: ${batchCount} operaciones`, 'info');
+        batchCount = 0;
+      }
+
+      i++;
+      setProgress(10 + (40 * i / totalGroups), `Migrando propuesta ${i}/${totalGroups}...`);
+    }
+
+    log(`✅ ${totalGroups} propuestas migradas`, 'success');
+
+    // Migrate quotes
+    log(`Migrando ${analysisData.quotes.length} cotizaciones...`, 'info');
+    let q = 0;
+    for (const quote of analysisData.quotes) {
+      // Try to find matching proposal
+      let proposalId = null;
+      let proposalVersion = 1;
+      
+      // Match by linkedProposal or path
+      if (quote.linkedProposal) {
+        proposalId = proposalIdMap[quote.linkedProposal] || null;
+      }
+      if (!proposalId && quote.proposalPath) {
+        proposalId = proposalIdMap[quote.proposalPath] || null;
+      }
+
+      const newQuoteRef = db.collection('quotes').doc();
+      const newQuoteData = {
+        folio: quote.folio || '',
+        proposalId: proposalId,
+        proposalVersion: proposalVersion,
+        clientIds: [quote.clientId],
+        companyId: quote.companyId || '',
+        status: quote.status || 'draft',
+        total: quote.total || 0,
+        subtotal: quote.subtotal || 0,
+        iva: quote.iva || 0,
+        items: quote.items || [],
+        createdAt: quote.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        migratedFrom: 'v1',
+        originalClientId: quote.clientId
+      };
+
+      batch.set(newQuoteRef, newQuoteData);
+      batchCount++;
+
+      if (batchCount >= BATCH_LIMIT) {
+        await batch.commit();
+        log(`Batch commit: ${batchCount} operaciones`, 'info');
+        batchCount = 0;
+      }
+
+      q++;
+      setProgress(50 + (40 * q / analysisData.quotes.length), `Migrando cotización ${q}/${analysisData.quotes.length}...`);
+    }
+
+    // Final commit
+    if (batchCount > 0) {
+      await batch.commit();
+      log(`Batch commit final: ${batchCount} operaciones`, 'info');
+    }
+
+    log(`✅ ${analysisData.quotes.length} cotizaciones migradas`, 'success');
+
+    // Create Firestore indexes reminder
+    log('═══════════════════════════════════════════', 'info');
+    log('⚠️ IMPORTANTE: Crear índices en Firebase Console:', 'warn');
+    log('  proposals: clientIds (array-contains) + updatedAt (desc)', 'warn');
+    log('  quotes: clientIds (array-contains) + createdAt (desc)', 'warn');
+
+    setProgress(100, '✅ Migración completada');
+    log('✅ ¡MIGRACIÓN COMPLETADA!', 'success');
+
+  } catch(e) {
+    log('ERROR en migración: ' + e.message, 'error');
+    console.error(e);
+    setProgress(0, 'Error en migración');
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// ROLLBACK
+// ═══════════════════════════════════════════════════════════════════
+document.getElementById('btnRollback').onclick = async () => {
+  if (!confirm('⚠️ ¿BORRAR todos los datos del modelo v2? Esta acción no se puede deshacer.')) return;
+  if (!confirm('¿Estás SEGURO? Se borrarán proposals/ y quotes/ del nuevo modelo.')) return;
+
+  log('═══════════════════════════════════════════', 'info');
+  log('Iniciando rollback...', 'warn');
+  setProgress(0, 'Borrando modelo v2...');
+
+  try {
+    // Delete all from proposals/
+    const proposalsSnap = await db.collection('proposals').get();
+    let i = 0;
+    for (const doc of proposalsSnap.docs) {
+      // Delete versions subcollection
+      const versionsSnap = await doc.ref.collection('versions').get();
+      for (const vDoc of versionsSnap.docs) {
+        await vDoc.ref.delete();
+      }
+      await doc.ref.delete();
+      i++;
+      setProgress(10 + (40 * i / proposalsSnap.size), `Borrando propuesta ${i}/${proposalsSnap.size}...`);
+    }
+    log(`Borradas ${proposalsSnap.size} propuestas de v2`, 'warn');
+
+    // Delete all from quotes/
+    const quotesSnap = await db.collection('quotes').get();
+    let q = 0;
+    for (const doc of quotesSnap.docs) {
+      await doc.ref.delete();
+      q++;
+      setProgress(50 + (40 * q / quotesSnap.size), `Borrando cotización ${q}/${quotesSnap.size}...`);
+    }
+    log(`Borradas ${quotesSnap.size} cotizaciones de v2`, 'warn');
+
+    setProgress(100, 'Rollback completado');
+    log('✅ Rollback completado. Modelo v2 borrado.', 'success');
+
+    // Reset stats
+    document.getElementById('statNewProposals').textContent = '0';
+
+  } catch(e) {
+    log('ERROR en rollback: ' + e.message, 'error');
+    setProgress(0, 'Error en rollback');
+  }
+};
+</script>
+</body>
+</html>

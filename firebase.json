@@ -30,6 +30,14 @@
         "destination": "/cotizacion.html"
       },
       {
+        "source": "/migrate-v2",
+        "destination": "/migrate-v2.html"
+      },
+      {
+        "source": "/facturacion",
+        "destination": "/facturacion.html"
+      },
+      {
         "source": "/coeur-mexicana/solar-poste-v1",
         "destination": "/coeur-mexicana/solar-poste-v1.html"
       },

@@ -135,39 +135,54 @@ auth.onAuthStateChanged(async user => {
 
   async function loadAllProposals() {
     grid.innerHTML = '';
-    const rendered = new Set();
     const cards = [];
 
-    // Own proposals
-    const ownSnap = await db.collection('clients').doc(uid).collection('proposals')
-      .orderBy('updatedAt','desc').get();
-    ownSnap.forEach(doc => {
-      const d = doc.data();
-      const html = renderCard(doc, d, false);
-      if (html) { cards.push({ts: d.updatedAt?.toDate?.()?.getTime()||0, html}); rendered.add(doc.id); }
-    });
-
-    // Linked proposals (where this client appears in linkedClients)
+    // ═══════════════════════════════════════════════════════════════════
+    // NUEVO MODELO: Buscar en proposals/ raíz donde clientIds contiene uid
+    // ═══════════════════════════════════════════════════════════════════
     try {
-      const linkedSnap = await db.collectionGroup('proposals')
-        .where('linkedClients','array-contains', uid)
+      const proposalsSnap = await db.collection('proposals')
+        .where('clientIds', 'array-contains', uid)
+        .orderBy('updatedAt', 'desc')
         .get();
-      linkedSnap.forEach(doc => {
-        if (rendered.has(doc.id)) return;
+      
+      proposalsSnap.forEach(doc => {
         const d = doc.data();
-        const html = renderCard(doc, d, true);
-        if (html) { cards.push({ts: d.updatedAt?.toDate?.()?.getTime()||0, html}); rendered.add(doc.id); }
+        const html = renderCard(doc, d, false);
+        if (html) { 
+          cards.push({ts: d.updatedAt?.toDate?.()?.getTime() || 0, html}); 
+        }
       });
     } catch(e) {
-      // collectionGroup index may not exist yet — silently skip linked proposals
-      console.warn('linkedClients query not available yet:', e.message);
+      console.warn('proposals query error (index may be building):', e.message);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // FALLBACK: También buscar en modelo antiguo (clients/{uid}/proposals)
+    // para compatibilidad durante migración
+    // ═══════════════════════════════════════════════════════════════════
+    try {
+      const legacySnap = await db.collection('clients').doc(uid).collection('proposals')
+        .orderBy('updatedAt', 'desc').get();
+      
+      const existingIds = new Set(cards.map(c => c.id));
+      legacySnap.forEach(doc => {
+        if (existingIds.has(doc.id)) return; // Ya existe en nuevo modelo
+        const d = doc.data();
+        const html = renderCard(doc, d, true); // Marcar como "legacy"
+        if (html) { 
+          cards.push({ts: d.updatedAt?.toDate?.()?.getTime() || 0, html, id: doc.id}); 
+        }
+      });
+    } catch(e) {
+      console.warn('legacy proposals query error:', e.message);
     }
 
     if (!cards.length) {
       grid.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Aún no tienes propuestas.<br>Tu ejecutivo las creará pronto.</p></div>';
       return;
     }
-    cards.sort((a,b) => b.ts - a.ts);
+    cards.sort((a, b) => b.ts - a.ts);
     grid.innerHTML = cards.map(c => c.html).join('');
   }
 

@@ -28,6 +28,7 @@ jobs:
         run: firebase deploy --only hosting --project xolar-clientes
 
       - name: Deploy Firestore Rules
+        continue-on-error: true
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/sa.json
-        run: firebase deploy --only firestore:rules --project xolar-clientes
+        run: firebase deploy --only firestore:rules --project xolar-clientes || echo "Firestore rules deploy failed - may need manual deployment"

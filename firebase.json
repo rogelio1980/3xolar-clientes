@@ -50,6 +50,10 @@
         "destination": "/coeur-mexicana/solar-poste-v3.html"
       },
       {
+        "source": "/coeur-mexicana/starlink-backup",
+        "destination": "/coeur-mexicana/starlink-backup.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
